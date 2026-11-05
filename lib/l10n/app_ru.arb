@@ -1,0 +1,72 @@
+{
+  "@@locale": "ru",
+  "appName": "AgentPort",
+  "appTagline": "AI-чаты, MCP-коннекторы и управление OpenCode — в одном месте.",
+  "language": "Язык",
+  "languageSystem": "Системный",
+  "languageEnglish": "Английский",
+  "languageRussian": "Русский",
+  "getStarted": "Начать",
+  "onboardingFeatureChatTitle": "Любой OpenAI-совместимый провайдер",
+  "onboardingFeatureChatBody": "Подключите DeepSeek или свой API по ключу, который хранится у вас.",
+  "onboardingFeatureMcpTitle": "MCP-маркетплейс",
+  "onboardingFeatureMcpBody": "Ставьте внешние MCP-коннекторы в пару касаний.",
+  "onboardingFeatureOpenCodeTitle": "OpenCode в кармане",
+  "onboardingFeatureOpenCodeBody": "Пары по QR, отправка промптов и живой вывод с телефона.",
+  "onboardingLocalFirst": "Local-first. Ключи и история остаются на этом устройстве.",
+  "tabChats": "Чаты",
+  "tabMarketplace": "Маркетплейс",
+  "tabConnections": "Подключения",
+  "tabSettings": "Настройки",
+  "chatsTitle": "Чаты",
+  "chatsEmptyTitle": "Чатов пока нет",
+  "chatsEmptyBody": "Начните диалог. История и API-ключи останутся зашифрованными на устройстве.",
+  "newChat": "Новый чат",
+  "newChatComingSoon": "Чаты появятся на следующем этапе.",
+  "marketplaceTitle": "Маркетплейс",
+  "marketplacePluginsTab": "Плагины",
+  "marketplaceMarketplacesTab": "Маркетплейсы",
+  "marketplaceEmptyTitle": "Пока ничего не установлено",
+  "marketplaceEmptyBody": "Добавьте Claude-совместимый маркетплейс, чтобы смотреть MCP-коннекторы.",
+  "marketplaceMarketplacesEmptyTitle": "Нет маркетплейсов",
+  "marketplaceMarketplacesEmptyBody": "Официальный маркетплейс появится здесь на следующем этапе.",
+  "connectionsTitle": "Подключения",
+  "connectionsEmptyTitle": "OpenCode не подключён",
+  "connectionsEmptyBody": "Отсканируйте QR из «opencode pair», чтобы управлять сессиями с телефона.",
+  "connectionsPair": "Подключить OpenCode",
+  "connectionsComingSoon": "Подключение появится на одном из следующих этапов.",
+  "settingsTitle": "Настройки",
+  "settingsSectionApp": "Приложение",
+  "settingsSectionUpdates": "Обновления",
+  "settingsLanguageSubtitle": "Язык интерфейса",
+  "settingsAutoUpdate": "Проверять обновления автоматически",
+  "settingsAutoUpdateSubtitle": "Только стабильный канал. При выходе новой версии появится окно.",
+  "settingsSectionAbout": "О приложении",
+  "settingsAbout": "Об AgentPort",
+  "settingsVersion": "Версия {version}",
+  "@settingsVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutTitle": "О приложении",
+  "aboutDescription": "Открытый Android-клиент для AI-чатов, MCP-коннекторов и удалённого управления OpenCode.",
+  "aboutVersion": "Версия {version}",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutSourceCode": "Исходный код",
+  "aboutPrivacy": "Политика конфиденциальности",
+  "aboutPrivacyBody": "У AgentPort нет бэкенда и телеметрии. Данные уходят только в сервисы, которые вы настроили.",
+  "aboutLicenses": "Лицензии open-source",
+  "aboutMadeWith": "Сделано на Flutter. Лицензия MIT.",
+  "commonCancel": "Отмена",
+  "commonDone": "Готово",
+  "commonComingSoon": "Скоро"
+}

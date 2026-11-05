@@ -1,0 +1,26 @@
+# Secrets — never commit
+.secrets/
+*.jks
+*.keystore
+*.b64
+.env
+*.env.local
+
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+lib/l10n/generated/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+.vscode/
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+android/app/release/
+*.apk
+*.aab

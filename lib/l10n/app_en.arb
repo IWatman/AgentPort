@@ -1,0 +1,72 @@
+{
+  "@@locale": "en",
+  "appName": "AgentPort",
+  "appTagline": "AI chats, MCP connectors, and OpenCode control — all in one place.",
+  "language": "Language",
+  "languageSystem": "System",
+  "languageEnglish": "English",
+  "languageRussian": "Russian",
+  "getStarted": "Get started",
+  "onboardingFeatureChatTitle": "Any OpenAI-compatible provider",
+  "onboardingFeatureChatBody": "Connect DeepSeek or your own API with a key you control.",
+  "onboardingFeatureMcpTitle": "MCP marketplace",
+  "onboardingFeatureMcpBody": "Install remote MCP connectors in a couple of taps.",
+  "onboardingFeatureOpenCodeTitle": "OpenCode in your pocket",
+  "onboardingFeatureOpenCodeBody": "Pair by QR, send prompts, and follow live output from your phone.",
+  "onboardingLocalFirst": "Local-first. Keys and history stay on this device.",
+  "tabChats": "Chats",
+  "tabMarketplace": "Marketplace",
+  "tabConnections": "Connections",
+  "tabSettings": "Settings",
+  "chatsTitle": "Chats",
+  "chatsEmptyTitle": "No chats yet",
+  "chatsEmptyBody": "Start a conversation. History and API keys stay encrypted on this device.",
+  "newChat": "New chat",
+  "newChatComingSoon": "Chats arrive in the next milestone.",
+  "marketplaceTitle": "Marketplace",
+  "marketplacePluginsTab": "Plugins",
+  "marketplaceMarketplacesTab": "Marketplaces",
+  "marketplaceEmptyTitle": "Nothing installed yet",
+  "marketplaceEmptyBody": "Add a Claude-compatible marketplace to browse MCP connectors.",
+  "marketplaceMarketplacesEmptyTitle": "No marketplaces",
+  "marketplaceMarketplacesEmptyBody": "The official marketplace will appear here in the next milestone.",
+  "connectionsTitle": "Connections",
+  "connectionsEmptyTitle": "OpenCode is not connected",
+  "connectionsEmptyBody": "Scan the QR code from “opencode pair” to control sessions from your phone.",
+  "connectionsPair": "Pair OpenCode",
+  "connectionsComingSoon": "Pairing arrives in a later milestone.",
+  "settingsTitle": "Settings",
+  "settingsSectionApp": "Application",
+  "settingsSectionUpdates": "Updates",
+  "settingsLanguageSubtitle": "Interface language",
+  "settingsAutoUpdate": "Check for updates automatically",
+  "settingsAutoUpdateSubtitle": "Stable channel only. A popup appears when a new version is available.",
+  "settingsSectionAbout": "About",
+  "settingsAbout": "About AgentPort",
+  "settingsVersion": "Version {version}",
+  "@settingsVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutTitle": "About",
+  "aboutDescription": "An open-source Android client for AI chats, MCP connectors, and OpenCode remote control.",
+  "aboutVersion": "Version {version}",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutSourceCode": "Source code",
+  "aboutPrivacy": "Privacy policy",
+  "aboutPrivacyBody": "AgentPort has no backend and no telemetry. Data goes only to the services you configure.",
+  "aboutLicenses": "Open-source licenses",
+  "aboutMadeWith": "Made with Flutter. Licensed under MIT.",
+  "commonCancel": "Cancel",
+  "commonDone": "Done",
+  "commonComingSoon": "Coming soon"
+}
