@@ -89,6 +89,9 @@ class ProviderRepository {
   }
 
   Future<void> delete(AiProvider provider) async {
+    await (_database.update(_database.conversations)
+          ..where((table) => table.providerId.equals(provider.id)))
+        .write(const ConversationsCompanion(model: Value(null)));
     await (_database.delete(
       _database.providerEntries,
     )..where((table) => table.id.equals(provider.id))).go();

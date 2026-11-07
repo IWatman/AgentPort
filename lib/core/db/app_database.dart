@@ -307,9 +307,11 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 4) {
         await migrator.createTable(mcpToolEntries);
-        await migrator.addColumn(messages, messages.toolCallId);
+        if (from >= 2) {
+          await migrator.addColumn(messages, messages.toolCallId);
+        }
       }
-      if (from < 5) {
+      if (from < 5 && from >= 2) {
         await migrator.addColumn(conversations, conversations.model);
         await migrator.addColumn(messages, messages.attachmentsJson);
       }

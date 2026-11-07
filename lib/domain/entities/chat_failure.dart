@@ -1,5 +1,6 @@
 enum ChatFailureKind {
   noProvider,
+  noModel,
   missingApiKey,
   unauthorized,
   insufficientBalance,

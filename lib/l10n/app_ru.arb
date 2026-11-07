@@ -83,6 +83,7 @@
   "chatDeleteBody": "Удалить этот чат и все сообщения? Отменить это нельзя.",
   "chatNoProvider": "Нет провайдера",
   "chatErrorNoProvider": "Добавьте AI-провайдера, чтобы начать чат.",
+  "chatErrorNoModel": "Сначала выберите модель для этого чата.",
   "chatErrorMissingApiKey": "У провайдера нет API-ключа. Откройте «AI-провайдеры» и добавьте ключ.",
   "chatErrorUnauthorized": "API-ключ отклонён. Проверьте его в AI-провайдерах.",
   "chatErrorInsufficientBalance": "На счёте провайдера недостаточно средств.",
@@ -116,8 +117,6 @@
   "providerName": "Название",
   "providerBaseUrl": "Базовый URL",
   "providerBaseUrlHint": "https://api.deepseek.com",
-  "providerModel": "Модель",
-  "providerModelHint": "deepseek-chat",
   "providerPresetsTitle": "Пресеты",
   "providerPresetsQuickAdd": "Быстрое добавление",
   "providerApiKey": "API-ключ",
@@ -294,6 +293,7 @@
   },
   "marketplaceServersMixedWarning": "Некоторые серверы плагина требуют настройки на компьютере и недоступны на Android.",
   "chatModel": "Модель",
+  "chatChooseModel": "Выберите модель",
   "chatModelDefault": "По умолчанию · {model}",
   "@chatModelDefault": {
     "placeholders": {
@@ -309,6 +309,7 @@
   "chatAttachPhoto": "Фото",
   "chatAttachFile": "Файл",
   "chatAttachmentTooLarge": "Файл слишком большой (максимум 8 МБ).",
+  "chatAttachmentLimit": "Можно прикрепить не больше 4 файлов.",
   "chatFileUnsupported": "Поддерживаются только изображения и текстовые файлы.",
   "chatRemoveAttachment": "Удалить",
   "chatVoice": "Голосовой ввод",

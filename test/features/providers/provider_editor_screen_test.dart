@@ -53,10 +53,7 @@ void main() {
       field('providerBaseUrlField').controller?.text,
       'https://api.groq.com/openai/v1',
     );
-    expect(
-      field('providerModelField').controller?.text,
-      'llama-3.3-70b-versatile',
-    );
+    expect(find.byKey(const Key('providerModelField')), findsNothing);
     expect(find.text('PRESETS'), findsOneWidget);
   });
 }

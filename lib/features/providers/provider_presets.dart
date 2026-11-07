@@ -29,7 +29,7 @@ class ProviderPreset {
     label: 'DeepSeek',
     description: 'Reasoning and coding models at low cost.',
     baseUrl: 'https://api.deepseek.com',
-    model: 'deepseek-chat',
+    model: 'deepseek-flash',
     type: AiProviderType.deepSeek,
     icon: Icons.auto_awesome_rounded,
   );

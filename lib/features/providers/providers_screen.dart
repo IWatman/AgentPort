@@ -36,15 +36,25 @@ class ProvidersScreen extends ConsumerWidget {
         ),
         data: (items) {
           if (items.isEmpty) {
-            return EmptyState(
-              icon: Icons.key_rounded,
-              title: l10n.providersEmptyTitle,
-              body: l10n.providersEmptyBody,
-              action: FilledButton.icon(
-                onPressed: () => context.push('/providers/new'),
-                icon: const Icon(Icons.add_rounded),
-                label: Text(l10n.providerAdd),
-              ),
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: _QuickAddStrip(l10n: l10n),
+                ),
+                Expanded(
+                  child: EmptyState(
+                    icon: Icons.key_rounded,
+                    title: l10n.providersEmptyTitle,
+                    body: l10n.providersEmptyBody,
+                    action: FilledButton.icon(
+                      onPressed: () => context.push('/providers/new'),
+                      icon: const Icon(Icons.add_rounded),
+                      label: Text(l10n.providerAdd),
+                    ),
+                  ),
+                ),
+              ],
             );
           }
 
@@ -83,7 +93,7 @@ class ProvidersScreen extends ConsumerWidget {
                   ),
                   title: Text(provider.name),
                   subtitle: Text(
-                    '${provider.model} · ${_hostLabel(provider.baseUrl)}',
+                    _hostLabel(provider.baseUrl),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

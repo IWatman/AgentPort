@@ -181,17 +181,16 @@ void main() {
     test('succeeds on a 200 response', () async {
       final client = OpenAiCompatibleClient(
         clientFactory: () => MockClient((request) async {
-          expect(request.url.path, '/v1/chat/completions');
-          final body = jsonDecode(request.body) as Map<String, Object?>;
-          expect(body['stream'], false);
-          return http.Response('{}', 200);
+          expect(request.method, 'GET');
+          expect(request.url.path, '/v1/models');
+          expect(request.headers['Authorization'], 'Bearer key');
+          return http.Response('{"data":[]}', 200);
         }),
       );
 
       await client.testConnection(
         baseUrl: 'https://example.com',
         apiKey: 'key',
-        model: 'model',
       );
     });
 
@@ -202,11 +201,7 @@ void main() {
       );
 
       expect(
-        client.testConnection(
-          baseUrl: 'https://example.com',
-          apiKey: 'key',
-          model: 'model',
-        ),
+        client.testConnection(baseUrl: 'https://example.com', apiKey: 'key'),
         throwsA(
           isA<ChatFailure>().having(
             (failure) => failure.kind,

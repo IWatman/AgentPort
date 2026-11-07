@@ -206,6 +206,34 @@ void main() {
     expect(stored.first.attachments, hasLength(2));
   });
 
+  test('sends an image without a caption', () async {
+    final provider = await createProvider();
+    final conversation = await conversations.create(providerId: provider.id);
+    final client = _FakeClient(deltas: const [ChatDelta(content: 'ok')]);
+    container = createContainer(client);
+    await openChat(container, conversation.id);
+
+    await container
+        .read(chatControllerProvider(conversation.id).notifier)
+        .send(
+          '',
+          attachments: const [
+            ChatMessageAttachment(
+              name: 'photo.png',
+              mimeType: 'image/png',
+              bytesBase64: 'aW1hZ2U=',
+            ),
+          ],
+        );
+
+    final user = client.requests.single.lastWhere(
+      (message) => message.role == 'user',
+    );
+    expect(user.content, isEmpty);
+    expect(user.contentParts, hasLength(1));
+    expect(user.contentParts.single['type'], 'image_url');
+  });
+
   test('uses a per-conversation model override', () async {
     final provider = await createProvider();
     final conversation = await conversations.create(providerId: provider.id);

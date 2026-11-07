@@ -8,6 +8,7 @@ import '../../domain/entities/chat_failure.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../shared/empty_state.dart';
 import '../shared/failure_text.dart';
+import 'model_catalog.dart';
 import 'provider_presets.dart';
 import 'providers_controller.dart';
 
@@ -172,18 +173,6 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
           ),
           const SizedBox(height: 14),
           TextField(
-            key: const Key('providerModelField'),
-            controller: _modelController,
-            textInputAction: TextInputAction.next,
-            autocorrect: false,
-            decoration: InputDecoration(
-              labelText: l10n.providerModel,
-              hintText: l10n.providerModelHint,
-              border: const OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 14),
-          TextField(
             key: const Key('providerApiKeyField'),
             controller: _apiKeyController,
             obscureText: _obscureApiKey,
@@ -255,13 +244,25 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
   }
 
   void _selectPreset(ProviderPreset preset) {
+    final oldHost = Uri.tryParse(_baseUrlController.text)?.host;
+    final newHost = Uri.tryParse(preset.baseUrl)?.host;
     setState(() {
+      if (oldHost != null && oldHost != newHost) {
+        _apiKeyController.clear();
+      }
       _applyPreset(preset, force: true);
       _error = null;
     });
   }
 
   void _selectType(AiProviderType type) {
+    if (_isEditing) {
+      setState(() {
+        _type = type;
+        _error = null;
+      });
+      return;
+    }
     final preset = type == AiProviderType.deepSeek
         ? ProviderPreset.deepSeek
         : ProviderPreset.custom;
@@ -301,10 +302,9 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
   Future<void> _testConnection(AppLocalizations l10n) async {
     final name = _nameController.text.trim();
     final baseUrl = _baseUrlController.text.trim();
-    final model = _modelController.text.trim();
     var apiKey = _apiKeyController.text.trim();
 
-    if (name.isEmpty || baseUrl.isEmpty || model.isEmpty) {
+    if (name.isEmpty || baseUrl.isEmpty) {
       setState(() => _error = l10n.providerFieldRequired);
       return;
     }
@@ -325,11 +325,7 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
 
     final client = ref.read(openAiCompatibleClientProvider);
     try {
-      await client.testConnection(
-        baseUrl: baseUrl,
-        apiKey: apiKey,
-        model: model,
-      );
+      await client.testConnection(baseUrl: baseUrl, apiKey: apiKey);
       if (!mounted) {
         return;
       }
@@ -358,10 +354,14 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
   Future<void> _save(AppLocalizations l10n) async {
     final name = _nameController.text.trim();
     final baseUrl = _baseUrlController.text.trim();
-    final model = _modelController.text.trim();
+    var model = _modelController.text.trim();
+    final options = ProviderModelCatalog.forBaseUrl(baseUrl);
+    if (options.isNotEmpty && !options.any((option) => option.id == model)) {
+      model = options.first.id;
+    }
     final apiKey = _apiKeyController.text.trim();
 
-    if (name.isEmpty || baseUrl.isEmpty || model.isEmpty) {
+    if (name.isEmpty || baseUrl.isEmpty) {
       setState(() => _error = l10n.providerFieldRequired);
       return;
     }

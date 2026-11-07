@@ -25,9 +25,9 @@ Remote MCP servers only, over HTTPS (`http`, `streamable-http`, `sse`). Streamab
 
 ## Chat
 
-- Add a provider in Settings. Presets fill the name, base URL, and model for common OpenAI-compatible services; every field remains editable.
+- Add a provider in Settings. Presets fill the name and base URL for common OpenAI-compatible services; every field remains editable. The model is chosen inside each chat.
 - Use **+** in the composer to attach a photo or a text file. Attachments are stored in the encrypted database with the message.
-- Tap the model bar under the composer to choose a model for this conversation, or enter a custom model ID.
+- Tap the model bar under the composer to choose a model for this conversation, or enter a custom model ID. DeepSeek models are shown as **DeepSeek V4.1 Flash** and **DeepSeek V4 Pro**.
 - Use the microphone button for device speech recognition; recognized text is inserted into the composer.
 
 ## Marketplace

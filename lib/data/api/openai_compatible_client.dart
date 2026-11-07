@@ -160,26 +160,11 @@ class OpenAiCompatibleClient {
   Future<void> testConnection({
     required String baseUrl,
     required String apiKey,
-    required String model,
   }) async {
     final client = _clientFactory();
     try {
       final response = await client
-          .post(
-            chatCompletionsUri(baseUrl),
-            headers: {
-              'Authorization': 'Bearer $apiKey',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-              'model': model,
-              'messages': const [
-                ChatRequestMessage(role: 'user', content: 'ping'),
-              ],
-              'max_tokens': 8,
-              'stream': false,
-            }),
-          )
+          .get(modelsUri(baseUrl), headers: {'Authorization': 'Bearer $apiKey'})
           .timeout(const Duration(seconds: 45));
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -199,6 +184,16 @@ class OpenAiCompatibleClient {
     } finally {
       client.close();
     }
+  }
+
+  /// Turns a user-supplied base URL into the models endpoint.
+  static Uri modelsUri(String baseUrl) {
+    final chat = chatCompletionsUri(baseUrl);
+    final path = chat.path.replaceFirst(
+      RegExp(r'/chat/completions$'),
+      '/models',
+    );
+    return chat.replace(path: path);
   }
 
   /// Turns a user-supplied base URL into a chat-completions endpoint.

@@ -5,6 +5,7 @@ import '../../l10n/generated/app_localizations.dart';
 String chatFailureText(AppLocalizations l10n, ChatFailure failure) {
   return switch (failure.kind) {
     ChatFailureKind.noProvider => l10n.chatErrorNoProvider,
+    ChatFailureKind.noModel => l10n.chatErrorNoModel,
     ChatFailureKind.missingApiKey => l10n.chatErrorMissingApiKey,
     ChatFailureKind.unauthorized => l10n.chatErrorUnauthorized,
     ChatFailureKind.insufficientBalance => l10n.chatErrorInsufficientBalance,

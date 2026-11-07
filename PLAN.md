@@ -716,7 +716,7 @@ Done: the app builds, opens, and shows its version.
 - DeepSeek preset.
 - Custom OpenAI-compatible.
 - Streaming, stop, retry.
-- Photo and text-file attachments, per-conversation model selection, voice input.
+- Photo and text-file attachments, per-conversation model selection with human-readable names, voice input.
 - History, rename/delete.
 - Markdown and code blocks.
 - Error handling.

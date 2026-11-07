@@ -35,7 +35,10 @@ class ChatSessionState {
     return null;
   }
 
-  bool get canRetry => !streaming && failure != null && lastUserMessage != null;
+  bool get canRetry =>
+      !streaming &&
+      lastUserMessage != null &&
+      (failure != null || messages.last.isUser);
 
   ChatSessionState copyWith({
     ChatConversation? conversation,
@@ -93,6 +96,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
   Future<void> send(
     String text, {
     List<ChatMessageAttachment> attachments = const [],
+    void Function()? onAccepted,
   }) async {
     final trimmed = text.trim();
     final current = state.value;
@@ -108,6 +112,10 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
     }
     if (provider == null) {
       _setFailure(const ChatFailure(ChatFailureKind.noProvider));
+      return;
+    }
+    if (_effectiveModel(provider).trim().isEmpty) {
+      _setFailure(const ChatFailure(ChatFailureKind.noModel));
       return;
     }
 
@@ -169,14 +177,33 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
       ),
     );
 
-    await repository.insertMessage(userMessage);
-    if (isFirstUserMessage) {
-      await repository.rename(conversationId, conversation.title);
+    try {
+      await repository.insertMessage(userMessage);
+      if (isFirstUserMessage) {
+        await repository.rename(conversationId, conversation.title);
+      }
+    } catch (error) {
+      if (ref.mounted) {
+        final latest = state.value;
+        if (latest != null) {
+          state = AsyncData(
+            latest.copyWith(
+              streaming: false,
+              failure: ChatFailure(
+                ChatFailureKind.unknown,
+                detail: error.toString(),
+              ),
+            ),
+          );
+        }
+      }
+      return;
     }
     if (!ref.mounted) {
       return;
     }
     _notifyList(conversation);
+    onAccepted?.call();
 
     await _generate(
       assistantMessageId: assistantMessage.id,
@@ -187,7 +214,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
 
   Future<void> retry() async {
     final current = state.value;
-    if (current == null || current.streaming) {
+    if (current == null || current.streaming || !current.canRetry) {
       return;
     }
 
@@ -204,6 +231,10 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
     }
     if (provider == null) {
       _setFailure(const ChatFailure(ChatFailureKind.noProvider));
+      return;
+    }
+    if (_effectiveModel(provider).trim().isEmpty) {
+      _setFailure(const ChatFailure(ChatFailureKind.noModel));
       return;
     }
 
@@ -242,7 +273,25 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
       ),
     );
 
-    await repository.deleteMessages(removedIds);
+    try {
+      await repository.deleteMessages(removedIds);
+    } catch (error) {
+      if (ref.mounted) {
+        final latest = state.value;
+        if (latest != null) {
+          state = AsyncData(
+            latest.copyWith(
+              streaming: false,
+              failure: ChatFailure(
+                ChatFailureKind.unknown,
+                detail: error.toString(),
+              ),
+            ),
+          );
+        }
+      }
+      return;
+    }
     if (!ref.mounted) {
       return;
     }
@@ -482,11 +531,16 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
           });
         }
       }
+      final hasImage = message.attachments.any(
+        (attachment) => attachment.isImage,
+      );
       result.add(
         ChatRequestMessage(
           role: message.role.storageValue,
           content: text,
-          contentParts: parts.length > 1 ? parts : const [],
+          contentParts: parts.isEmpty || (!hasImage && parts.length == 1)
+              ? const []
+              : parts,
         ),
       );
     }

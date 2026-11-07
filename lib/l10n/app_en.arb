@@ -83,6 +83,7 @@
   "chatDeleteBody": "Delete this chat and all of its messages? This cannot be undone.",
   "chatNoProvider": "No provider",
   "chatErrorNoProvider": "Add an AI provider to start chatting.",
+  "chatErrorNoModel": "Choose a model for this chat first.",
   "chatErrorMissingApiKey": "This provider has no API key. Open AI providers and add one.",
   "chatErrorUnauthorized": "The API key was rejected. Check it in AI providers.",
   "chatErrorInsufficientBalance": "The provider account has insufficient balance.",
@@ -123,8 +124,7 @@
   "providerName": "Name",
   "providerBaseUrl": "Base URL",
   "providerBaseUrlHint": "https://api.deepseek.com",
-  "providerModel": "Model",
-  "providerModelHint": "deepseek-chat",
+  "providerBaseUrl": "Base URL",
   "providerPresetsTitle": "Presets",
   "providerPresetsQuickAdd": "Quick add",
   "providerApiKey": "API key",
@@ -308,6 +308,7 @@
   },
   "marketplaceServersMixedWarning": "Some servers in this plugin need desktop setup and are unavailable on Android.",
   "chatModel": "Model",
+  "chatChooseModel": "Choose model",
   "chatModelDefault": "Default · {model}",
   "@chatModelDefault": {
     "placeholders": {
@@ -323,6 +324,7 @@
   "chatAttachPhoto": "Photo",
   "chatAttachFile": "File",
   "chatAttachmentTooLarge": "File is too large (max 8 MB).",
+  "chatAttachmentLimit": "You can attach up to 4 files.",
   "chatFileUnsupported": "Only images and text files are supported.",
   "chatRemoveAttachment": "Remove",
   "chatVoice": "Voice input",

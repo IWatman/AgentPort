@@ -14,6 +14,7 @@ import '../../domain/entities/ai_provider.dart';
 import '../../domain/entities/chat_failure.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../providers/model_catalog.dart';
 import '../providers/providers_controller.dart';
 import '../shared/empty_state.dart';
 import '../shared/failure_text.dart';
@@ -136,7 +137,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 listening: _listening,
                 modelLabel: provider == null
                     ? l10n.chatNoProvider
-                    : _modelFor(state, provider),
+                    : _modelBarLabel(l10n, state, provider),
                 onSend: () => _send(state),
                 onStop: () => unawaited(
                   ref
@@ -148,7 +149,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 onAttach: () => unawaited(_attach(l10n)),
                 onRemoveAttachment: _removeAttachment,
                 onVoice: () => unawaited(_toggleVoice(l10n)),
-                onPickModel: provider == null
+                onPickModel: state.streaming || provider == null
                     ? null
                     : () => unawaited(_pickModel(l10n, state, provider)),
               ),
@@ -182,7 +183,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             provider == null
                 ? l10n.chatNoProvider
                 : '${provider.name} · '
-                      '${_modelFor(state, provider)}',
+                      '${_modelBarLabel(l10n, state, provider)}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.labelSmall?.copyWith(
@@ -194,6 +195,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       actions: [
         PopupMenuButton<_ChatMenuAction>(
+          enabled: !state.streaming,
           onSelected: (action) {
             switch (action) {
               case _ChatMenuAction.rename:
@@ -228,19 +230,42 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if ((text.isEmpty && _attachments.isEmpty) || state.streaming) {
       return;
     }
+    if (_listening) {
+      unawaited(_speech.cancel());
+      setState(() => _listening = false);
+    }
     final attachments = List<ChatMessageAttachment>.of(_attachments);
-    _composer.clear();
-    setState(_attachments.clear);
     unawaited(
       ref
           .read(chatControllerProvider(widget.conversationId).notifier)
-          .send(text, attachments: attachments),
+          .send(
+            text,
+            attachments: attachments,
+            onAccepted: () {
+              if (!mounted) {
+                return;
+              }
+              _composer.clear();
+              setState(_attachments.clear);
+            },
+          ),
     );
   }
 
   String _modelFor(ChatSessionState state, AiProvider provider) {
     final model = state.conversation.model?.trim();
     return model == null || model.isEmpty ? provider.model : model;
+  }
+
+  String _modelBarLabel(
+    AppLocalizations l10n,
+    ChatSessionState state,
+    AiProvider provider,
+  ) {
+    final model = _modelFor(state, provider);
+    return model.trim().isEmpty
+        ? l10n.chatChooseModel
+        : ProviderModelCatalog.labelFor(provider.baseUrl, model);
   }
 
   Future<void> _attach(AppLocalizations l10n) async {
@@ -276,12 +301,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _pickPhoto(AppLocalizations l10n) async {
+    if (_attachments.length >= _maxAttachments) {
+      _snack(l10n.chatAttachmentLimit);
+      return;
+    }
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       maxWidth: 1600,
       imageQuality: 78,
     );
     if (picked == null || !mounted) {
+      return;
+    }
+    final length = await picked.length();
+    if (length > _maxAttachmentBytes) {
+      _snack(l10n.chatAttachmentTooLarge);
       return;
     }
     final List<int> bytes;
@@ -311,8 +345,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _pickFile(AppLocalizations l10n) async {
+    if (_attachments.length >= _maxAttachments) {
+      _snack(l10n.chatAttachmentLimit);
+      return;
+    }
     final file = await FilePicker.pickFile();
     if (file == null || !mounted) {
+      return;
+    }
+    final name = file.name;
+    final mime = _mimeForName(name);
+    final isImage = mime.startsWith('image/');
+    if (!isImage && !_isTextFile(name)) {
+      _snack(l10n.chatFileUnsupported);
+      return;
+    }
+    final length = await file.length();
+    if (length != null && length > _maxAttachmentBytes) {
+      _snack(l10n.chatAttachmentTooLarge);
       return;
     }
     final List<int> bytes;
@@ -329,9 +379,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       _snack(l10n.chatAttachmentTooLarge);
       return;
     }
-    final name = file.name;
-    final mime = _mimeForName(name);
-    if (mime.startsWith('image/')) {
+    if (isImage) {
       setState(() {
         _attachments.add(
           ChatMessageAttachment(
@@ -341,10 +389,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         );
       });
-      return;
-    }
-    if (!_isTextFile(name)) {
-      _snack(l10n.chatFileUnsupported);
       return;
     }
     var text = utf8.decode(bytes, allowMalformed: true);
@@ -366,29 +410,36 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Future<void> _toggleVoice(AppLocalizations l10n) async {
     if (_listening) {
-      await _speech.stop();
+      await _speech.cancel();
       if (mounted) {
         setState(() => _listening = false);
       }
       return;
     }
 
-    final available = await _speech.initialize(
-      onStatus: (status) {
-        if (!mounted) {
-          return;
-        }
-        if (status == 'done' || status == 'notListening') {
-          setState(() => _listening = false);
-        }
-      },
-      onError: (error) {
-        if (mounted) {
+    bool available;
+    try {
+      available = await _speech.initialize(
+        onStatus: (status) {
+          if (!mounted) {
+            return;
+          }
+          if (status == 'done' || status == 'notListening') {
+            setState(() => _listening = false);
+          }
+        },
+        onError: (error) {
+          if (!mounted) {
+            return;
+          }
+          unawaited(_speech.cancel());
           setState(() => _listening = false);
           _snack(l10n.chatVoiceUnavailable);
-        }
-      },
-    );
+        },
+      );
+    } catch (_) {
+      available = false;
+    }
     if (!available || !mounted) {
       _snack(l10n.chatVoiceUnavailable);
       return;
@@ -396,21 +447,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     _voiceBaseText = _composer.text;
     setState(() => _listening = true);
-    await _speech.listen(
-      onResult: (result) {
-        if (!mounted) {
-          return;
-        }
-        final recognized = result.recognizedWords.trim();
-        final text = _voiceBaseText.trim().isEmpty
-            ? recognized
-            : '${_voiceBaseText.trim()} $recognized';
-        _composer.value = TextEditingValue(
-          text: text,
-          selection: TextSelection.collapsed(offset: text.length),
-        );
-      },
-    );
+    try {
+      await _speech.listen(
+        onResult: (result) {
+          if (!mounted) {
+            return;
+          }
+          final recognized = result.recognizedWords.trim();
+          final text = _voiceBaseText.trim().isEmpty
+              ? recognized
+              : '${_voiceBaseText.trim()} $recognized';
+          _composer.value = TextEditingValue(
+            text: text,
+            selection: TextSelection.collapsed(offset: text.length),
+          );
+        },
+        listenOptions: SpeechListenOptions(cancelOnError: true),
+      );
+    } catch (_) {
+      unawaited(_speech.cancel());
+      if (mounted) {
+        setState(() => _listening = false);
+        _snack(l10n.chatVoiceUnavailable);
+      }
+    }
   }
 
   Future<void> _pickModel(
@@ -435,22 +495,34 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.auto_awesome_rounded),
-              title: Text(l10n.chatModelDefault(provider.model)),
-              trailing: current == provider.model
-                  ? const Icon(Icons.check_rounded)
-                  : null,
-              onTap: () => Navigator.of(sheetContext).pop(_defaultModelValue),
-            ),
-            for (final model in suggestions)
+            if (provider.model.trim().isNotEmpty)
               ListTile(
-                leading: const Icon(Icons.memory_rounded),
-                title: Text(model),
-                trailing: current == model
+                leading: const Icon(Icons.auto_awesome_rounded),
+                title: Text(
+                  l10n.chatModelDefault(
+                    ProviderModelCatalog.labelFor(
+                      provider.baseUrl,
+                      provider.model,
+                    ),
+                  ),
+                ),
+                subtitle: current == provider.model
+                    ? null
+                    : Text(provider.model),
+                trailing: current == provider.model
                     ? const Icon(Icons.check_rounded)
                     : null,
-                onTap: () => Navigator.of(sheetContext).pop(model),
+                onTap: () => Navigator.of(sheetContext).pop(_defaultModelValue),
+              ),
+            for (final option in suggestions)
+              ListTile(
+                leading: const Icon(Icons.memory_rounded),
+                title: Text(option.label),
+                subtitle: Text(option.id),
+                trailing: current == option.id
+                    ? const Icon(Icons.check_rounded)
+                    : null,
+                onTap: () => Navigator.of(sheetContext).pop(option.id),
               ),
             const Divider(),
             ListTile(
@@ -517,28 +589,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return value?.trim();
   }
 
-  List<String> _modelSuggestions(AiProvider provider) {
-    final host = Uri.tryParse(provider.baseUrl)?.host.toLowerCase() ?? '';
-    final defaults = switch (host) {
-      'api.deepseek.com' => ['deepseek-chat', 'deepseek-reasoner'],
-      'api.openai.com' => ['gpt-4o-mini', 'gpt-4o'],
-      'openrouter.ai' => [
-        'openai/gpt-4o-mini',
-        'anthropic/claude-3.5-sonnet',
-        'google/gemini-2.5-flash',
-      ],
-      'api.groq.com' => ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
-      'api.mistral.ai' => ['mistral-large-latest', 'mistral-small-latest'],
-      'api.together.xyz' => ['meta-llama/Llama-3.3-70B-Instruct-Turbo'],
-      'api.x.ai' => ['grok-2-latest'],
-      'generativelanguage.googleapis.com' => [
-        'gemini-2.5-flash',
-        'gemini-2.5-pro',
-      ],
-      _ => const <String>[],
-    };
-    return defaults
-        .where((model) => model != provider.model)
+  List<ModelOption> _modelSuggestions(AiProvider provider) {
+    return ProviderModelCatalog.forBaseUrl(provider.baseUrl)
+        .where((option) => option.id != provider.model)
         .toList(growable: false);
   }
 
@@ -638,8 +691,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       context: context,
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
+          shrinkWrap: true,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
@@ -662,7 +715,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ),
                 title: Text(provider.name),
                 subtitle: Text(
-                  provider.model,
+                  ProviderModelCatalog.labelFor(
+                    provider.baseUrl,
+                    provider.model,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -770,6 +826,7 @@ const _addProviderValue = '__add_provider__';
 const _defaultModelValue = '__default_model__';
 const _customModelValue = '__custom_model__';
 const _maxAttachmentBytes = 8 * 1024 * 1024;
+const _maxAttachments = 4;
 const _maxTextAttachmentChars = 200000;
 
 enum _AttachSource { photo, file }
