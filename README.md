@@ -42,7 +42,7 @@ Trust labels:
 - Other plugins in the official marketplace: **Verified partner**.
 - Plugins from custom marketplaces: **Community / unverified**.
 
-Marketplace tables store no secret values (OAuth tokens, API keys, or resolved header values); authorization is a separate milestone (Connections). AgentPort uses no Google Cloud project and no per-user `client_id`.
+Marketplace tables store no secret values (OAuth tokens, API keys, or resolved header values). MCP header values are stored separately in the Android Keystore. AgentPort uses no Google Cloud project and no per-user `client_id`.
 
 ### Install a plugin
 
@@ -51,6 +51,17 @@ Marketplace tables store no secret values (OAuth tokens, API keys, or resolved h
 3. Open a plugin and review its trust label and MCP servers.
 4. Tap **Install**. If the plugin has only local servers, it is marked unsupported and cannot be installed.
 5. Use **Marketplaces** to add sources or refresh a catalog. Installed plugins are preserved.
+
+## Connections
+
+**Connections** lists the remote MCP servers installed from marketplace plugins.
+
+- **Test connection** performs the MCP handshake, discovers tools, and caches them locally.
+- Header values (API keys, bearer tokens) are stored in the Android Keystore, never in the database.
+- Servers can be enabled or disabled without uninstalling the plugin.
+- Tool details are shown with a read-only / requires-approval hint.
+
+Current transport support: **Streamable HTTP over HTTPS**. Legacy SSE transport is listed but not connected yet. Browser OAuth discovery and automatic token refresh are not implemented yet; use a manual API key or header for now. Invoking tools from chat is the next step.
 
 ## Build
 

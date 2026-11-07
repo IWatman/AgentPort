@@ -730,6 +730,8 @@ Done: a full chat works with the user's key.
 - Approval UI.
 - Fake MCP server for tests.
 
+Current status: Streamable HTTP client, tool discovery/cache, and the Connections UI are implemented. The chat tool loop and approval dialog remain.
+
 Done: the model invokes an external MCP tool.
 
 ### M3 — Marketplace, 4 days
@@ -761,6 +763,8 @@ Done: a user browses the marketplace, installs a remote MCP plugin, and manages 
 - API key and manual header fallback.
 - Re-consent when a plugin changes its MCP URL.
 - Error states.
+
+Current status: manual API key/header fallback, secure header storage, connection testing, and re-consent are implemented. Browser OAuth discovery and token refresh remain.
 
 Done: a user installs a plugin, taps "Connect", logs in through the browser, and the tools work.
 

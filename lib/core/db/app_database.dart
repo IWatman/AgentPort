@@ -85,6 +85,9 @@ class Messages extends Table {
 
   TextColumn get toolCallsJson => text().nullable()();
 
+  /// OpenAI `tool_call_id` for a tool-result message.
+  TextColumn get toolCallId => text().nullable()();
+
   /// `complete`, `stopped`, or `error`.
   TextColumn get status => text().withDefault(const Constant('complete'))();
 
@@ -240,6 +243,30 @@ class McpServerEntries extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// Tools discovered from an installed MCP server.
+class McpToolEntries extends Table {
+  @override
+  String get tableName => 'mcp_tools';
+
+  TextColumn get id => text()();
+
+  TextColumn get serverId =>
+      text().references(McpServerEntries, #id, onDelete: KeyAction.cascade)();
+
+  TextColumn get name => text()();
+
+  TextColumn get description => text().withDefault(const Constant(''))();
+
+  TextColumn get schemaJson => text()();
+
+  BoolColumn get needsApproval => boolean().withDefault(const Constant(true))();
+
+  IntColumn get discoveredAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     SettingEntries,
@@ -249,13 +276,14 @@ class McpServerEntries extends Table {
     MarketplaceEntries,
     MarketplacePluginEntries,
     McpServerEntries,
+    McpToolEntries,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -270,6 +298,10 @@ class AppDatabase extends _$AppDatabase {
         await migrator.createTable(marketplaceEntries);
         await migrator.createTable(marketplacePluginEntries);
         await migrator.createTable(mcpServerEntries);
+      }
+      if (from < 4) {
+        await migrator.createTable(mcpToolEntries);
+        await migrator.addColumn(messages, messages.toolCallId);
       }
     },
     beforeOpen: (details) async {

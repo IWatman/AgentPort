@@ -1210,6 +1210,17 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _toolCallIdMeta = const VerificationMeta(
+    'toolCallId',
+  );
+  @override
+  late final GeneratedColumn<String> toolCallId = GeneratedColumn<String>(
+    'tool_call_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -1239,6 +1250,7 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     content,
     reasoning,
     toolCallsJson,
+    toolCallId,
     status,
     createdAt,
   ];
@@ -1299,6 +1311,15 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         ),
       );
     }
+    if (data.containsKey('tool_call_id')) {
+      context.handle(
+        _toolCallIdMeta,
+        toolCallId.isAcceptableOrUnknown(
+          data['tool_call_id']!,
+          _toolCallIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('status')) {
       context.handle(
         _statusMeta,
@@ -1346,6 +1367,10 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         DriftSqlType.string,
         data['${effectivePrefix}tool_calls_json'],
       ),
+      toolCallId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_call_id'],
+      ),
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -1373,6 +1398,9 @@ class Message extends DataClass implements Insertable<Message> {
   final String? reasoning;
   final String? toolCallsJson;
 
+  /// OpenAI `tool_call_id` for a tool-result message.
+  final String? toolCallId;
+
   /// `complete`, `stopped`, or `error`.
   final String status;
   final int createdAt;
@@ -1383,6 +1411,7 @@ class Message extends DataClass implements Insertable<Message> {
     required this.content,
     this.reasoning,
     this.toolCallsJson,
+    this.toolCallId,
     required this.status,
     required this.createdAt,
   });
@@ -1398,6 +1427,9 @@ class Message extends DataClass implements Insertable<Message> {
     }
     if (!nullToAbsent || toolCallsJson != null) {
       map['tool_calls_json'] = Variable<String>(toolCallsJson);
+    }
+    if (!nullToAbsent || toolCallId != null) {
+      map['tool_call_id'] = Variable<String>(toolCallId);
     }
     map['status'] = Variable<String>(status);
     map['created_at'] = Variable<int>(createdAt);
@@ -1416,6 +1448,9 @@ class Message extends DataClass implements Insertable<Message> {
       toolCallsJson: toolCallsJson == null && nullToAbsent
           ? const Value.absent()
           : Value(toolCallsJson),
+      toolCallId: toolCallId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toolCallId),
       status: Value(status),
       createdAt: Value(createdAt),
     );
@@ -1433,6 +1468,7 @@ class Message extends DataClass implements Insertable<Message> {
       content: serializer.fromJson<String>(json['content']),
       reasoning: serializer.fromJson<String?>(json['reasoning']),
       toolCallsJson: serializer.fromJson<String?>(json['toolCallsJson']),
+      toolCallId: serializer.fromJson<String?>(json['toolCallId']),
       status: serializer.fromJson<String>(json['status']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
     );
@@ -1447,6 +1483,7 @@ class Message extends DataClass implements Insertable<Message> {
       'content': serializer.toJson<String>(content),
       'reasoning': serializer.toJson<String?>(reasoning),
       'toolCallsJson': serializer.toJson<String?>(toolCallsJson),
+      'toolCallId': serializer.toJson<String?>(toolCallId),
       'status': serializer.toJson<String>(status),
       'createdAt': serializer.toJson<int>(createdAt),
     };
@@ -1459,6 +1496,7 @@ class Message extends DataClass implements Insertable<Message> {
     String? content,
     Value<String?> reasoning = const Value.absent(),
     Value<String?> toolCallsJson = const Value.absent(),
+    Value<String?> toolCallId = const Value.absent(),
     String? status,
     int? createdAt,
   }) => Message(
@@ -1470,6 +1508,7 @@ class Message extends DataClass implements Insertable<Message> {
     toolCallsJson: toolCallsJson.present
         ? toolCallsJson.value
         : this.toolCallsJson,
+    toolCallId: toolCallId.present ? toolCallId.value : this.toolCallId,
     status: status ?? this.status,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -1485,6 +1524,9 @@ class Message extends DataClass implements Insertable<Message> {
       toolCallsJson: data.toolCallsJson.present
           ? data.toolCallsJson.value
           : this.toolCallsJson,
+      toolCallId: data.toolCallId.present
+          ? data.toolCallId.value
+          : this.toolCallId,
       status: data.status.present ? data.status.value : this.status,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -1499,6 +1541,7 @@ class Message extends DataClass implements Insertable<Message> {
           ..write('content: $content, ')
           ..write('reasoning: $reasoning, ')
           ..write('toolCallsJson: $toolCallsJson, ')
+          ..write('toolCallId: $toolCallId, ')
           ..write('status: $status, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -1513,6 +1556,7 @@ class Message extends DataClass implements Insertable<Message> {
     content,
     reasoning,
     toolCallsJson,
+    toolCallId,
     status,
     createdAt,
   );
@@ -1526,6 +1570,7 @@ class Message extends DataClass implements Insertable<Message> {
           other.content == this.content &&
           other.reasoning == this.reasoning &&
           other.toolCallsJson == this.toolCallsJson &&
+          other.toolCallId == this.toolCallId &&
           other.status == this.status &&
           other.createdAt == this.createdAt);
 }
@@ -1537,6 +1582,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   final Value<String> content;
   final Value<String?> reasoning;
   final Value<String?> toolCallsJson;
+  final Value<String?> toolCallId;
   final Value<String> status;
   final Value<int> createdAt;
   final Value<int> rowid;
@@ -1547,6 +1593,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.content = const Value.absent(),
     this.reasoning = const Value.absent(),
     this.toolCallsJson = const Value.absent(),
+    this.toolCallId = const Value.absent(),
     this.status = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1558,6 +1605,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.content = const Value.absent(),
     this.reasoning = const Value.absent(),
     this.toolCallsJson = const Value.absent(),
+    this.toolCallId = const Value.absent(),
     this.status = const Value.absent(),
     required int createdAt,
     this.rowid = const Value.absent(),
@@ -1572,6 +1620,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Expression<String>? content,
     Expression<String>? reasoning,
     Expression<String>? toolCallsJson,
+    Expression<String>? toolCallId,
     Expression<String>? status,
     Expression<int>? createdAt,
     Expression<int>? rowid,
@@ -1583,6 +1632,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       if (content != null) 'content': content,
       if (reasoning != null) 'reasoning': reasoning,
       if (toolCallsJson != null) 'tool_calls_json': toolCallsJson,
+      if (toolCallId != null) 'tool_call_id': toolCallId,
       if (status != null) 'status': status,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
@@ -1596,6 +1646,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Value<String>? content,
     Value<String?>? reasoning,
     Value<String?>? toolCallsJson,
+    Value<String?>? toolCallId,
     Value<String>? status,
     Value<int>? createdAt,
     Value<int>? rowid,
@@ -1607,6 +1658,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       content: content ?? this.content,
       reasoning: reasoning ?? this.reasoning,
       toolCallsJson: toolCallsJson ?? this.toolCallsJson,
+      toolCallId: toolCallId ?? this.toolCallId,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
@@ -1634,6 +1686,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     if (toolCallsJson.present) {
       map['tool_calls_json'] = Variable<String>(toolCallsJson.value);
     }
+    if (toolCallId.present) {
+      map['tool_call_id'] = Variable<String>(toolCallId.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
@@ -1655,6 +1710,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
           ..write('content: $content, ')
           ..write('reasoning: $reasoning, ')
           ..write('toolCallsJson: $toolCallsJson, ')
+          ..write('toolCallId: $toolCallId, ')
           ..write('status: $status, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
@@ -4479,6 +4535,487 @@ class McpServerEntriesCompanion extends UpdateCompanion<McpServerEntry> {
   }
 }
 
+class $McpToolEntriesTable extends McpToolEntries
+    with TableInfo<$McpToolEntriesTable, McpToolEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $McpToolEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _serverIdMeta = const VerificationMeta(
+    'serverId',
+  );
+  @override
+  late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
+    'server_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES mcp_servers (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _schemaJsonMeta = const VerificationMeta(
+    'schemaJson',
+  );
+  @override
+  late final GeneratedColumn<String> schemaJson = GeneratedColumn<String>(
+    'schema_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _needsApprovalMeta = const VerificationMeta(
+    'needsApproval',
+  );
+  @override
+  late final GeneratedColumn<bool> needsApproval = GeneratedColumn<bool>(
+    'needs_approval',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_approval" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _discoveredAtMeta = const VerificationMeta(
+    'discoveredAt',
+  );
+  @override
+  late final GeneratedColumn<int> discoveredAt = GeneratedColumn<int>(
+    'discovered_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    serverId,
+    name,
+    description,
+    schemaJson,
+    needsApproval,
+    discoveredAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mcp_tools';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<McpToolEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('server_id')) {
+      context.handle(
+        _serverIdMeta,
+        serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_serverIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('schema_json')) {
+      context.handle(
+        _schemaJsonMeta,
+        schemaJson.isAcceptableOrUnknown(data['schema_json']!, _schemaJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_schemaJsonMeta);
+    }
+    if (data.containsKey('needs_approval')) {
+      context.handle(
+        _needsApprovalMeta,
+        needsApproval.isAcceptableOrUnknown(
+          data['needs_approval']!,
+          _needsApprovalMeta,
+        ),
+      );
+    }
+    if (data.containsKey('discovered_at')) {
+      context.handle(
+        _discoveredAtMeta,
+        discoveredAt.isAcceptableOrUnknown(
+          data['discovered_at']!,
+          _discoveredAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_discoveredAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  McpToolEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return McpToolEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      serverId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}server_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
+      schemaJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}schema_json'],
+      )!,
+      needsApproval: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_approval'],
+      )!,
+      discoveredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}discovered_at'],
+      )!,
+    );
+  }
+
+  @override
+  $McpToolEntriesTable createAlias(String alias) {
+    return $McpToolEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class McpToolEntry extends DataClass implements Insertable<McpToolEntry> {
+  final String id;
+  final String serverId;
+  final String name;
+  final String description;
+  final String schemaJson;
+  final bool needsApproval;
+  final int discoveredAt;
+  const McpToolEntry({
+    required this.id,
+    required this.serverId,
+    required this.name,
+    required this.description,
+    required this.schemaJson,
+    required this.needsApproval,
+    required this.discoveredAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['server_id'] = Variable<String>(serverId);
+    map['name'] = Variable<String>(name);
+    map['description'] = Variable<String>(description);
+    map['schema_json'] = Variable<String>(schemaJson);
+    map['needs_approval'] = Variable<bool>(needsApproval);
+    map['discovered_at'] = Variable<int>(discoveredAt);
+    return map;
+  }
+
+  McpToolEntriesCompanion toCompanion(bool nullToAbsent) {
+    return McpToolEntriesCompanion(
+      id: Value(id),
+      serverId: Value(serverId),
+      name: Value(name),
+      description: Value(description),
+      schemaJson: Value(schemaJson),
+      needsApproval: Value(needsApproval),
+      discoveredAt: Value(discoveredAt),
+    );
+  }
+
+  factory McpToolEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return McpToolEntry(
+      id: serializer.fromJson<String>(json['id']),
+      serverId: serializer.fromJson<String>(json['serverId']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String>(json['description']),
+      schemaJson: serializer.fromJson<String>(json['schemaJson']),
+      needsApproval: serializer.fromJson<bool>(json['needsApproval']),
+      discoveredAt: serializer.fromJson<int>(json['discoveredAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'serverId': serializer.toJson<String>(serverId),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String>(description),
+      'schemaJson': serializer.toJson<String>(schemaJson),
+      'needsApproval': serializer.toJson<bool>(needsApproval),
+      'discoveredAt': serializer.toJson<int>(discoveredAt),
+    };
+  }
+
+  McpToolEntry copyWith({
+    String? id,
+    String? serverId,
+    String? name,
+    String? description,
+    String? schemaJson,
+    bool? needsApproval,
+    int? discoveredAt,
+  }) => McpToolEntry(
+    id: id ?? this.id,
+    serverId: serverId ?? this.serverId,
+    name: name ?? this.name,
+    description: description ?? this.description,
+    schemaJson: schemaJson ?? this.schemaJson,
+    needsApproval: needsApproval ?? this.needsApproval,
+    discoveredAt: discoveredAt ?? this.discoveredAt,
+  );
+  McpToolEntry copyWithCompanion(McpToolEntriesCompanion data) {
+    return McpToolEntry(
+      id: data.id.present ? data.id.value : this.id,
+      serverId: data.serverId.present ? data.serverId.value : this.serverId,
+      name: data.name.present ? data.name.value : this.name,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      schemaJson: data.schemaJson.present
+          ? data.schemaJson.value
+          : this.schemaJson,
+      needsApproval: data.needsApproval.present
+          ? data.needsApproval.value
+          : this.needsApproval,
+      discoveredAt: data.discoveredAt.present
+          ? data.discoveredAt.value
+          : this.discoveredAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpToolEntry(')
+          ..write('id: $id, ')
+          ..write('serverId: $serverId, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('schemaJson: $schemaJson, ')
+          ..write('needsApproval: $needsApproval, ')
+          ..write('discoveredAt: $discoveredAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    serverId,
+    name,
+    description,
+    schemaJson,
+    needsApproval,
+    discoveredAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is McpToolEntry &&
+          other.id == this.id &&
+          other.serverId == this.serverId &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.schemaJson == this.schemaJson &&
+          other.needsApproval == this.needsApproval &&
+          other.discoveredAt == this.discoveredAt);
+}
+
+class McpToolEntriesCompanion extends UpdateCompanion<McpToolEntry> {
+  final Value<String> id;
+  final Value<String> serverId;
+  final Value<String> name;
+  final Value<String> description;
+  final Value<String> schemaJson;
+  final Value<bool> needsApproval;
+  final Value<int> discoveredAt;
+  final Value<int> rowid;
+  const McpToolEntriesCompanion({
+    this.id = const Value.absent(),
+    this.serverId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.schemaJson = const Value.absent(),
+    this.needsApproval = const Value.absent(),
+    this.discoveredAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  McpToolEntriesCompanion.insert({
+    required String id,
+    required String serverId,
+    required String name,
+    this.description = const Value.absent(),
+    required String schemaJson,
+    this.needsApproval = const Value.absent(),
+    required int discoveredAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       serverId = Value(serverId),
+       name = Value(name),
+       schemaJson = Value(schemaJson),
+       discoveredAt = Value(discoveredAt);
+  static Insertable<McpToolEntry> custom({
+    Expression<String>? id,
+    Expression<String>? serverId,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<String>? schemaJson,
+    Expression<bool>? needsApproval,
+    Expression<int>? discoveredAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (serverId != null) 'server_id': serverId,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (schemaJson != null) 'schema_json': schemaJson,
+      if (needsApproval != null) 'needs_approval': needsApproval,
+      if (discoveredAt != null) 'discovered_at': discoveredAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  McpToolEntriesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? serverId,
+    Value<String>? name,
+    Value<String>? description,
+    Value<String>? schemaJson,
+    Value<bool>? needsApproval,
+    Value<int>? discoveredAt,
+    Value<int>? rowid,
+  }) {
+    return McpToolEntriesCompanion(
+      id: id ?? this.id,
+      serverId: serverId ?? this.serverId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      schemaJson: schemaJson ?? this.schemaJson,
+      needsApproval: needsApproval ?? this.needsApproval,
+      discoveredAt: discoveredAt ?? this.discoveredAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (serverId.present) {
+      map['server_id'] = Variable<String>(serverId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (schemaJson.present) {
+      map['schema_json'] = Variable<String>(schemaJson.value);
+    }
+    if (needsApproval.present) {
+      map['needs_approval'] = Variable<bool>(needsApproval.value);
+    }
+    if (discoveredAt.present) {
+      map['discovered_at'] = Variable<int>(discoveredAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpToolEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('serverId: $serverId, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('schemaJson: $schemaJson, ')
+          ..write('needsApproval: $needsApproval, ')
+          ..write('discoveredAt: $discoveredAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4495,6 +5032,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $McpServerEntriesTable mcpServerEntries = $McpServerEntriesTable(
     this,
   );
+  late final $McpToolEntriesTable mcpToolEntries = $McpToolEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4507,6 +5045,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     marketplaceEntries,
     marketplacePluginEntries,
     mcpServerEntries,
+    mcpToolEntries,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -4537,6 +5076,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('mcp_servers', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'mcp_servers',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('mcp_tools', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -5496,6 +6042,7 @@ typedef $$MessagesTableCreateCompanionBuilder = MessagesCompanion Function({
   Value<String> content,
   Value<String?> reasoning,
   Value<String?> toolCallsJson,
+  Value<String?> toolCallId,
   Value<String> status,
   required int createdAt,
   Value<int> rowid,
@@ -5507,6 +6054,7 @@ typedef $$MessagesTableUpdateCompanionBuilder = MessagesCompanion Function({
   Value<String> content,
   Value<String?> reasoning,
   Value<String?> toolCallsJson,
+  Value<String?> toolCallId,
   Value<String> status,
   Value<int> createdAt,
   Value<int> rowid,
@@ -5566,6 +6114,11 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<String> get toolCallsJson => $composableBuilder(
     column: $table.toolCallsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5637,6 +6190,11 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
     builder: (column) => ColumnOrderings(column),
@@ -5694,6 +6252,11 @@ class $$MessagesTableAnnotationComposer
 
   GeneratedColumn<String> get toolCallsJson => $composableBuilder(
     column: $table.toolCallsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
     builder: (column) => column,
   );
 
@@ -5761,6 +6324,7 @@ class $$MessagesTableTableManager
                 Value<String> content = const Value.absent(),
                 Value<String?> reasoning = const Value.absent(),
                 Value<String?> toolCallsJson = const Value.absent(),
+                Value<String?> toolCallId = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -5771,6 +6335,7 @@ class $$MessagesTableTableManager
                 content: content,
                 reasoning: reasoning,
                 toolCallsJson: toolCallsJson,
+                toolCallId: toolCallId,
                 status: status,
                 createdAt: createdAt,
                 rowid: rowid,
@@ -5783,6 +6348,7 @@ class $$MessagesTableTableManager
                 Value<String> content = const Value.absent(),
                 Value<String?> reasoning = const Value.absent(),
                 Value<String?> toolCallsJson = const Value.absent(),
+                Value<String?> toolCallId = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 required int createdAt,
                 Value<int> rowid = const Value.absent(),
@@ -5793,6 +6359,7 @@ class $$MessagesTableTableManager
                 content: content,
                 reasoning: reasoning,
                 toolCallsJson: toolCallsJson,
+                toolCallId: toolCallId,
                 status: status,
                 createdAt: createdAt,
                 rowid: rowid,
@@ -7212,6 +7779,24 @@ final class $$McpServerEntriesTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<$McpToolEntriesTable, List<McpToolEntry>>
+  _mcpToolEntriesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.mcpToolEntries,
+    aliasName: 'mcp_servers__id__mcp_tools__server_id',
+  );
+
+  $$McpToolEntriesTableProcessedTableManager get mcpToolEntriesRefs {
+    final manager = $$McpToolEntriesTableTableManager(
+      $_db,
+      $_db.mcpToolEntries,
+    ).filter((f) => f.serverId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_mcpToolEntriesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$McpServerEntriesTableFilterComposer
@@ -7300,6 +7885,31 @@ class $$McpServerEntriesTableFilterComposer
               ),
         );
     return composer;
+  }
+
+  Expression<bool> mcpToolEntriesRefs(
+    Expression<bool> Function($$McpToolEntriesTableFilterComposer f) f,
+  ) {
+    final $$McpToolEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mcpToolEntries,
+      getReferencedColumn: (t) => t.serverId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$McpToolEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.mcpToolEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -7465,6 +8075,31 @@ class $$McpServerEntriesTableAnnotationComposer
         );
     return composer;
   }
+
+  Expression<T> mcpToolEntriesRefs<T extends Object>(
+    Expression<T> Function($$McpToolEntriesTableAnnotationComposer a) f,
+  ) {
+    final $$McpToolEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mcpToolEntries,
+      getReferencedColumn: (t) => t.serverId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$McpToolEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mcpToolEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$McpServerEntriesTableTableManager
@@ -7480,7 +8115,7 @@ class $$McpServerEntriesTableTableManager
           $$McpServerEntriesTableUpdateCompanionBuilder,
           (McpServerEntry, $$McpServerEntriesTableReferences),
           McpServerEntry,
-          PrefetchHooks Function({bool pluginId})
+          PrefetchHooks Function({bool pluginId, bool mcpToolEntriesRefs})
         > {
   $$McpServerEntriesTableTableManager(
     _$AppDatabase db,
@@ -7563,7 +8198,398 @@ class $$McpServerEntriesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({pluginId = false}) {
+          prefetchHooksCallback:
+              ({pluginId = false, mcpToolEntriesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (mcpToolEntriesRefs) db.mcpToolEntries,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (pluginId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.pluginId,
+                            referencedTable: $$McpServerEntriesTableReferences
+                                ._pluginIdTable(db),
+                            referencedColumn: $$McpServerEntriesTableReferences
+                                ._pluginIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (mcpToolEntriesRefs)
+                        await $_getPrefetchedDataByColumns<
+                          McpServerEntry,
+                          $McpServerEntriesTable,
+                          McpToolEntry,
+                          $McpToolEntriesTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$McpServerEntriesTableReferences
+                              ._mcpToolEntriesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$McpServerEntriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).mcpToolEntriesRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'server_id',
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$McpServerEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $McpServerEntriesTable,
+      McpServerEntry,
+      $$McpServerEntriesTableFilterComposer,
+      $$McpServerEntriesTableOrderingComposer,
+      $$McpServerEntriesTableAnnotationComposer,
+      $$McpServerEntriesTableCreateCompanionBuilder,
+      $$McpServerEntriesTableUpdateCompanionBuilder,
+      (McpServerEntry, $$McpServerEntriesTableReferences),
+      McpServerEntry,
+      PrefetchHooks Function({bool pluginId, bool mcpToolEntriesRefs})
+    >;
+typedef $$McpToolEntriesTableCreateCompanionBuilder =
+    McpToolEntriesCompanion Function({
+      required String id,
+      required String serverId,
+      required String name,
+      Value<String> description,
+      required String schemaJson,
+      Value<bool> needsApproval,
+      required int discoveredAt,
+      Value<int> rowid,
+    });
+typedef $$McpToolEntriesTableUpdateCompanionBuilder =
+    McpToolEntriesCompanion Function({
+      Value<String> id,
+      Value<String> serverId,
+      Value<String> name,
+      Value<String> description,
+      Value<String> schemaJson,
+      Value<bool> needsApproval,
+      Value<int> discoveredAt,
+      Value<int> rowid,
+    });
+
+final class $$McpToolEntriesTableReferences
+    extends BaseReferences<_$AppDatabase, $McpToolEntriesTable, McpToolEntry> {
+  $$McpToolEntriesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $McpServerEntriesTable _serverIdTable(_$AppDatabase db) =>
+      db.mcpServerEntries.createAlias('mcp_tools__server_id__mcp_servers__id');
+
+  $$McpServerEntriesTableProcessedTableManager get serverId {
+    final $_column = $_itemColumn<String>('server_id')!;
+
+    final manager = $$McpServerEntriesTableTableManager(
+      $_db,
+      $_db.mcpServerEntries,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_serverIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$McpToolEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $McpToolEntriesTable> {
+  $$McpToolEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get schemaJson => $composableBuilder(
+    column: $table.schemaJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsApproval => $composableBuilder(
+    column: $table.needsApproval,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get discoveredAt => $composableBuilder(
+    column: $table.discoveredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$McpServerEntriesTableFilterComposer get serverId {
+    final $$McpServerEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.serverId,
+      referencedTable: $db.mcpServerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$McpServerEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.mcpServerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$McpToolEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $McpToolEntriesTable> {
+  $$McpToolEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get schemaJson => $composableBuilder(
+    column: $table.schemaJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsApproval => $composableBuilder(
+    column: $table.needsApproval,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get discoveredAt => $composableBuilder(
+    column: $table.discoveredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$McpServerEntriesTableOrderingComposer get serverId {
+    final $$McpServerEntriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.serverId,
+      referencedTable: $db.mcpServerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$McpServerEntriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.mcpServerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$McpToolEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $McpToolEntriesTable> {
+  $$McpToolEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get schemaJson => $composableBuilder(
+    column: $table.schemaJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get needsApproval => $composableBuilder(
+    column: $table.needsApproval,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get discoveredAt => $composableBuilder(
+    column: $table.discoveredAt,
+    builder: (column) => column,
+  );
+
+  $$McpServerEntriesTableAnnotationComposer get serverId {
+    final $$McpServerEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.serverId,
+      referencedTable: $db.mcpServerEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$McpServerEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mcpServerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$McpToolEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $McpToolEntriesTable,
+          McpToolEntry,
+          $$McpToolEntriesTableFilterComposer,
+          $$McpToolEntriesTableOrderingComposer,
+          $$McpToolEntriesTableAnnotationComposer,
+          $$McpToolEntriesTableCreateCompanionBuilder,
+          $$McpToolEntriesTableUpdateCompanionBuilder,
+          (McpToolEntry, $$McpToolEntriesTableReferences),
+          McpToolEntry,
+          PrefetchHooks Function({bool serverId})
+        > {
+  $$McpToolEntriesTableTableManager(
+    _$AppDatabase db,
+    $McpToolEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$McpToolEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$McpToolEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$McpToolEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> serverId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<String> schemaJson = const Value.absent(),
+                Value<bool> needsApproval = const Value.absent(),
+                Value<int> discoveredAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => McpToolEntriesCompanion(
+                id: id,
+                serverId: serverId,
+                name: name,
+                description: description,
+                schemaJson: schemaJson,
+                needsApproval: needsApproval,
+                discoveredAt: discoveredAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String serverId,
+                required String name,
+                Value<String> description = const Value.absent(),
+                required String schemaJson,
+                Value<bool> needsApproval = const Value.absent(),
+                required int discoveredAt,
+                Value<int> rowid = const Value.absent(),
+              }) => McpToolEntriesCompanion.insert(
+                id: id,
+                serverId: serverId,
+                name: name,
+                description: description,
+                schemaJson: schemaJson,
+                needsApproval: needsApproval,
+                discoveredAt: discoveredAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$McpToolEntriesTable, McpToolEntry>(table),
+                  $$McpToolEntriesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({serverId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -7583,14 +8609,14 @@ class $$McpServerEntriesTableTableManager
                       dynamic
                     >
                   >(state) {
-                    if (pluginId) {
+                    if (serverId) {
                       state = state.withJoin(
                         currentTable: table,
-                        currentColumn: table.pluginId,
-                        referencedTable: $$McpServerEntriesTableReferences
-                            ._pluginIdTable(db),
-                        referencedColumn: $$McpServerEntriesTableReferences
-                            ._pluginIdTable(db)
+                        currentColumn: table.serverId,
+                        referencedTable: $$McpToolEntriesTableReferences
+                            ._serverIdTable(db),
+                        referencedColumn: $$McpToolEntriesTableReferences
+                            ._serverIdTable(db)
                             .id,
                       ) as T;
                     }
@@ -7606,19 +8632,19 @@ class $$McpServerEntriesTableTableManager
       );
 }
 
-typedef $$McpServerEntriesTableProcessedTableManager =
+typedef $$McpToolEntriesTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $McpServerEntriesTable,
-      McpServerEntry,
-      $$McpServerEntriesTableFilterComposer,
-      $$McpServerEntriesTableOrderingComposer,
-      $$McpServerEntriesTableAnnotationComposer,
-      $$McpServerEntriesTableCreateCompanionBuilder,
-      $$McpServerEntriesTableUpdateCompanionBuilder,
-      (McpServerEntry, $$McpServerEntriesTableReferences),
-      McpServerEntry,
-      PrefetchHooks Function({bool pluginId})
+      $McpToolEntriesTable,
+      McpToolEntry,
+      $$McpToolEntriesTableFilterComposer,
+      $$McpToolEntriesTableOrderingComposer,
+      $$McpToolEntriesTableAnnotationComposer,
+      $$McpToolEntriesTableCreateCompanionBuilder,
+      $$McpToolEntriesTableUpdateCompanionBuilder,
+      (McpToolEntry, $$McpToolEntriesTableReferences),
+      McpToolEntry,
+      PrefetchHooks Function({bool serverId})
     >;
 
 class $AppDatabaseManager {
@@ -7641,4 +8667,6 @@ class $AppDatabaseManager {
       );
   $$McpServerEntriesTableTableManager get mcpServerEntries =>
       $$McpServerEntriesTableTableManager(_db, _db.mcpServerEntries);
+  $$McpToolEntriesTableTableManager get mcpToolEntries =>
+      $$McpToolEntriesTableTableManager(_db, _db.mcpToolEntries);
 }
