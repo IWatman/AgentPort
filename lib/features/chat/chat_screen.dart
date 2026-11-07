@@ -1,9 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../domain/entities/ai_provider.dart';
 import '../../domain/entities/chat_failure.dart';
@@ -26,12 +31,17 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _composer = TextEditingController();
   final _scroll = ScrollController();
+  final _attachments = <ChatMessageAttachment>[];
+  final _speech = SpeechToText();
   String? _lastSignature;
+  bool _listening = false;
+  String _voiceBaseText = '';
 
   @override
   void dispose() {
     _composer.dispose();
     _scroll.dispose();
+    unawaited(_speech.stop());
     super.dispose();
   }
 
@@ -122,6 +132,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               _Composer(
                 controller: _composer,
                 streaming: state.streaming,
+                attachments: _attachments,
+                listening: _listening,
+                modelLabel: provider == null
+                    ? l10n.chatNoProvider
+                    : _modelFor(state, provider),
                 onSend: () => _send(state),
                 onStop: () => unawaited(
                   ref
@@ -130,6 +145,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       )
                       .stop(),
                 ),
+                onAttach: () => unawaited(_attach(l10n)),
+                onRemoveAttachment: _removeAttachment,
+                onVoice: () => unawaited(_toggleVoice(l10n)),
+                onPickModel: provider == null
+                    ? null
+                    : () => unawaited(_pickModel(l10n, state, provider)),
               ),
             ],
           );
@@ -160,7 +181,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           Text(
             provider == null
                 ? l10n.chatNoProvider
-                : '${provider.name} · ${provider.model}',
+                : '${provider.name} · '
+                      '${_modelFor(state, provider)}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.labelSmall?.copyWith(
@@ -203,15 +225,355 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _send(ChatSessionState state) {
     final text = _composer.text.trim();
-    if (text.isEmpty || state.streaming) {
+    if ((text.isEmpty && _attachments.isEmpty) || state.streaming) {
       return;
     }
+    final attachments = List<ChatMessageAttachment>.of(_attachments);
     _composer.clear();
+    setState(_attachments.clear);
     unawaited(
       ref
           .read(chatControllerProvider(widget.conversationId).notifier)
-          .send(text),
+          .send(text, attachments: attachments),
     );
+  }
+
+  String _modelFor(ChatSessionState state, AiProvider provider) {
+    final model = state.conversation.model?.trim();
+    return model == null || model.isEmpty ? provider.model : model;
+  }
+
+  Future<void> _attach(AppLocalizations l10n) async {
+    final source = await showModalBottomSheet<_AttachSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text(l10n.chatAttachPhoto),
+              onTap: () => Navigator.of(sheetContext).pop(_AttachSource.photo),
+            ),
+            ListTile(
+              leading: const Icon(Icons.attach_file_rounded),
+              title: Text(l10n.chatAttachFile),
+              onTap: () => Navigator.of(sheetContext).pop(_AttachSource.file),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) {
+      return;
+    }
+    if (source == _AttachSource.photo) {
+      await _pickPhoto(l10n);
+    } else {
+      await _pickFile(l10n);
+    }
+  }
+
+  Future<void> _pickPhoto(AppLocalizations l10n) async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      imageQuality: 78,
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    final bytes = await picked.readAsBytes();
+    if (!mounted) {
+      return;
+    }
+    if (bytes.length > _maxAttachmentBytes) {
+      _snack(l10n.chatAttachmentTooLarge);
+      return;
+    }
+    final name = picked.name;
+    setState(() {
+      _attachments.add(
+        ChatMessageAttachment(
+          name: name,
+          mimeType: picked.mimeType ?? _mimeForName(name),
+          bytesBase64: base64Encode(bytes),
+        ),
+      );
+    });
+  }
+
+  Future<void> _pickFile(AppLocalizations l10n) async {
+    final file = await FilePicker.pickFile();
+    if (file == null || !mounted) {
+      return;
+    }
+    final bytes = await file.readAsBytes();
+    if (!mounted) {
+      return;
+    }
+    if (bytes.length > _maxAttachmentBytes) {
+      _snack(l10n.chatAttachmentTooLarge);
+      return;
+    }
+    final name = file.name;
+    final mime = _mimeForName(name);
+    if (mime.startsWith('image/')) {
+      setState(() {
+        _attachments.add(
+          ChatMessageAttachment(
+            name: name,
+            mimeType: mime,
+            bytesBase64: base64Encode(bytes),
+          ),
+        );
+      });
+      return;
+    }
+    if (!_isTextFile(name)) {
+      _snack(l10n.chatFileUnsupported);
+      return;
+    }
+    setState(() {
+      _attachments.add(
+        ChatMessageAttachment(
+          name: name,
+          mimeType: mime,
+          textContent: utf8.decode(bytes, allowMalformed: true),
+        ),
+      );
+    });
+  }
+
+  void _removeAttachment(ChatMessageAttachment attachment) {
+    setState(() => _attachments.remove(attachment));
+  }
+
+  Future<void> _toggleVoice(AppLocalizations l10n) async {
+    if (_listening) {
+      await _speech.stop();
+      if (mounted) {
+        setState(() => _listening = false);
+      }
+      return;
+    }
+
+    final available = await _speech.initialize(
+      onStatus: (status) {
+        if (!mounted) {
+          return;
+        }
+        if (status == 'done' || status == 'notListening') {
+          setState(() => _listening = false);
+        }
+      },
+      onError: (error) {
+        if (mounted) {
+          setState(() => _listening = false);
+          _snack(l10n.chatVoiceUnavailable);
+        }
+      },
+    );
+    if (!available || !mounted) {
+      _snack(l10n.chatVoiceUnavailable);
+      return;
+    }
+
+    _voiceBaseText = _composer.text;
+    setState(() => _listening = true);
+    await _speech.listen(
+      onResult: (result) {
+        if (!mounted) {
+          return;
+        }
+        final recognized = result.recognizedWords.trim();
+        final text = _voiceBaseText.trim().isEmpty
+            ? recognized
+            : '${_voiceBaseText.trim()} $recognized';
+        _composer.value = TextEditingValue(
+          text: text,
+          selection: TextSelection.collapsed(offset: text.length),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickModel(
+    AppLocalizations l10n,
+    ChatSessionState state,
+    AiProvider provider,
+  ) async {
+    final current = _modelFor(state, provider);
+    final suggestions = _modelSuggestions(provider);
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text(
+                l10n.chatModel,
+                style: Theme.of(sheetContext).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.auto_awesome_rounded),
+              title: Text(l10n.chatModelDefault(provider.model)),
+              trailing: current == provider.model
+                  ? const Icon(Icons.check_rounded)
+                  : null,
+              onTap: () => Navigator.of(sheetContext).pop(_defaultModelValue),
+            ),
+            for (final model in suggestions)
+              ListTile(
+                leading: const Icon(Icons.memory_rounded),
+                title: Text(model),
+                trailing: current == model
+                    ? const Icon(Icons.check_rounded)
+                    : null,
+                onTap: () => Navigator.of(sheetContext).pop(model),
+              ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.edit_rounded),
+              title: Text(l10n.chatModelCustom),
+              onTap: () => Navigator.of(sheetContext).pop(_customModelValue),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (selected == null || !mounted) {
+      return;
+    }
+    final controller = ref.read(
+      chatControllerProvider(widget.conversationId).notifier,
+    );
+    if (selected == _defaultModelValue) {
+      await controller.selectModel(null);
+      return;
+    }
+    if (selected == _customModelValue) {
+      final custom = await _promptCustomModel(l10n, current);
+      if (custom != null && custom.isNotEmpty) {
+        await controller.selectModel(custom);
+      }
+      return;
+    }
+    await controller.selectModel(selected);
+  }
+
+  Future<String?> _promptCustomModel(
+    AppLocalizations l10n,
+    String current,
+  ) async {
+    final controller = TextEditingController(text: current);
+    final value = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.chatCustomModelTitle),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          autocorrect: false,
+          decoration: InputDecoration(
+            hintText: l10n.chatCustomModelHint,
+            border: const OutlineInputBorder(),
+          ),
+          onSubmitted: (text) => Navigator.of(dialogContext).pop(text),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+            child: Text(l10n.commonSave),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return value?.trim();
+  }
+
+  List<String> _modelSuggestions(AiProvider provider) {
+    final host = Uri.tryParse(provider.baseUrl)?.host.toLowerCase() ?? '';
+    final defaults = switch (host) {
+      'api.deepseek.com' => ['deepseek-chat', 'deepseek-reasoner'],
+      'api.openai.com' => ['gpt-4o-mini', 'gpt-4o'],
+      'openrouter.ai' => [
+        'openai/gpt-4o-mini',
+        'anthropic/claude-3.5-sonnet',
+        'google/gemini-2.5-flash',
+      ],
+      'api.groq.com' => ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
+      'api.mistral.ai' => ['mistral-large-latest', 'mistral-small-latest'],
+      'api.together.xyz' => ['meta-llama/Llama-3.3-70B-Instruct-Turbo'],
+      'api.x.ai' => ['grok-2-latest'],
+      'generativelanguage.googleapis.com' => [
+        'gemini-2.5-flash',
+        'gemini-2.5-pro',
+      ],
+      _ => const <String>[],
+    };
+    return defaults
+        .where((model) => model != provider.model)
+        .toList(growable: false);
+  }
+
+  void _snack(String message) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _mimeForName(String name) {
+    final extension = p.extension(name).toLowerCase().replaceFirst('.', '');
+    return switch (extension) {
+      'png' => 'image/png',
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'webp' => 'image/webp',
+      'gif' => 'image/gif',
+      'heic' => 'image/heic',
+      'json' => 'application/json',
+      'md' => 'text/markdown',
+      'csv' => 'text/csv',
+      'html' => 'text/html',
+      'xml' => 'application/xml',
+      'yaml' || 'yml' => 'text/yaml',
+      'dart' ||
+      'js' ||
+      'ts' ||
+      'py' ||
+      'java' ||
+      'kt' ||
+      'swift' ||
+      'c' ||
+      'cpp' ||
+      'h' ||
+      'css' ||
+      'sql' ||
+      'sh' ||
+      'log' ||
+      'txt' => 'text/plain',
+      _ => 'application/octet-stream',
+    };
+  }
+
+  bool _isTextFile(String name) {
+    final mime = _mimeForName(name);
+    return mime.startsWith('text/') ||
+        mime == 'application/json' ||
+        mime == 'application/xml';
   }
 
   Future<void> _rename(AppLocalizations l10n, ChatSessionState state) async {
@@ -391,6 +753,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 }
 
 const _addProviderValue = '__add_provider__';
+const _defaultModelValue = '__default_model__';
+const _customModelValue = '__custom_model__';
+const _maxAttachmentBytes = 8 * 1024 * 1024;
+
+enum _AttachSource { photo, file }
 
 enum _ChatMenuAction { rename, provider, delete }
 
@@ -441,13 +808,96 @@ class _UserBubble extends StatelessWidget {
             bottomRight: Radius.circular(6),
           ),
         ),
-        child: SelectableText(
-          message.content,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onPrimaryContainer,
-            height: 1.45,
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (message.attachments.isNotEmpty) ...[
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                alignment: WrapAlignment.end,
+                children: [
+                  for (final attachment in message.attachments)
+                    _AttachmentPreview(attachment: attachment),
+                ],
+              ),
+              if (message.content.trim().isNotEmpty) const SizedBox(height: 8),
+            ],
+            if (message.content.trim().isNotEmpty)
+              SelectableText(
+                message.content,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onPrimaryContainer,
+                  height: 1.45,
+                ),
+              ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+class _AttachmentPreview extends StatelessWidget {
+  const _AttachmentPreview({required this.attachment});
+
+  final ChatMessageAttachment attachment;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (attachment.isImage && attachment.bytesBase64 != null) {
+      try {
+        final bytes = base64Decode(attachment.bytesBase64!);
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.memory(
+            bytes,
+            width: 220,
+            height: 160,
+            fit: BoxFit.cover,
+            cacheWidth: 660,
+            errorBuilder: (context, error, stackTrace) => _fileChip(theme),
+          ),
+        );
+      } on FormatException {
+        return _fileChip(theme);
+      }
+    }
+    return _fileChip(theme);
+  }
+
+  Widget _fileChip(ThemeData theme) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 220),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            attachment.isImage
+                ? Icons.image_outlined
+                : Icons.description_outlined,
+            size: 16,
+            color: theme.colorScheme.onPrimaryContainer,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              attachment.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -797,14 +1247,28 @@ class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
     required this.streaming,
+    required this.attachments,
+    required this.listening,
+    required this.modelLabel,
     required this.onSend,
     required this.onStop,
+    required this.onAttach,
+    required this.onRemoveAttachment,
+    required this.onVoice,
+    required this.onPickModel,
   });
 
   final TextEditingController controller;
   final bool streaming;
+  final List<ChatMessageAttachment> attachments;
+  final bool listening;
+  final String modelLabel;
   final VoidCallback onSend;
   final VoidCallback onStop;
+  final VoidCallback onAttach;
+  final ValueChanged<ChatMessageAttachment> onRemoveAttachment;
+  final VoidCallback onVoice;
+  final VoidCallback? onPickModel;
 
   @override
   Widget build(BuildContext context) {
@@ -815,51 +1279,148 @@ class _Composer extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+        padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
         decoration: BoxDecoration(
           color: scheme.surfaceContainerLow,
           border: Border(top: BorderSide(color: scheme.outlineVariant)),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: TextField(
-                controller: controller,
-                minLines: 1,
-                maxLines: 5,
-                textCapitalization: TextCapitalization.sentences,
-                keyboardType: TextInputType.multiline,
-                decoration: InputDecoration(
-                  hintText: l10n.chatInputHint,
-                  filled: true,
-                  fillColor: scheme.surfaceContainer,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide.none,
+            if (attachments.isNotEmpty)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 6),
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      for (final attachment in attachments)
+                        InputChip(
+                          avatar: Icon(
+                            attachment.isImage
+                                ? Icons.image_outlined
+                                : Icons.description_outlined,
+                            size: 16,
+                          ),
+                          label: Text(
+                            attachment.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          onDeleted: () => onRemoveAttachment(attachment),
+                          deleteButtonTooltipMessage: l10n.chatRemoveAttachment,
+                        ),
+                    ],
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            IconButton.filled(
-              tooltip: streaming ? l10n.chatStop : l10n.chatSend,
-              onPressed: streaming ? onStop : onSend,
-              icon: Icon(
-                streaming ? Icons.stop_rounded : Icons.arrow_upward_rounded,
+            if (listening)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 12, bottom: 4),
+                  child: Text(
+                    l10n.chatListening,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: scheme.primary,
+                    ),
+                  ),
+                ),
               ),
-              style: IconButton.styleFrom(
-                minimumSize: const Size(48, 48),
-                backgroundColor: streaming
-                    ? scheme.errorContainer
-                    : scheme.primary,
-                foregroundColor: streaming
-                    ? scheme.onErrorContainer
-                    : scheme.onPrimary,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                IconButton(
+                  onPressed: streaming ? null : onAttach,
+                  tooltip: l10n.chatAttach,
+                  icon: const Icon(Icons.add_rounded),
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    minLines: 1,
+                    maxLines: 5,
+                    textCapitalization: TextCapitalization.sentences,
+                    keyboardType: TextInputType.multiline,
+                    decoration: InputDecoration(
+                      hintText: l10n.chatInputHint,
+                      filled: true,
+                      fillColor: scheme.surfaceContainer,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  onPressed: streaming ? null : onVoice,
+                  tooltip: listening ? l10n.chatVoiceStop : l10n.chatVoice,
+                  color: listening ? scheme.primary : null,
+                  icon: Icon(
+                    listening ? Icons.mic_rounded : Icons.mic_none_rounded,
+                  ),
+                ),
+                IconButton.filled(
+                  tooltip: streaming ? l10n.chatStop : l10n.chatSend,
+                  onPressed: streaming ? onStop : onSend,
+                  icon: Icon(
+                    streaming ? Icons.stop_rounded : Icons.arrow_upward_rounded,
+                  ),
+                  style: IconButton.styleFrom(
+                    minimumSize: const Size(48, 48),
+                    backgroundColor: streaming
+                        ? scheme.errorContainer
+                        : scheme.primary,
+                    foregroundColor: streaming
+                        ? scheme.onErrorContainer
+                        : scheme.onPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            InkWell(
+              onTap: onPickModel,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.tune_rounded,
+                      size: 16,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        modelLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.expand_more_rounded,
+                      size: 18,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

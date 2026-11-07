@@ -305,6 +305,28 @@
     }
   },
   "marketplaceServersMixedWarning": "Some servers in this plugin need desktop setup and are unavailable on Android.",
+  "chatModel": "Model",
+  "chatModelDefault": "Default · {model}",
+  "@chatModelDefault": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "chatModelCustom": "Custom model…",
+  "chatCustomModelTitle": "Custom model",
+  "chatCustomModelHint": "Model ID",
+  "chatAttach": "Attach",
+  "chatAttachPhoto": "Photo",
+  "chatAttachFile": "File",
+  "chatAttachmentTooLarge": "File is too large (max 8 MB).",
+  "chatFileUnsupported": "Only images and text files are supported.",
+  "chatRemoveAttachment": "Remove",
+  "chatVoice": "Voice input",
+  "chatVoiceStop": "Stop voice input",
+  "chatListening": "Listening…",
+  "chatVoiceUnavailable": "Voice input is not available on this device.",
   "mcpNoServersTitle": "No MCP connections",
   "mcpNoServersBody": "Install a remote MCP plugin from the Marketplace to connect it here.",
   "mcpOpenMarketplace": "Open Marketplace",

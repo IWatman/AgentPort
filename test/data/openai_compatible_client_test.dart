@@ -10,18 +10,16 @@ void main() {
   group('chatCompletionsUri', () {
     test('adds /v1/chat/completions to a bare host', () {
       expect(
-        OpenAiCompatibleClient.chatCompletionsUri(
-          'https://api.deepseek.com',
-        ).toString(),
+        OpenAiCompatibleClient.chatCompletionsUri('https://api.deepseek.com')
+            .toString(),
         'https://api.deepseek.com/v1/chat/completions',
       );
     });
 
     test('keeps an existing /v1 prefix', () {
       expect(
-        OpenAiCompatibleClient.chatCompletionsUri(
-          'https://api.openai.com/v1',
-        ).toString(),
+        OpenAiCompatibleClient.chatCompletionsUri('https://api.openai.com/v1')
+            .toString(),
         'https://api.openai.com/v1/chat/completions',
       );
     });
@@ -65,9 +63,28 @@ void main() {
   group('streamChat', () {
     test('parses content, reasoning, and done markers', () async {
       final events = [
-        'data: ${jsonEncode({'choices': [{'delta': {'reasoning_content': 'think'}}]})}\n\n',
-        'data: ${jsonEncode({'choices': [{'delta': {'content': 'Hel'}}]})}\n\n',
-        'data: ${jsonEncode({'choices': [{'delta': {'content': 'lo'}, 'finish_reason': 'stop'}]})}\n\n',
+        'data: ${jsonEncode({
+          'choices': [
+            {
+              'delta': {'reasoning_content': 'think'},
+            },
+          ],
+        })}\n\n',
+        'data: ${jsonEncode({
+          'choices': [
+            {
+              'delta': {'content': 'Hel'},
+            },
+          ],
+        })}\n\n',
+        'data: ${jsonEncode({
+          'choices': [
+            {
+              'delta': {'content': 'lo'},
+              'finish_reason': 'stop',
+            },
+          ],
+        })}\n\n',
         'data: [DONE]\n\n',
       ];
       final client = OpenAiCompatibleClient(
@@ -88,9 +105,7 @@ void main() {
             baseUrl: 'https://example.com',
             apiKey: 'secret',
             model: 'deepseek-chat',
-            messages: const [
-              ChatRequestMessage(role: 'user', content: 'Hi'),
-            ],
+            messages: const [ChatRequestMessage(role: 'user', content: 'Hi')],
           )
           .toList();
 
@@ -129,11 +144,7 @@ void main() {
                 'kind',
                 ChatFailureKind.unauthorized,
               )
-              .having(
-                (failure) => failure.detail,
-                'detail',
-                'Invalid API key',
-              ),
+              .having((failure) => failure.detail, 'detail', 'Invalid API key'),
         ),
       );
     });
@@ -186,9 +197,8 @@ void main() {
 
     test('throws a rate-limit failure on HTTP 429', () async {
       final client = OpenAiCompatibleClient(
-        clientFactory: () => MockClient(
-          (request) async => http.Response('slow down', 429),
-        ),
+        clientFactory: () =>
+            MockClient((request) async => http.Response('slow down', 429)),
       );
 
       expect(
@@ -206,5 +216,24 @@ void main() {
         ),
       );
     });
+  });
+
+  test('serializes multimodal content parts', () {
+    const message = ChatRequestMessage(
+      role: 'user',
+      content: 'look',
+      contentParts: [
+        {'type': 'text', 'text': 'look'},
+        {
+          'type': 'image_url',
+          'image_url': {'url': 'data:image/jpeg;base64,abc'},
+        },
+      ],
+    );
+
+    final json = message.toJson();
+    expect(json['role'], 'user');
+    expect(json['content'], isA<List>());
+    expect((json['content'] as List), hasLength(2));
   });
 }

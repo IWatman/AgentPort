@@ -291,6 +291,28 @@
     }
   },
   "marketplaceServersMixedWarning": "Некоторые серверы плагина требуют настройки на компьютере и недоступны на Android.",
+  "chatModel": "Модель",
+  "chatModelDefault": "По умолчанию · {model}",
+  "@chatModelDefault": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "chatModelCustom": "Своя модель…",
+  "chatCustomModelTitle": "Своя модель",
+  "chatCustomModelHint": "ID модели",
+  "chatAttach": "Прикрепить",
+  "chatAttachPhoto": "Фото",
+  "chatAttachFile": "Файл",
+  "chatAttachmentTooLarge": "Файл слишком большой (максимум 8 МБ).",
+  "chatFileUnsupported": "Поддерживаются только изображения и текстовые файлы.",
+  "chatRemoveAttachment": "Удалить",
+  "chatVoice": "Голосовой ввод",
+  "chatVoiceStop": "Остановить голосовой ввод",
+  "chatListening": "Слушаю…",
+  "chatVoiceUnavailable": "Голосовой ввод недоступен на этом устройстве.",
   "mcpNoServersTitle": "Нет MCP-подключений",
   "mcpNoServersBody": "Установите удалённый MCP-плагин в Маркетплейсе, чтобы подключить его здесь.",
   "mcpOpenMarketplace": "Открыть Маркетплейс",

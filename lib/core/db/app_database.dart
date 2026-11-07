@@ -58,6 +58,9 @@ class Conversations extends Table {
     onDelete: KeyAction.setNull,
   )();
 
+  /// Optional per-conversation model override.
+  TextColumn get model => text().nullable()();
+
   TextColumn get systemPrompt => text().nullable()();
 
   BoolColumn get archived => boolean().withDefault(const Constant(false))();
@@ -84,6 +87,9 @@ class Messages extends Table {
   TextColumn get reasoning => text().nullable()();
 
   TextColumn get toolCallsJson => text().nullable()();
+
+  /// JSON list of image or text-file attachments.
+  TextColumn get attachmentsJson => text().nullable()();
 
   /// OpenAI `tool_call_id` for a tool-result message.
   TextColumn get toolCallId => text().nullable()();
@@ -283,7 +289,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -302,6 +308,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 4) {
         await migrator.createTable(mcpToolEntries);
         await migrator.addColumn(messages, messages.toolCallId);
+      }
+      if (from < 5) {
+        await migrator.addColumn(conversations, conversations.model);
+        await migrator.addColumn(messages, messages.attachmentsJson);
       }
     },
     beforeOpen: (details) async {

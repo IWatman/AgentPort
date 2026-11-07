@@ -90,10 +90,15 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
     return ChatSessionState(conversation: conversation, messages: messages);
   }
 
-  Future<void> send(String text) async {
+  Future<void> send(
+    String text, {
+    List<ChatMessageAttachment> attachments = const [],
+  }) async {
     final trimmed = text.trim();
     final current = state.value;
-    if (trimmed.isEmpty || current == null || current.streaming) {
+    if ((trimmed.isEmpty && attachments.isEmpty) ||
+        current == null ||
+        current.streaming) {
       return;
     }
 
@@ -131,6 +136,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
       reasoning: null,
       status: ChatMessageStatus.complete,
       createdAt: now,
+      attachments: attachments,
     );
     final assistantMessage = ChatMessage(
       id: repository.newMessageId(),
@@ -144,7 +150,13 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
 
     final conversation = isFirstUserMessage
         ? current.conversation.copyWith(
-            title: _titleFor(trimmed),
+            title: _titleFor(
+              trimmed.isEmpty
+                  ? (attachments.isEmpty
+                        ? 'Attachment'
+                        : attachments.first.name)
+                  : trimmed,
+            ),
             updatedAt: now,
           )
         : current.conversation;
@@ -276,6 +288,27 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
     _notifyList(conversation);
   }
 
+  Future<void> selectModel(String? model) async {
+    final current = state.value;
+    if (current == null || current.streaming) {
+      return;
+    }
+    final trimmed = model?.trim();
+    final conversation = current.conversation.copyWith(
+      model: trimmed == null || trimmed.isEmpty ? null : trimmed,
+      clearModel: trimmed == null || trimmed.isEmpty,
+      updatedAt: DateTime.now(),
+    );
+    state = AsyncData(current.copyWith(conversation: conversation));
+    await ref
+        .read(conversationRepositoryProvider)
+        .setModel(conversationId, conversation.model);
+    if (!ref.mounted) {
+      return;
+    }
+    _notifyList(conversation);
+  }
+
   Future<void> rename(String title) async {
     final trimmed = title.trim();
     final current = state.value;
@@ -304,6 +337,11 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
           .read(conversationsControllerProvider.notifier)
           .removeById(conversationId);
     }
+  }
+
+  String _effectiveModel(AiProvider provider) {
+    final model = state.value?.conversation.model?.trim();
+    return model == null || model.isEmpty ? provider.model : model;
   }
 
   Future<AiProvider?> _resolveProvider(String? providerId) async {
@@ -340,7 +378,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
         .streamChat(
           baseUrl: provider.baseUrl,
           apiKey: apiKey,
-          model: provider.model,
+          model: _effectiveModel(provider),
           messages: _requestMessages(excludingId: assistantMessageId),
         )
         .listen(
@@ -419,17 +457,52 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
       if (!message.isUser && !message.isAssistant) {
         continue;
       }
-      if (message.content.trim().isEmpty) {
+      final text = _textWithFiles(message);
+      if (text.trim().isEmpty && message.attachments.isEmpty) {
         continue;
+      }
+      final parts = <Map<String, Object?>>[];
+      if (text.trim().isNotEmpty) {
+        parts.add({'type': 'text', 'text': text});
+      }
+      for (final attachment in message.attachments) {
+        if (attachment.isImage) {
+          parts.add({
+            'type': 'image_url',
+            'image_url': {
+              'url':
+                  'data:${attachment.mimeType};base64,'
+                  '${attachment.bytesBase64}',
+            },
+          });
+        }
       }
       result.add(
         ChatRequestMessage(
           role: message.role.storageValue,
-          content: message.content,
+          content: text,
+          contentParts: parts.length > 1 ? parts : const [],
         ),
       );
     }
     return result;
+  }
+
+  String _textWithFiles(ChatMessage message) {
+    final buffer = StringBuffer(message.content);
+    for (final attachment in message.attachments) {
+      final text = attachment.textContent;
+      if (text == null) {
+        continue;
+      }
+      if (buffer.isNotEmpty) {
+        buffer.write('\n\n');
+      }
+      buffer
+        ..writeln('--- Attached file: ${attachment.name} ---')
+        ..write(text);
+    }
+    return buffer.toString();
   }
 
   void _publishStreaming(String messageId) {

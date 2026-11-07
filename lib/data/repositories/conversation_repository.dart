@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -70,6 +72,16 @@ class ConversationRepository {
     );
   }
 
+  Future<void> setModel(String id, String? model) async {
+    await _update(
+      id,
+      ConversationsCompanion(
+        model: Value(model),
+        updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
+      ),
+    );
+  }
+
   Future<void> touch(String id) async {
     await _update(
       id,
@@ -104,6 +116,15 @@ class ConversationRepository {
             role: message.role.storageValue,
             content: Value(message.content),
             reasoning: Value(message.reasoning),
+            attachmentsJson: message.attachments.isEmpty
+                ? const Value.absent()
+                : Value(
+                    jsonEncode(
+                      message.attachments
+                          .map((attachment) => attachment.toJson())
+                          .toList(),
+                    ),
+                  ),
             status: Value(message.status.storageValue),
             createdAt: message.createdAt.millisecondsSinceEpoch,
           ),
@@ -134,6 +155,7 @@ class ConversationRepository {
       title: row.title,
       providerId: row.providerId,
       systemPrompt: row.systemPrompt,
+      model: row.model,
       createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(row.updatedAt),
     );
@@ -148,7 +170,30 @@ class ConversationRepository {
       reasoning: row.reasoning,
       status: ChatMessageStatus.fromStorage(row.status),
       createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt),
+      attachments: _attachmentsFromJson(row.attachmentsJson),
     );
+  }
+
+  List<ChatMessageAttachment> _attachmentsFromJson(String? raw) {
+    if (raw == null || raw.isEmpty) {
+      return const [];
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) {
+        return const [];
+      }
+      return decoded
+          .whereType<Map>()
+          .map(
+            (item) =>
+                ChatMessageAttachment.fromJson(Map<String, Object?>.from(item)),
+          )
+          .whereType<ChatMessageAttachment>()
+          .toList(growable: false);
+    } on FormatException {
+      return const [];
+    }
   }
 }
 

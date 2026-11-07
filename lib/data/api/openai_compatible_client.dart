@@ -8,12 +8,23 @@ import 'package:http/http.dart' as http;
 import '../../domain/entities/chat_failure.dart';
 
 class ChatRequestMessage {
-  const ChatRequestMessage({required this.role, required this.content});
+  const ChatRequestMessage({
+    required this.role,
+    required this.content,
+    this.contentParts = const [],
+  });
 
   final String role;
   final String content;
 
-  Map<String, Object?> toJson() => {'role': role, 'content': content};
+  /// Multimodal content parts (for example text + image_url). When non-empty,
+  /// these replace the plain string content.
+  final List<Map<String, Object?>> contentParts;
+
+  Map<String, Object?> toJson() => {
+    'role': role,
+    'content': contentParts.isEmpty ? content : contentParts,
+  };
 }
 
 class ChatDelta {

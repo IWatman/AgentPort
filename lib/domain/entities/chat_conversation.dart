@@ -6,6 +6,7 @@ class ChatConversation {
     required this.systemPrompt,
     required this.createdAt,
     required this.updatedAt,
+    this.model,
   });
 
   final String id;
@@ -15,6 +16,9 @@ class ChatConversation {
 
   final String? providerId;
   final String? systemPrompt;
+
+  /// Optional model override for this conversation.
+  final String? model;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -22,6 +26,8 @@ class ChatConversation {
     String? title,
     String? providerId,
     bool clearProvider = false,
+    String? model,
+    bool clearModel = false,
     DateTime? updatedAt,
   }) {
     return ChatConversation(
@@ -29,6 +35,7 @@ class ChatConversation {
       title: title ?? this.title,
       providerId: clearProvider ? null : (providerId ?? this.providerId),
       systemPrompt: systemPrompt,
+      model: clearModel ? null : (model ?? this.model),
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

@@ -37,6 +37,8 @@ class _FakeClient extends OpenAiCompatibleClient {
   final bool hold;
   final Object? error;
   int calls = 0;
+  final List<List<ChatRequestMessage>> requests = [];
+  final List<String> models = [];
 
   @override
   Stream<ChatDelta> streamChat({
@@ -46,6 +48,8 @@ class _FakeClient extends OpenAiCompatibleClient {
     required List<ChatRequestMessage> messages,
   }) {
     calls++;
+    requests.add(List.of(messages));
+    models.add(model);
     if (error != null) {
       return Stream.error(error!);
     }
@@ -144,7 +148,9 @@ void main() {
     );
     await notifier.send('Hello there');
 
-    final state = container.read(chatControllerProvider(conversation.id)).value!;
+    final state = container
+        .read(chatControllerProvider(conversation.id))
+        .value!;
     expect(client.calls, 1);
     expect(state.streaming, isFalse);
     expect(state.failure, isNull);
@@ -158,6 +164,70 @@ void main() {
     final stored = await conversations.messages(conversation.id);
     expect(stored, hasLength(2));
     expect(stored.last.content, 'Hello');
+  });
+
+  test('sends image and text attachments to the model', () async {
+    final provider = await createProvider();
+    final conversation = await conversations.create(providerId: provider.id);
+    final client = _FakeClient(deltas: const [ChatDelta(content: 'ok')]);
+    container = createContainer(client);
+    await openChat(container, conversation.id);
+
+    await container
+        .read(chatControllerProvider(conversation.id).notifier)
+        .send(
+          'Describe this',
+          attachments: const [
+            ChatMessageAttachment(
+              name: 'photo.jpg',
+              mimeType: 'image/jpeg',
+              bytesBase64: 'aGVsbG8=',
+            ),
+            ChatMessageAttachment(
+              name: 'notes.txt',
+              mimeType: 'text/plain',
+              textContent: 'file body',
+            ),
+          ],
+        );
+
+    final messages = client.requests.single;
+    final user = messages.lastWhere((message) => message.role == 'user');
+    expect(user.content, contains('file body'));
+    expect(user.contentParts, hasLength(2));
+    expect(user.contentParts.first['type'], 'text');
+    expect(user.contentParts.last['type'], 'image_url');
+    expect(
+      (user.contentParts.last['image_url'] as Map)['url'],
+      'data:image/jpeg;base64,aGVsbG8=',
+    );
+
+    final stored = await conversations.messages(conversation.id);
+    expect(stored.first.attachments, hasLength(2));
+  });
+
+  test('uses a per-conversation model override', () async {
+    final provider = await createProvider();
+    final conversation = await conversations.create(providerId: provider.id);
+    final client = _FakeClient(deltas: const [ChatDelta(content: 'ok')]);
+    container = createContainer(client);
+    await openChat(container, conversation.id);
+
+    final notifier = container.read(
+      chatControllerProvider(conversation.id).notifier,
+    );
+    await notifier.selectModel('deepseek-reasoner');
+    await notifier.send('Hello');
+
+    expect(client.models.single, 'deepseek-reasoner');
+    expect(
+      (await conversations.get(conversation.id))?.model,
+      'deepseek-reasoner',
+    );
+
+    await notifier.selectModel(null);
+    await notifier.send('Again');
+    expect(client.models.last, provider.model);
   });
 
   test('stop keeps the partial reply as stopped', () async {
@@ -175,8 +245,10 @@ void main() {
     );
     final sendFuture = notifier.send('Hello');
     await _waitUntil(() {
-      final messages =
-          container.read(chatControllerProvider(conversation.id)).value?.messages;
+      final messages = container
+          .read(chatControllerProvider(conversation.id))
+          .value
+          ?.messages;
       return messages != null &&
           messages.isNotEmpty &&
           messages.last.content == 'Partial answer';
@@ -185,7 +257,9 @@ void main() {
     await notifier.stop();
     await sendFuture;
 
-    final state = container.read(chatControllerProvider(conversation.id)).value!;
+    final state = container
+        .read(chatControllerProvider(conversation.id))
+        .value!;
     expect(state.streaming, isFalse);
     expect(state.messages.last.status, ChatMessageStatus.stopped);
     expect(state.messages.last.content, 'Partial answer');
@@ -206,7 +280,9 @@ void main() {
         .read(chatControllerProvider(conversation.id).notifier)
         .send('Hello');
 
-    final state = container.read(chatControllerProvider(conversation.id)).value!;
+    final state = container
+        .read(chatControllerProvider(conversation.id))
+        .value!;
     expect(client.calls, 0);
     expect(state.messages, isEmpty);
     expect(state.failure?.kind, ChatFailureKind.missingApiKey);
@@ -216,7 +292,9 @@ void main() {
   test('retry removes the failed assistant reply and streams again', () async {
     final provider = await createProvider();
     final conversation = await conversations.create(providerId: provider.id);
-    final failingClient = _FakeClient(error: const ChatFailure(ChatFailureKind.server));
+    final failingClient = _FakeClient(
+      error: const ChatFailure(ChatFailureKind.server),
+    );
     container = createContainer(failingClient);
     await openChat(container, conversation.id);
 

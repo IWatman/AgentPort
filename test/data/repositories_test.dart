@@ -104,9 +104,7 @@ void main() {
         model: 'deepseek-chat',
         apiKey: 'secret',
       );
-      final conversation = await conversations.create(
-        providerId: provider.id,
-      );
+      final conversation = await conversations.create(providerId: provider.id);
 
       await providers.delete(provider);
 
@@ -174,9 +172,7 @@ void main() {
         model: 'deepseek-chat',
         apiKey: 'secret',
       );
-      final conversation = await conversations.create(
-        providerId: provider.id,
-      );
+      final conversation = await conversations.create(providerId: provider.id);
 
       await conversations.setProvider(conversation.id, null);
       expect((await conversations.get(conversation.id))?.providerId, isNull);
@@ -186,6 +182,45 @@ void main() {
         (await conversations.get(conversation.id))?.providerId,
         provider.id,
       );
+    });
+
+    test('stores a per-conversation model and message attachments', () async {
+      final conversation = await conversations.create();
+      await conversations.setModel(conversation.id, 'deepseek-reasoner');
+      expect(
+        (await conversations.get(conversation.id))?.model,
+        'deepseek-reasoner',
+      );
+
+      final id = conversations.newMessageId();
+      await conversations.insertMessage(
+        ChatMessage(
+          id: id,
+          conversationId: conversation.id,
+          role: ChatRole.user,
+          content: 'See attached',
+          reasoning: null,
+          status: ChatMessageStatus.complete,
+          createdAt: DateTime(2026),
+          attachments: const [
+            ChatMessageAttachment(
+              name: 'photo.jpg',
+              mimeType: 'image/jpeg',
+              bytesBase64: 'aGVsbG8=',
+            ),
+            ChatMessageAttachment(
+              name: 'notes.txt',
+              mimeType: 'text/plain',
+              textContent: 'file body',
+            ),
+          ],
+        ),
+      );
+
+      final message = (await conversations.messages(conversation.id)).single;
+      expect(message.attachments, hasLength(2));
+      expect(message.attachments.first.bytesBase64, 'aGVsbG8=');
+      expect(message.attachments.last.textContent, 'file body');
     });
   });
 }

@@ -703,6 +703,15 @@ class $ConversationsTable extends Conversations
       'REFERENCES providers (id) ON DELETE SET NULL',
     ),
   );
+  static const VerificationMeta _modelMeta = const VerificationMeta('model');
+  @override
+  late final GeneratedColumn<String> model = GeneratedColumn<String>(
+    'model',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _systemPromptMeta = const VerificationMeta(
     'systemPrompt',
   );
@@ -756,6 +765,7 @@ class $ConversationsTable extends Conversations
     id,
     title,
     providerId,
+    model,
     systemPrompt,
     archived,
     createdAt,
@@ -788,6 +798,12 @@ class $ConversationsTable extends Conversations
       context.handle(
         _providerIdMeta,
         providerId.isAcceptableOrUnknown(data['provider_id']!, _providerIdMeta),
+      );
+    }
+    if (data.containsKey('model')) {
+      context.handle(
+        _modelMeta,
+        model.isAcceptableOrUnknown(data['model']!, _modelMeta),
       );
     }
     if (data.containsKey('system_prompt')) {
@@ -842,6 +858,10 @@ class $ConversationsTable extends Conversations
         DriftSqlType.string,
         data['${effectivePrefix}provider_id'],
       ),
+      model: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model'],
+      ),
       systemPrompt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}system_prompt'],
@@ -873,6 +893,9 @@ class Conversation extends DataClass implements Insertable<Conversation> {
   /// Empty until the first user message arrives.
   final String title;
   final String? providerId;
+
+  /// Optional per-conversation model override.
+  final String? model;
   final String? systemPrompt;
   final bool archived;
   final int createdAt;
@@ -881,6 +904,7 @@ class Conversation extends DataClass implements Insertable<Conversation> {
     required this.id,
     required this.title,
     this.providerId,
+    this.model,
     this.systemPrompt,
     required this.archived,
     required this.createdAt,
@@ -893,6 +917,9 @@ class Conversation extends DataClass implements Insertable<Conversation> {
     map['title'] = Variable<String>(title);
     if (!nullToAbsent || providerId != null) {
       map['provider_id'] = Variable<String>(providerId);
+    }
+    if (!nullToAbsent || model != null) {
+      map['model'] = Variable<String>(model);
     }
     if (!nullToAbsent || systemPrompt != null) {
       map['system_prompt'] = Variable<String>(systemPrompt);
@@ -910,6 +937,9 @@ class Conversation extends DataClass implements Insertable<Conversation> {
       providerId: providerId == null && nullToAbsent
           ? const Value.absent()
           : Value(providerId),
+      model: model == null && nullToAbsent
+          ? const Value.absent()
+          : Value(model),
       systemPrompt: systemPrompt == null && nullToAbsent
           ? const Value.absent()
           : Value(systemPrompt),
@@ -928,6 +958,7 @@ class Conversation extends DataClass implements Insertable<Conversation> {
       id: serializer.fromJson<String>(json['id']),
       title: serializer.fromJson<String>(json['title']),
       providerId: serializer.fromJson<String?>(json['providerId']),
+      model: serializer.fromJson<String?>(json['model']),
       systemPrompt: serializer.fromJson<String?>(json['systemPrompt']),
       archived: serializer.fromJson<bool>(json['archived']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
@@ -941,6 +972,7 @@ class Conversation extends DataClass implements Insertable<Conversation> {
       'id': serializer.toJson<String>(id),
       'title': serializer.toJson<String>(title),
       'providerId': serializer.toJson<String?>(providerId),
+      'model': serializer.toJson<String?>(model),
       'systemPrompt': serializer.toJson<String?>(systemPrompt),
       'archived': serializer.toJson<bool>(archived),
       'createdAt': serializer.toJson<int>(createdAt),
@@ -952,6 +984,7 @@ class Conversation extends DataClass implements Insertable<Conversation> {
     String? id,
     String? title,
     Value<String?> providerId = const Value.absent(),
+    Value<String?> model = const Value.absent(),
     Value<String?> systemPrompt = const Value.absent(),
     bool? archived,
     int? createdAt,
@@ -960,6 +993,7 @@ class Conversation extends DataClass implements Insertable<Conversation> {
     id: id ?? this.id,
     title: title ?? this.title,
     providerId: providerId.present ? providerId.value : this.providerId,
+    model: model.present ? model.value : this.model,
     systemPrompt: systemPrompt.present ? systemPrompt.value : this.systemPrompt,
     archived: archived ?? this.archived,
     createdAt: createdAt ?? this.createdAt,
@@ -972,6 +1006,7 @@ class Conversation extends DataClass implements Insertable<Conversation> {
       providerId: data.providerId.present
           ? data.providerId.value
           : this.providerId,
+      model: data.model.present ? data.model.value : this.model,
       systemPrompt: data.systemPrompt.present
           ? data.systemPrompt.value
           : this.systemPrompt,
@@ -987,6 +1022,7 @@ class Conversation extends DataClass implements Insertable<Conversation> {
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('providerId: $providerId, ')
+          ..write('model: $model, ')
           ..write('systemPrompt: $systemPrompt, ')
           ..write('archived: $archived, ')
           ..write('createdAt: $createdAt, ')
@@ -1000,6 +1036,7 @@ class Conversation extends DataClass implements Insertable<Conversation> {
     id,
     title,
     providerId,
+    model,
     systemPrompt,
     archived,
     createdAt,
@@ -1012,6 +1049,7 @@ class Conversation extends DataClass implements Insertable<Conversation> {
           other.id == this.id &&
           other.title == this.title &&
           other.providerId == this.providerId &&
+          other.model == this.model &&
           other.systemPrompt == this.systemPrompt &&
           other.archived == this.archived &&
           other.createdAt == this.createdAt &&
@@ -1022,6 +1060,7 @@ class ConversationsCompanion extends UpdateCompanion<Conversation> {
   final Value<String> id;
   final Value<String> title;
   final Value<String?> providerId;
+  final Value<String?> model;
   final Value<String?> systemPrompt;
   final Value<bool> archived;
   final Value<int> createdAt;
@@ -1031,6 +1070,7 @@ class ConversationsCompanion extends UpdateCompanion<Conversation> {
     this.id = const Value.absent(),
     this.title = const Value.absent(),
     this.providerId = const Value.absent(),
+    this.model = const Value.absent(),
     this.systemPrompt = const Value.absent(),
     this.archived = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1041,6 +1081,7 @@ class ConversationsCompanion extends UpdateCompanion<Conversation> {
     required String id,
     this.title = const Value.absent(),
     this.providerId = const Value.absent(),
+    this.model = const Value.absent(),
     this.systemPrompt = const Value.absent(),
     this.archived = const Value.absent(),
     required int createdAt,
@@ -1053,6 +1094,7 @@ class ConversationsCompanion extends UpdateCompanion<Conversation> {
     Expression<String>? id,
     Expression<String>? title,
     Expression<String>? providerId,
+    Expression<String>? model,
     Expression<String>? systemPrompt,
     Expression<bool>? archived,
     Expression<int>? createdAt,
@@ -1063,6 +1105,7 @@ class ConversationsCompanion extends UpdateCompanion<Conversation> {
       if (id != null) 'id': id,
       if (title != null) 'title': title,
       if (providerId != null) 'provider_id': providerId,
+      if (model != null) 'model': model,
       if (systemPrompt != null) 'system_prompt': systemPrompt,
       if (archived != null) 'archived': archived,
       if (createdAt != null) 'created_at': createdAt,
@@ -1075,6 +1118,7 @@ class ConversationsCompanion extends UpdateCompanion<Conversation> {
     Value<String>? id,
     Value<String>? title,
     Value<String?>? providerId,
+    Value<String?>? model,
     Value<String?>? systemPrompt,
     Value<bool>? archived,
     Value<int>? createdAt,
@@ -1085,6 +1129,7 @@ class ConversationsCompanion extends UpdateCompanion<Conversation> {
       id: id ?? this.id,
       title: title ?? this.title,
       providerId: providerId ?? this.providerId,
+      model: model ?? this.model,
       systemPrompt: systemPrompt ?? this.systemPrompt,
       archived: archived ?? this.archived,
       createdAt: createdAt ?? this.createdAt,
@@ -1104,6 +1149,9 @@ class ConversationsCompanion extends UpdateCompanion<Conversation> {
     }
     if (providerId.present) {
       map['provider_id'] = Variable<String>(providerId.value);
+    }
+    if (model.present) {
+      map['model'] = Variable<String>(model.value);
     }
     if (systemPrompt.present) {
       map['system_prompt'] = Variable<String>(systemPrompt.value);
@@ -1129,6 +1177,7 @@ class ConversationsCompanion extends UpdateCompanion<Conversation> {
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('providerId: $providerId, ')
+          ..write('model: $model, ')
           ..write('systemPrompt: $systemPrompt, ')
           ..write('archived: $archived, ')
           ..write('createdAt: $createdAt, ')
@@ -1210,6 +1259,17 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _attachmentsJsonMeta = const VerificationMeta(
+    'attachmentsJson',
+  );
+  @override
+  late final GeneratedColumn<String> attachmentsJson = GeneratedColumn<String>(
+    'attachments_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _toolCallIdMeta = const VerificationMeta(
     'toolCallId',
   );
@@ -1250,6 +1310,7 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     content,
     reasoning,
     toolCallsJson,
+    attachmentsJson,
     toolCallId,
     status,
     createdAt,
@@ -1311,6 +1372,15 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         ),
       );
     }
+    if (data.containsKey('attachments_json')) {
+      context.handle(
+        _attachmentsJsonMeta,
+        attachmentsJson.isAcceptableOrUnknown(
+          data['attachments_json']!,
+          _attachmentsJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('tool_call_id')) {
       context.handle(
         _toolCallIdMeta,
@@ -1367,6 +1437,10 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         DriftSqlType.string,
         data['${effectivePrefix}tool_calls_json'],
       ),
+      attachmentsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}attachments_json'],
+      ),
       toolCallId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}tool_call_id'],
@@ -1398,6 +1472,9 @@ class Message extends DataClass implements Insertable<Message> {
   final String? reasoning;
   final String? toolCallsJson;
 
+  /// JSON list of image or text-file attachments.
+  final String? attachmentsJson;
+
   /// OpenAI `tool_call_id` for a tool-result message.
   final String? toolCallId;
 
@@ -1411,6 +1488,7 @@ class Message extends DataClass implements Insertable<Message> {
     required this.content,
     this.reasoning,
     this.toolCallsJson,
+    this.attachmentsJson,
     this.toolCallId,
     required this.status,
     required this.createdAt,
@@ -1427,6 +1505,9 @@ class Message extends DataClass implements Insertable<Message> {
     }
     if (!nullToAbsent || toolCallsJson != null) {
       map['tool_calls_json'] = Variable<String>(toolCallsJson);
+    }
+    if (!nullToAbsent || attachmentsJson != null) {
+      map['attachments_json'] = Variable<String>(attachmentsJson);
     }
     if (!nullToAbsent || toolCallId != null) {
       map['tool_call_id'] = Variable<String>(toolCallId);
@@ -1448,6 +1529,9 @@ class Message extends DataClass implements Insertable<Message> {
       toolCallsJson: toolCallsJson == null && nullToAbsent
           ? const Value.absent()
           : Value(toolCallsJson),
+      attachmentsJson: attachmentsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(attachmentsJson),
       toolCallId: toolCallId == null && nullToAbsent
           ? const Value.absent()
           : Value(toolCallId),
@@ -1468,6 +1552,7 @@ class Message extends DataClass implements Insertable<Message> {
       content: serializer.fromJson<String>(json['content']),
       reasoning: serializer.fromJson<String?>(json['reasoning']),
       toolCallsJson: serializer.fromJson<String?>(json['toolCallsJson']),
+      attachmentsJson: serializer.fromJson<String?>(json['attachmentsJson']),
       toolCallId: serializer.fromJson<String?>(json['toolCallId']),
       status: serializer.fromJson<String>(json['status']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
@@ -1483,6 +1568,7 @@ class Message extends DataClass implements Insertable<Message> {
       'content': serializer.toJson<String>(content),
       'reasoning': serializer.toJson<String?>(reasoning),
       'toolCallsJson': serializer.toJson<String?>(toolCallsJson),
+      'attachmentsJson': serializer.toJson<String?>(attachmentsJson),
       'toolCallId': serializer.toJson<String?>(toolCallId),
       'status': serializer.toJson<String>(status),
       'createdAt': serializer.toJson<int>(createdAt),
@@ -1496,6 +1582,7 @@ class Message extends DataClass implements Insertable<Message> {
     String? content,
     Value<String?> reasoning = const Value.absent(),
     Value<String?> toolCallsJson = const Value.absent(),
+    Value<String?> attachmentsJson = const Value.absent(),
     Value<String?> toolCallId = const Value.absent(),
     String? status,
     int? createdAt,
@@ -1508,6 +1595,9 @@ class Message extends DataClass implements Insertable<Message> {
     toolCallsJson: toolCallsJson.present
         ? toolCallsJson.value
         : this.toolCallsJson,
+    attachmentsJson: attachmentsJson.present
+        ? attachmentsJson.value
+        : this.attachmentsJson,
     toolCallId: toolCallId.present ? toolCallId.value : this.toolCallId,
     status: status ?? this.status,
     createdAt: createdAt ?? this.createdAt,
@@ -1524,6 +1614,9 @@ class Message extends DataClass implements Insertable<Message> {
       toolCallsJson: data.toolCallsJson.present
           ? data.toolCallsJson.value
           : this.toolCallsJson,
+      attachmentsJson: data.attachmentsJson.present
+          ? data.attachmentsJson.value
+          : this.attachmentsJson,
       toolCallId: data.toolCallId.present
           ? data.toolCallId.value
           : this.toolCallId,
@@ -1541,6 +1634,7 @@ class Message extends DataClass implements Insertable<Message> {
           ..write('content: $content, ')
           ..write('reasoning: $reasoning, ')
           ..write('toolCallsJson: $toolCallsJson, ')
+          ..write('attachmentsJson: $attachmentsJson, ')
           ..write('toolCallId: $toolCallId, ')
           ..write('status: $status, ')
           ..write('createdAt: $createdAt')
@@ -1556,6 +1650,7 @@ class Message extends DataClass implements Insertable<Message> {
     content,
     reasoning,
     toolCallsJson,
+    attachmentsJson,
     toolCallId,
     status,
     createdAt,
@@ -1570,6 +1665,7 @@ class Message extends DataClass implements Insertable<Message> {
           other.content == this.content &&
           other.reasoning == this.reasoning &&
           other.toolCallsJson == this.toolCallsJson &&
+          other.attachmentsJson == this.attachmentsJson &&
           other.toolCallId == this.toolCallId &&
           other.status == this.status &&
           other.createdAt == this.createdAt);
@@ -1582,6 +1678,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   final Value<String> content;
   final Value<String?> reasoning;
   final Value<String?> toolCallsJson;
+  final Value<String?> attachmentsJson;
   final Value<String?> toolCallId;
   final Value<String> status;
   final Value<int> createdAt;
@@ -1593,6 +1690,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.content = const Value.absent(),
     this.reasoning = const Value.absent(),
     this.toolCallsJson = const Value.absent(),
+    this.attachmentsJson = const Value.absent(),
     this.toolCallId = const Value.absent(),
     this.status = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1605,6 +1703,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.content = const Value.absent(),
     this.reasoning = const Value.absent(),
     this.toolCallsJson = const Value.absent(),
+    this.attachmentsJson = const Value.absent(),
     this.toolCallId = const Value.absent(),
     this.status = const Value.absent(),
     required int createdAt,
@@ -1620,6 +1719,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Expression<String>? content,
     Expression<String>? reasoning,
     Expression<String>? toolCallsJson,
+    Expression<String>? attachmentsJson,
     Expression<String>? toolCallId,
     Expression<String>? status,
     Expression<int>? createdAt,
@@ -1632,6 +1732,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       if (content != null) 'content': content,
       if (reasoning != null) 'reasoning': reasoning,
       if (toolCallsJson != null) 'tool_calls_json': toolCallsJson,
+      if (attachmentsJson != null) 'attachments_json': attachmentsJson,
       if (toolCallId != null) 'tool_call_id': toolCallId,
       if (status != null) 'status': status,
       if (createdAt != null) 'created_at': createdAt,
@@ -1646,6 +1747,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Value<String>? content,
     Value<String?>? reasoning,
     Value<String?>? toolCallsJson,
+    Value<String?>? attachmentsJson,
     Value<String?>? toolCallId,
     Value<String>? status,
     Value<int>? createdAt,
@@ -1658,6 +1760,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       content: content ?? this.content,
       reasoning: reasoning ?? this.reasoning,
       toolCallsJson: toolCallsJson ?? this.toolCallsJson,
+      attachmentsJson: attachmentsJson ?? this.attachmentsJson,
       toolCallId: toolCallId ?? this.toolCallId,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
@@ -1686,6 +1789,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     if (toolCallsJson.present) {
       map['tool_calls_json'] = Variable<String>(toolCallsJson.value);
     }
+    if (attachmentsJson.present) {
+      map['attachments_json'] = Variable<String>(attachmentsJson.value);
+    }
     if (toolCallId.present) {
       map['tool_call_id'] = Variable<String>(toolCallId.value);
     }
@@ -1710,6 +1816,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
           ..write('content: $content, ')
           ..write('reasoning: $reasoning, ')
           ..write('toolCallsJson: $toolCallsJson, ')
+          ..write('attachmentsJson: $attachmentsJson, ')
           ..write('toolCallId: $toolCallId, ')
           ..write('status: $status, ')
           ..write('createdAt: $createdAt, ')
@@ -5590,6 +5697,7 @@ typedef $$ConversationsTableCreateCompanionBuilder =
       required String id,
       Value<String> title,
       Value<String?> providerId,
+      Value<String?> model,
       Value<String?> systemPrompt,
       Value<bool> archived,
       required int createdAt,
@@ -5601,6 +5709,7 @@ typedef $$ConversationsTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> title,
       Value<String?> providerId,
+      Value<String?> model,
       Value<String?> systemPrompt,
       Value<bool> archived,
       Value<int> createdAt,
@@ -5670,6 +5779,11 @@ class $$ConversationsTableFilterComposer
 
   ColumnFilters<String> get title => $composableBuilder(
     column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get model => $composableBuilder(
+    column: $table.model,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5761,6 +5875,11 @@ class $$ConversationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get systemPrompt => $composableBuilder(
     column: $table.systemPrompt,
     builder: (column) => ColumnOrderings(column),
@@ -5819,6 +5938,9 @@ class $$ConversationsTableAnnotationComposer
 
   GeneratedColumn<String> get title =>
       $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => column);
 
   GeneratedColumn<String> get systemPrompt => $composableBuilder(
     column: $table.systemPrompt,
@@ -5914,6 +6036,7 @@ class $$ConversationsTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<String?> providerId = const Value.absent(),
+                Value<String?> model = const Value.absent(),
                 Value<String?> systemPrompt = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
@@ -5923,6 +6046,7 @@ class $$ConversationsTableTableManager
                 id: id,
                 title: title,
                 providerId: providerId,
+                model: model,
                 systemPrompt: systemPrompt,
                 archived: archived,
                 createdAt: createdAt,
@@ -5934,6 +6058,7 @@ class $$ConversationsTableTableManager
                 required String id,
                 Value<String> title = const Value.absent(),
                 Value<String?> providerId = const Value.absent(),
+                Value<String?> model = const Value.absent(),
                 Value<String?> systemPrompt = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
                 required int createdAt,
@@ -5943,6 +6068,7 @@ class $$ConversationsTableTableManager
                 id: id,
                 title: title,
                 providerId: providerId,
+                model: model,
                 systemPrompt: systemPrompt,
                 archived: archived,
                 createdAt: createdAt,
@@ -6042,6 +6168,7 @@ typedef $$MessagesTableCreateCompanionBuilder = MessagesCompanion Function({
   Value<String> content,
   Value<String?> reasoning,
   Value<String?> toolCallsJson,
+  Value<String?> attachmentsJson,
   Value<String?> toolCallId,
   Value<String> status,
   required int createdAt,
@@ -6054,6 +6181,7 @@ typedef $$MessagesTableUpdateCompanionBuilder = MessagesCompanion Function({
   Value<String> content,
   Value<String?> reasoning,
   Value<String?> toolCallsJson,
+  Value<String?> attachmentsJson,
   Value<String?> toolCallId,
   Value<String> status,
   Value<int> createdAt,
@@ -6114,6 +6242,11 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<String> get toolCallsJson => $composableBuilder(
     column: $table.toolCallsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get attachmentsJson => $composableBuilder(
+    column: $table.attachmentsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6190,6 +6323,11 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get attachmentsJson => $composableBuilder(
+    column: $table.attachmentsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get toolCallId => $composableBuilder(
     column: $table.toolCallId,
     builder: (column) => ColumnOrderings(column),
@@ -6252,6 +6390,11 @@ class $$MessagesTableAnnotationComposer
 
   GeneratedColumn<String> get toolCallsJson => $composableBuilder(
     column: $table.toolCallsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get attachmentsJson => $composableBuilder(
+    column: $table.attachmentsJson,
     builder: (column) => column,
   );
 
@@ -6324,6 +6467,7 @@ class $$MessagesTableTableManager
                 Value<String> content = const Value.absent(),
                 Value<String?> reasoning = const Value.absent(),
                 Value<String?> toolCallsJson = const Value.absent(),
+                Value<String?> attachmentsJson = const Value.absent(),
                 Value<String?> toolCallId = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
@@ -6335,6 +6479,7 @@ class $$MessagesTableTableManager
                 content: content,
                 reasoning: reasoning,
                 toolCallsJson: toolCallsJson,
+                attachmentsJson: attachmentsJson,
                 toolCallId: toolCallId,
                 status: status,
                 createdAt: createdAt,
@@ -6348,6 +6493,7 @@ class $$MessagesTableTableManager
                 Value<String> content = const Value.absent(),
                 Value<String?> reasoning = const Value.absent(),
                 Value<String?> toolCallsJson = const Value.absent(),
+                Value<String?> attachmentsJson = const Value.absent(),
                 Value<String?> toolCallId = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 required int createdAt,
@@ -6359,6 +6505,7 @@ class $$MessagesTableTableManager
                 content: content,
                 reasoning: reasoning,
                 toolCallsJson: toolCallsJson,
+                attachmentsJson: attachmentsJson,
                 toolCallId: toolCallId,
                 status: status,
                 createdAt: createdAt,
