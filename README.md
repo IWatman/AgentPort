@@ -14,7 +14,7 @@ Android AI chat client with a built-in MCP marketplace and remote control for [O
 - Let the model call MCP tools from chat, with automatic read-only calls and approval for write tools.
 - Control OpenCode sessions from your phone: pair by QR or URL, read transcripts, send prompts, stream replies, stop, and switch agent/model.
 - Local encrypted storage for chats, keys, and tokens.
-- Stable-channel update client with signed APK downloads; in-app update prompts are in progress.
+- Automatic stable-channel update checks with a popup, release notes, progress, checksum verification, and the Android installer.
 - English and Russian UI.
 
 ## Platform
@@ -97,6 +97,8 @@ Release builds are signed by CI. Local release builds use `android/key.propertie
 ### Releases
 
 Releases are cut from `main` by pushing a `vX.Y.Z` tag. GitHub Actions builds and signs the universal APK, publishes SHA-256 checksums, and creates a stable GitHub Release. See [Releasing](docs/RELEASING.md) for secrets, versioning, and checksum verification.
+
+The app checks for stable updates once per day when automatic checks are enabled, or on demand from **Settings → Check for updates**. A newer release opens a popup with its notes; the APK is downloaded with progress, verified against the published checksum, and handed to the Android installer.
 
 ## Connect OpenCode
 
