@@ -26,7 +26,9 @@ void main() {
     await database.customSelect('SELECT tool_call_id FROM messages').get();
     await database.customSelect('SELECT name FROM mcp_tools').get();
     await database.customSelect('SELECT name FROM marketplaces').get();
-    await database.customSelect('SELECT base_url FROM opencode_connections').get();
+    await database
+        .customSelect('SELECT base_url FROM opencode_connections')
+        .get();
 
     expect(database.schemaVersion, 6);
   });
