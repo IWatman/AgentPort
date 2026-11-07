@@ -732,7 +732,7 @@ Done: a full chat works with the user's key.
 - Approval UI.
 - Fake MCP server for tests.
 
-Current status: Streamable HTTP client, tool discovery/cache, and the Connections UI are implemented. The chat tool loop and approval dialog remain.
+Current status: Streamable HTTP client, tool discovery/cache, Connections UI, the chat tool loop, and the approval dialog are implemented. Legacy SSE transport and verification against a live MCP server with cached tools remain.
 
 Done: the model invokes an external MCP tool.
 
@@ -783,6 +783,8 @@ Done: a user installs a plugin, taps "Connect", logs in through the browser, and
 - Agent/model.
 - Manual URL entry.
 - Minimum supported OpenCode version: 2.2.5.
+
+Current status: pairing payload/link parser, code redemption, Basic auth, REST endpoints, SSE events, and the version check are implemented and tested. The QR scanner and session UI remain.
 
 Done: the phone controls an OpenCode session.
 

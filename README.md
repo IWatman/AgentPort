@@ -11,7 +11,8 @@ Android AI chat client with a built-in MCP marketplace and remote control for [O
 - Attach photos and text files, switch models per conversation, and use voice input.
 - Browse MCP connectors from Claude-compatible plugin marketplaces.
 - Install remote MCP servers from marketplace plugins and configure header authorization in Connections.
-- Control OpenCode sessions from your phone: pair by QR, send prompts, stream responses, stop, switch agent/model.
+- Let the model call MCP tools from chat, with automatic read-only calls and approval for write tools.
+- OpenCode pairing and API client are implemented; the remote-control UI is in progress.
 - Local encrypted storage for chats, keys, and tokens.
 - Updates from GitHub Releases (stable channel).
 - English and Russian UI.
@@ -29,6 +30,7 @@ Remote MCP servers only, over HTTPS (`http`, `streamable-http`, `sse`). Streamab
 - Use **+** in the composer to attach a photo or a text file. Attachments are stored in the encrypted database with the message.
 - Tap the model bar under the composer to choose a model for this conversation. DeepSeek models are shown as **DeepSeek V4.1 Flash** and **DeepSeek V4 Pro**.
 - Use the microphone button for device speech recognition; recognized text is inserted into the composer.
+- When an MCP server has cached tools, the model can call them during a reply. Read-only tools run automatically; tools marked for approval show an **Allow / Deny** dialog. Denials and tool errors are returned to the model, and a turn stops after four tool rounds.
 
 ## Marketplace
 
@@ -70,7 +72,7 @@ Marketplace tables store no secret values (OAuth tokens, API keys, or resolved h
 - Servers can be enabled or disabled without uninstalling the plugin.
 - Tool details are shown with a read-only / requires-approval hint.
 
-Current transport support: **Streamable HTTP over HTTPS**. Legacy SSE transport is listed but not connected yet. Browser OAuth discovery and automatic token refresh are not implemented yet; use a manual API key or header for now. Invoking tools from chat is the next step.
+Current transport support: **Streamable HTTP over HTTPS**. Legacy SSE transport is listed but not connected yet. Browser OAuth discovery and automatic token refresh are not implemented yet; use a manual API key or header for now. Cached tools are available to the model in chat; tool calls stream through the same OpenAI-compatible request loop.
 
 ## Build
 
@@ -104,7 +106,7 @@ opencode pair
 
 Scan the QR code in AgentPort. For a remote connection use `opencode pair --remote`, or pass a custom URL with `opencode pair --url https://your-host`.
 
-Minimum supported OpenCode version: **2.2.5**. The OpenCode API v2 is experimental.
+Minimum supported OpenCode version: **2.2.5**. The OpenCode API v2 is experimental. The pairing parser, code redemption, REST client, and SSE event stream are implemented; the pairing and session screens are next.
 
 ## Documentation
 
