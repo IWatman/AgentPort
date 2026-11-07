@@ -94,6 +94,10 @@ The APK is written to `build/app/outputs/flutter-apk/app-release.apk`.
 
 Release builds are signed by CI. Local release builds use `android/key.properties` if present.
 
+### Releases
+
+Releases are cut from `main` by pushing a `vX.Y.Z` tag. GitHub Actions builds and signs the universal APK, publishes SHA-256 checksums, and creates a stable GitHub Release. See [Releasing](docs/RELEASING.md) for secrets, versioning, and checksum verification.
+
 ## Connect OpenCode
 
 On the computer:
@@ -111,6 +115,7 @@ Minimum supported OpenCode version: **2.2.5**. The OpenCode API v2 is experiment
 ## Documentation
 
 - [Development plan](PLAN.md)
+- [Release guide](docs/RELEASING.md)
 - [Privacy policy](docs/PRIVACY.md)
 
 ## License
