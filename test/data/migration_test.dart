@@ -27,6 +27,6 @@ void main() {
     await database.customSelect('SELECT name FROM mcp_tools').get();
     await database.customSelect('SELECT name FROM marketplaces').get();
 
-    expect(database.schemaVersion, 5);
+    expect(database.schemaVersion, 6);
   });
 }
