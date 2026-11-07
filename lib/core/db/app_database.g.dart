@@ -5123,6 +5123,467 @@ class McpToolEntriesCompanion extends UpdateCompanion<McpToolEntry> {
   }
 }
 
+class $OpenCodeConnectionEntriesTable extends OpenCodeConnectionEntries
+    with TableInfo<$OpenCodeConnectionEntriesTable, OpenCodeConnectionEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OpenCodeConnectionEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _baseUrlMeta = const VerificationMeta(
+    'baseUrl',
+  );
+  @override
+  late final GeneratedColumn<String> baseUrl = GeneratedColumn<String>(
+    'base_url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _usernameMeta = const VerificationMeta(
+    'username',
+  );
+  @override
+  late final GeneratedColumn<String> username = GeneratedColumn<String>(
+    'username',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('opencode'),
+  );
+  static const VerificationMeta _tokenRefMeta = const VerificationMeta(
+    'tokenRef',
+  );
+  @override
+  late final GeneratedColumn<String> tokenRef = GeneratedColumn<String>(
+    'token_ref',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastSeenMeta = const VerificationMeta(
+    'lastSeen',
+  );
+  @override
+  late final GeneratedColumn<int> lastSeen = GeneratedColumn<int>(
+    'last_seen',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    baseUrl,
+    username,
+    tokenRef,
+    lastSeen,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'opencode_connections';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OpenCodeConnectionEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('base_url')) {
+      context.handle(
+        _baseUrlMeta,
+        baseUrl.isAcceptableOrUnknown(data['base_url']!, _baseUrlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_baseUrlMeta);
+    }
+    if (data.containsKey('username')) {
+      context.handle(
+        _usernameMeta,
+        username.isAcceptableOrUnknown(data['username']!, _usernameMeta),
+      );
+    }
+    if (data.containsKey('token_ref')) {
+      context.handle(
+        _tokenRefMeta,
+        tokenRef.isAcceptableOrUnknown(data['token_ref']!, _tokenRefMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tokenRefMeta);
+    }
+    if (data.containsKey('last_seen')) {
+      context.handle(
+        _lastSeenMeta,
+        lastSeen.isAcceptableOrUnknown(data['last_seen']!, _lastSeenMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  OpenCodeConnectionEntry map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OpenCodeConnectionEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      baseUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}base_url'],
+      )!,
+      username: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}username'],
+      )!,
+      tokenRef: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}token_ref'],
+      )!,
+      lastSeen: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_seen'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $OpenCodeConnectionEntriesTable createAlias(String alias) {
+    return $OpenCodeConnectionEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class OpenCodeConnectionEntry extends DataClass
+    implements Insertable<OpenCodeConnectionEntry> {
+  final String id;
+  final String name;
+  final String baseUrl;
+  final String username;
+  final String tokenRef;
+  final int? lastSeen;
+  final int createdAt;
+  const OpenCodeConnectionEntry({
+    required this.id,
+    required this.name,
+    required this.baseUrl,
+    required this.username,
+    required this.tokenRef,
+    this.lastSeen,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['base_url'] = Variable<String>(baseUrl);
+    map['username'] = Variable<String>(username);
+    map['token_ref'] = Variable<String>(tokenRef);
+    if (!nullToAbsent || lastSeen != null) {
+      map['last_seen'] = Variable<int>(lastSeen);
+    }
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  OpenCodeConnectionEntriesCompanion toCompanion(bool nullToAbsent) {
+    return OpenCodeConnectionEntriesCompanion(
+      id: Value(id),
+      name: Value(name),
+      baseUrl: Value(baseUrl),
+      username: Value(username),
+      tokenRef: Value(tokenRef),
+      lastSeen: lastSeen == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSeen),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory OpenCodeConnectionEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OpenCodeConnectionEntry(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      baseUrl: serializer.fromJson<String>(json['baseUrl']),
+      username: serializer.fromJson<String>(json['username']),
+      tokenRef: serializer.fromJson<String>(json['tokenRef']),
+      lastSeen: serializer.fromJson<int?>(json['lastSeen']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'baseUrl': serializer.toJson<String>(baseUrl),
+      'username': serializer.toJson<String>(username),
+      'tokenRef': serializer.toJson<String>(tokenRef),
+      'lastSeen': serializer.toJson<int?>(lastSeen),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  OpenCodeConnectionEntry copyWith({
+    String? id,
+    String? name,
+    String? baseUrl,
+    String? username,
+    String? tokenRef,
+    Value<int?> lastSeen = const Value.absent(),
+    int? createdAt,
+  }) => OpenCodeConnectionEntry(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    baseUrl: baseUrl ?? this.baseUrl,
+    username: username ?? this.username,
+    tokenRef: tokenRef ?? this.tokenRef,
+    lastSeen: lastSeen.present ? lastSeen.value : this.lastSeen,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  OpenCodeConnectionEntry copyWithCompanion(
+    OpenCodeConnectionEntriesCompanion data,
+  ) {
+    return OpenCodeConnectionEntry(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      baseUrl: data.baseUrl.present ? data.baseUrl.value : this.baseUrl,
+      username: data.username.present ? data.username.value : this.username,
+      tokenRef: data.tokenRef.present ? data.tokenRef.value : this.tokenRef,
+      lastSeen: data.lastSeen.present ? data.lastSeen.value : this.lastSeen,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OpenCodeConnectionEntry(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('baseUrl: $baseUrl, ')
+          ..write('username: $username, ')
+          ..write('tokenRef: $tokenRef, ')
+          ..write('lastSeen: $lastSeen, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, baseUrl, username, tokenRef, lastSeen, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OpenCodeConnectionEntry &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.baseUrl == this.baseUrl &&
+          other.username == this.username &&
+          other.tokenRef == this.tokenRef &&
+          other.lastSeen == this.lastSeen &&
+          other.createdAt == this.createdAt);
+}
+
+class OpenCodeConnectionEntriesCompanion
+    extends UpdateCompanion<OpenCodeConnectionEntry> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> baseUrl;
+  final Value<String> username;
+  final Value<String> tokenRef;
+  final Value<int?> lastSeen;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const OpenCodeConnectionEntriesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.baseUrl = const Value.absent(),
+    this.username = const Value.absent(),
+    this.tokenRef = const Value.absent(),
+    this.lastSeen = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OpenCodeConnectionEntriesCompanion.insert({
+    required String id,
+    required String name,
+    required String baseUrl,
+    this.username = const Value.absent(),
+    required String tokenRef,
+    this.lastSeen = const Value.absent(),
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       baseUrl = Value(baseUrl),
+       tokenRef = Value(tokenRef),
+       createdAt = Value(createdAt);
+  static Insertable<OpenCodeConnectionEntry> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? baseUrl,
+    Expression<String>? username,
+    Expression<String>? tokenRef,
+    Expression<int>? lastSeen,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (baseUrl != null) 'base_url': baseUrl,
+      if (username != null) 'username': username,
+      if (tokenRef != null) 'token_ref': tokenRef,
+      if (lastSeen != null) 'last_seen': lastSeen,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OpenCodeConnectionEntriesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? baseUrl,
+    Value<String>? username,
+    Value<String>? tokenRef,
+    Value<int?>? lastSeen,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return OpenCodeConnectionEntriesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      baseUrl: baseUrl ?? this.baseUrl,
+      username: username ?? this.username,
+      tokenRef: tokenRef ?? this.tokenRef,
+      lastSeen: lastSeen ?? this.lastSeen,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (baseUrl.present) {
+      map['base_url'] = Variable<String>(baseUrl.value);
+    }
+    if (username.present) {
+      map['username'] = Variable<String>(username.value);
+    }
+    if (tokenRef.present) {
+      map['token_ref'] = Variable<String>(tokenRef.value);
+    }
+    if (lastSeen.present) {
+      map['last_seen'] = Variable<int>(lastSeen.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OpenCodeConnectionEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('baseUrl: $baseUrl, ')
+          ..write('username: $username, ')
+          ..write('tokenRef: $tokenRef, ')
+          ..write('lastSeen: $lastSeen, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5140,6 +5601,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $McpToolEntriesTable mcpToolEntries = $McpToolEntriesTable(this);
+  late final $OpenCodeConnectionEntriesTable openCodeConnectionEntries =
+      $OpenCodeConnectionEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5153,6 +5616,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     marketplacePluginEntries,
     mcpServerEntries,
     mcpToolEntries,
+    openCodeConnectionEntries,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -8793,6 +9257,275 @@ typedef $$McpToolEntriesTableProcessedTableManager =
       McpToolEntry,
       PrefetchHooks Function({bool serverId})
     >;
+typedef $$OpenCodeConnectionEntriesTableCreateCompanionBuilder =
+    OpenCodeConnectionEntriesCompanion Function({
+      required String id,
+      required String name,
+      required String baseUrl,
+      Value<String> username,
+      required String tokenRef,
+      Value<int?> lastSeen,
+      required int createdAt,
+      Value<int> rowid,
+    });
+typedef $$OpenCodeConnectionEntriesTableUpdateCompanionBuilder =
+    OpenCodeConnectionEntriesCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> baseUrl,
+      Value<String> username,
+      Value<String> tokenRef,
+      Value<int?> lastSeen,
+      Value<int> createdAt,
+      Value<int> rowid,
+    });
+
+class $$OpenCodeConnectionEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $OpenCodeConnectionEntriesTable> {
+  $$OpenCodeConnectionEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get baseUrl => $composableBuilder(
+    column: $table.baseUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get username => $composableBuilder(
+    column: $table.username,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tokenRef => $composableBuilder(
+    column: $table.tokenRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastSeen => $composableBuilder(
+    column: $table.lastSeen,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$OpenCodeConnectionEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $OpenCodeConnectionEntriesTable> {
+  $$OpenCodeConnectionEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get baseUrl => $composableBuilder(
+    column: $table.baseUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get username => $composableBuilder(
+    column: $table.username,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tokenRef => $composableBuilder(
+    column: $table.tokenRef,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastSeen => $composableBuilder(
+    column: $table.lastSeen,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$OpenCodeConnectionEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OpenCodeConnectionEntriesTable> {
+  $$OpenCodeConnectionEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get baseUrl =>
+      $composableBuilder(column: $table.baseUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get username =>
+      $composableBuilder(column: $table.username, builder: (column) => column);
+
+  GeneratedColumn<String> get tokenRef =>
+      $composableBuilder(column: $table.tokenRef, builder: (column) => column);
+
+  GeneratedColumn<int> get lastSeen =>
+      $composableBuilder(column: $table.lastSeen, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$OpenCodeConnectionEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $OpenCodeConnectionEntriesTable,
+          OpenCodeConnectionEntry,
+          $$OpenCodeConnectionEntriesTableFilterComposer,
+          $$OpenCodeConnectionEntriesTableOrderingComposer,
+          $$OpenCodeConnectionEntriesTableAnnotationComposer,
+          $$OpenCodeConnectionEntriesTableCreateCompanionBuilder,
+          $$OpenCodeConnectionEntriesTableUpdateCompanionBuilder,
+          (
+            OpenCodeConnectionEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $OpenCodeConnectionEntriesTable,
+              OpenCodeConnectionEntry
+            >,
+          ),
+          OpenCodeConnectionEntry,
+          PrefetchHooks Function()
+        > {
+  $$OpenCodeConnectionEntriesTableTableManager(
+    _$AppDatabase db,
+    $OpenCodeConnectionEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OpenCodeConnectionEntriesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$OpenCodeConnectionEntriesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$OpenCodeConnectionEntriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> baseUrl = const Value.absent(),
+                Value<String> username = const Value.absent(),
+                Value<String> tokenRef = const Value.absent(),
+                Value<int?> lastSeen = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OpenCodeConnectionEntriesCompanion(
+                id: id,
+                name: name,
+                baseUrl: baseUrl,
+                username: username,
+                tokenRef: tokenRef,
+                lastSeen: lastSeen,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String baseUrl,
+                Value<String> username = const Value.absent(),
+                required String tokenRef,
+                Value<int?> lastSeen = const Value.absent(),
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => OpenCodeConnectionEntriesCompanion.insert(
+                id: id,
+                name: name,
+                baseUrl: baseUrl,
+                username: username,
+                tokenRef: tokenRef,
+                lastSeen: lastSeen,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $OpenCodeConnectionEntriesTable,
+                    OpenCodeConnectionEntry
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $OpenCodeConnectionEntriesTable,
+                    OpenCodeConnectionEntry
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$OpenCodeConnectionEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $OpenCodeConnectionEntriesTable,
+      OpenCodeConnectionEntry,
+      $$OpenCodeConnectionEntriesTableFilterComposer,
+      $$OpenCodeConnectionEntriesTableOrderingComposer,
+      $$OpenCodeConnectionEntriesTableAnnotationComposer,
+      $$OpenCodeConnectionEntriesTableCreateCompanionBuilder,
+      $$OpenCodeConnectionEntriesTableUpdateCompanionBuilder,
+      (
+        OpenCodeConnectionEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $OpenCodeConnectionEntriesTable,
+          OpenCodeConnectionEntry
+        >,
+      ),
+      OpenCodeConnectionEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -8816,4 +9549,9 @@ class $AppDatabaseManager {
       $$McpServerEntriesTableTableManager(_db, _db.mcpServerEntries);
   $$McpToolEntriesTableTableManager get mcpToolEntries =>
       $$McpToolEntriesTableTableManager(_db, _db.mcpToolEntries);
+  $$OpenCodeConnectionEntriesTableTableManager get openCodeConnectionEntries =>
+      $$OpenCodeConnectionEntriesTableTableManager(
+        _db,
+        _db.openCodeConnectionEntries,
+      );
 }

@@ -95,24 +95,75 @@ class OpenCodeClient {
     return _parseSession(value);
   }
 
+  /// Lists agents available on the server.
+  Future<List<OpenCodeAgent>> agents() async {
+    final decoded = await _getJson('api/agent');
+    final list = _readDataList(decoded);
+    final agents = <OpenCodeAgent>[];
+    for (final item in list) {
+      if (item is! Map) {
+        continue;
+      }
+      final map = Map<String, Object?>.from(item);
+      final id = _readString(map['id']);
+      if (id == null) {
+        continue;
+      }
+      agents.add(OpenCodeAgent(id: id, name: _readString(map['name']) ?? id));
+    }
+    return List.unmodifiable(agents);
+  }
+
+  /// Lists chat models available on the server.
+  Future<List<OpenCodeModel>> models() async {
+    final decoded = await _getJson('api/model');
+    final list = _readDataList(decoded);
+    final models = <OpenCodeModel>[];
+    for (final item in list) {
+      if (item is! Map) {
+        continue;
+      }
+      final map = Map<String, Object?>.from(item);
+      final id = _readString(map['id']) ?? _readString(map['modelID']);
+      final providerId = _readString(map['providerID']);
+      if (id == null || providerId == null) {
+        continue;
+      }
+      models.add(
+        OpenCodeModel(
+          id: id,
+          providerId: providerId,
+          name: _readString(map['name']) ?? id,
+        ),
+      );
+    }
+    return List.unmodifiable(models);
+  }
+
+  /// Fetches the transcript of a session.
+  Future<List<OpenCodeMessage>> messages(String id) async {
+    final decoded = await _getJson('api/session/${_segment(id)}/message');
+    final list = _readDataList(decoded);
+    final messages = <OpenCodeMessage>[];
+    for (final item in list) {
+      final message = _parseMessage(item);
+      if (message != null) {
+        messages.add(message);
+      }
+    }
+    return List.unmodifiable(messages);
+  }
+
   /// Sends a prompt to a session.
   ///
   /// The response is acknowledged but not parsed; streamed output arrives via
   /// [events].
-  Future<void> sendPrompt(
-    String id,
-    String prompt, {
-    String? agent,
-    String? model,
-  }) async {
-    final body = <String, Object?>{'prompt': prompt};
-    if (agent != null && agent.trim().isNotEmpty) {
-      body['agent'] = agent.trim();
-    }
-    if (model != null && model.trim().isNotEmpty) {
-      body['model'] = model.trim();
-    }
-    await _request('POST', 'api/session/${_segment(id)}/prompt', body: body);
+  Future<void> sendPrompt(String id, String prompt) async {
+    await _request(
+      'POST',
+      'api/session/${_segment(id)}/prompt',
+      body: {'text': prompt},
+    );
   }
 
   /// Interrupts the current generation in a session.
@@ -137,18 +188,11 @@ class OpenCodeClient {
   }
 
   /// Switches the model used by a session.
-  Future<void> setModel(String id, String model) async {
-    final value = model.trim();
-    if (value.isEmpty) {
-      throw const OpenCodeFailure(
-        OpenCodeFailureKind.invalidPayload,
-        detail: 'Choose a model first.',
-      );
-    }
+  Future<void> setModel(String id, OpenCodeModelRef model) async {
     await _request(
       'POST',
       'api/session/${_segment(id)}/model',
-      body: {'model': value},
+      body: {'model': model.toJson()},
     );
   }
 
@@ -461,6 +505,109 @@ class OpenCodeClient {
           ? value.toInt()
           : (value * 1000).toInt();
       return DateTime.fromMillisecondsSinceEpoch(milliseconds);
+    }
+    return null;
+  }
+
+  String? _readString(Object? value) {
+    if (value is! String) {
+      return null;
+    }
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  List<Object?> _readDataList(Object? decoded) {
+    final Object? list;
+    if (decoded is List) {
+      list = decoded;
+    } else if (decoded is Map) {
+      list = decoded['data'] ?? decoded['items'] ?? decoded['sessions'];
+    } else {
+      list = null;
+    }
+    if (list is! List) {
+      throw const OpenCodeFailure(
+        OpenCodeFailureKind.invalidResponse,
+        detail: 'The OpenCode server returned an invalid list response.',
+      );
+    }
+    return list;
+  }
+
+  OpenCodeMessage? _parseMessage(Object? value) {
+    if (value is! Map) {
+      return null;
+    }
+    final map = Map<String, Object?>.from(value);
+    final id = _readString(map['id']);
+    final type = _readString(map['type']);
+    if (id == null || type == null) {
+      return null;
+    }
+
+    if (type == 'user') {
+      return OpenCodeMessage(
+        id: id,
+        role: 'user',
+        text: _readString(map['text']) ?? '',
+        createdAt: _readTime(map['time'], 'created'),
+      );
+    }
+    if (type != 'assistant') {
+      return null;
+    }
+
+    final text = StringBuffer();
+    final reasoning = StringBuffer();
+    final tools = <String>[];
+    final content = map['content'];
+    if (content is List) {
+      for (final part in content) {
+        if (part is! Map) {
+          continue;
+        }
+        final partMap = Map<String, Object?>.from(part);
+        switch (_readString(partMap['type'])) {
+          case 'text':
+            text.write(_readString(partMap['text']) ?? '');
+            break;
+          case 'reasoning':
+            reasoning.write(_readString(partMap['text']) ?? '');
+            break;
+          case 'tool':
+            final name = _readString(partMap['name']);
+            if (name != null) {
+              tools.add(name);
+            }
+            break;
+        }
+      }
+    }
+
+    return OpenCodeMessage(
+      id: id,
+      role: 'assistant',
+      text: text.toString(),
+      reasoning: reasoning.toString(),
+      tools: List.unmodifiable(tools),
+      createdAt: _readTime(map['time'], 'created'),
+    );
+  }
+
+  DateTime? _readTime(Object? time, String key) {
+    if (time is! Map) {
+      return null;
+    }
+    final value = time[key];
+    if (value is num) {
+      final milliseconds = value > 100000000000
+          ? value.toInt()
+          : (value * 1000).toInt();
+      return DateTime.fromMillisecondsSinceEpoch(milliseconds);
+    }
+    if (value is String) {
+      return DateTime.tryParse(value);
     }
     return null;
   }

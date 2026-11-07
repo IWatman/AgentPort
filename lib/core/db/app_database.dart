@@ -273,6 +273,32 @@ class McpToolEntries extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// A saved OpenCode server connection.
+///
+/// The access token is kept in the Android Keystore; [tokenRef] is only the
+/// lookup key.
+class OpenCodeConnectionEntries extends Table {
+  @override
+  String get tableName => 'opencode_connections';
+
+  TextColumn get id => text()();
+
+  TextColumn get name => text()();
+
+  TextColumn get baseUrl => text()();
+
+  TextColumn get username => text().withDefault(const Constant('opencode'))();
+
+  TextColumn get tokenRef => text()();
+
+  IntColumn get lastSeen => integer().nullable()();
+
+  IntColumn get createdAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     SettingEntries,
@@ -283,13 +309,14 @@ class McpToolEntries extends Table {
     MarketplacePluginEntries,
     McpServerEntries,
     McpToolEntries,
+    OpenCodeConnectionEntries,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -314,6 +341,9 @@ class AppDatabase extends _$AppDatabase {
       if (from < 5 && from >= 2) {
         await migrator.addColumn(conversations, conversations.model);
         await migrator.addColumn(messages, messages.attachmentsJson);
+      }
+      if (from < 6) {
+        await migrator.createTable(openCodeConnectionEntries);
       }
     },
     beforeOpen: (details) async {

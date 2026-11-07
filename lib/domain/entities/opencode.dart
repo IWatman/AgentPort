@@ -99,4 +99,81 @@ class OpenCodeEvent {
 
   /// The decoded JSON object carried by the event.
   final Map<String, Object?> data;
+
+  /// The event-specific payload, when the server wraps it in `data`.
+  Map<String, Object?> get payload {
+    final value = data['data'];
+    return value is Map ? Map<String, Object?>.from(value) : data;
+  }
+
+  String? get sessionId {
+    final value = payload['sessionID'] ?? payload['sessionId'];
+    return value is String && value.isNotEmpty ? value : null;
+  }
+}
+
+/// An agent exposed by `GET /api/agent`.
+class OpenCodeAgent {
+  const OpenCodeAgent({required this.id, required this.name});
+
+  final String id;
+  final String name;
+}
+
+/// A chat model exposed by `GET /api/model`.
+class OpenCodeModel {
+  const OpenCodeModel({
+    required this.id,
+    required this.providerId,
+    required this.name,
+  });
+
+  final String id;
+  final String providerId;
+  final String name;
+
+  OpenCodeModelRef get ref => OpenCodeModelRef(id: id, providerId: providerId);
+}
+
+/// A model reference accepted by the session model endpoint.
+class OpenCodeModelRef {
+  const OpenCodeModelRef({
+    required this.id,
+    required this.providerId,
+    this.variant,
+  });
+
+  final String id;
+  final String providerId;
+  final String? variant;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'providerID': providerId,
+    if (variant != null && variant!.isNotEmpty) 'variant': variant,
+  };
+}
+
+/// A single user or assistant message in an OpenCode session.
+class OpenCodeMessage {
+  const OpenCodeMessage({
+    required this.id,
+    required this.role,
+    required this.text,
+    this.reasoning = '',
+    this.tools = const [],
+    this.createdAt,
+  });
+
+  final String id;
+
+  /// `user` or `assistant`.
+  final String role;
+
+  final String text;
+  final String reasoning;
+  final List<String> tools;
+  final DateTime? createdAt;
+
+  bool get isUser => role == 'user';
 }

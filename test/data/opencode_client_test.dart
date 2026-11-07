@@ -220,7 +220,7 @@ void main() {
       expect(paths, ['/api/session', '/api/session/ses_1']);
     });
 
-    test('sends prompts with agent and model', () async {
+    test('sends prompts using the text field', () async {
       final seen = <http.Request>[];
       final client = OpenCodeClient(
         baseUrl: 'https://example.com',
@@ -231,22 +231,92 @@ void main() {
         }),
       );
 
-      await client.sendPrompt(
-        'ses_1',
-        'Hello',
-        agent: 'build',
-        model: 'deepseek/deepseek-chat',
-      );
+      await client.sendPrompt('ses_1', 'Hello');
 
       final request = seen.single;
       expect(request.method, 'POST');
       expect(request.url.path, '/api/session/ses_1/prompt');
       expect(request.headers['Content-Type'], 'application/json');
-      expect(jsonDecode(request.body), {
-        'prompt': 'Hello',
-        'agent': 'build',
-        'model': 'deepseek/deepseek-chat',
-      });
+      expect(jsonDecode(request.body), {'text': 'Hello'});
+    });
+
+    test('lists agents and models', () async {
+      final paths = <String>[];
+      final client = OpenCodeClient(
+        baseUrl: 'https://example.com',
+        token: 't',
+        clientFactory: () => MockClient((request) async {
+          paths.add(request.url.path);
+          if (request.url.path.endsWith('/api/agent')) {
+            return _json({
+              'data': [
+                {'id': 'build', 'name': 'Build'},
+                {'id': 'plan', 'name': 'Plan'},
+              ],
+            });
+          }
+          return _json({
+            'data': [
+              {
+                'id': 'deepseek-v4-flash',
+                'modelID': 'deepseek-v4-flash',
+                'providerID': 'deepseek',
+                'name': 'DeepSeek V4.1 Flash',
+              },
+            ],
+          });
+        }),
+      );
+
+      final agents = await client.agents();
+      final models = await client.models();
+
+      expect(agents.map((agent) => agent.name), ['Build', 'Plan']);
+      expect(models.single.providerId, 'deepseek');
+      expect(models.single.name, 'DeepSeek V4.1 Flash');
+      expect(paths, ['/api/agent', '/api/model']);
+    });
+
+    test('parses user and assistant transcripts', () async {
+      final client = OpenCodeClient(
+        baseUrl: 'https://example.com',
+        token: 't',
+        clientFactory: () => MockClient(
+          (request) async => _json({
+            'data': [
+              {
+                'id': 'msg_1',
+                'type': 'user',
+                'text': 'Fix the build',
+                'time': {'created': 1762584000000},
+              },
+              {
+                'id': 'msg_2',
+                'type': 'assistant',
+                'time': {'created': 1762584001000},
+                'content': [
+                  {'type': 'reasoning', 'text': 'Thinking'},
+                  {'type': 'text', 'text': 'Done. '},
+                  {'type': 'text', 'text': 'Build is green.'},
+                  {'type': 'tool', 'name': 'bash'},
+                ],
+              },
+              {'id': 'msg_3', 'type': 'system'},
+            ],
+            'cursor': {'next': null, 'previous': null},
+          }),
+        ),
+      );
+
+      final messages = await client.messages('ses_1');
+
+      expect(messages, hasLength(2));
+      expect(messages.first.isUser, isTrue);
+      expect(messages.first.text, 'Fix the build');
+      expect(messages.first.createdAt, isNotNull);
+      expect(messages[1].reasoning, 'Thinking');
+      expect(messages[1].text, 'Done.Build is green.');
+      expect(messages[1].tools, ['bash']);
     });
 
     test('sends interrupt, agent, and model requests', () async {
@@ -262,7 +332,10 @@ void main() {
 
       await client.interrupt('ses_1');
       await client.setAgent('ses_1', 'plan');
-      await client.setModel('ses_1', 'anthropic/claude');
+      await client.setModel(
+        'ses_1',
+        const OpenCodeModelRef(id: 'claude', providerId: 'anthropic'),
+      );
 
       expect(seen.map((request) => request.url.path), [
         '/opencode/api/session/ses_1/interrupt',
@@ -270,7 +343,9 @@ void main() {
         '/opencode/api/session/ses_1/model',
       ]);
       expect(jsonDecode(seen[1].body), {'agent': 'plan'});
-      expect(jsonDecode(seen[2].body), {'model': 'anthropic/claude'});
+      expect(jsonDecode(seen[2].body), {
+        'model': {'id': 'claude', 'providerID': 'anthropic'},
+      });
     });
 
     test('maps 401 to an authorization failure', () async {
@@ -364,6 +439,27 @@ void main() {
       expect(events[1].id, '2');
       expect(events[1].type, 'message.part');
       expect(events[1].data['text'], 'hi');
+    });
+
+    test('exposes the event payload and session id', () async {
+      final client = OpenCodeClient(
+        baseUrl: 'https://example.com',
+        token: 't',
+        clientFactory: () => MockClient(
+          (request) async => http.Response(
+            'data: {"type":"session.text.delta","data":'
+            '{"sessionID":"ses_1","delta":"hi"}}\n\n',
+            200,
+            headers: {'content-type': 'text/event-stream'},
+          ),
+        ),
+      );
+
+      final event = (await client.events().toList()).single;
+
+      expect(event.type, 'session.text.delta');
+      expect(event.sessionId, 'ses_1');
+      expect(event.payload['delta'], 'hi');
     });
 
     test('sends Basic auth and the event-stream accept header', () async {
