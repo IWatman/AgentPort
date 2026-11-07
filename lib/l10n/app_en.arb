@@ -15,7 +15,7 @@
   "onboardingFeatureOpenCodeBody": "Pair by QR, send prompts, and follow live output from your phone.",
   "onboardingLocalFirst": "Local-first. Keys and history stay on this device.",
   "tabChats": "Chats",
-  "tabMarketplace": "Marketplace",
+  "tabMarketplace": "Plugins",
   "tabConnections": "Connections",
   "tabSettings": "Settings",
   "chatsTitle": "Chats",
@@ -23,7 +23,7 @@
   "chatsEmptyBody": "Start a conversation. History and API keys stay encrypted on this device.",
   "newChat": "New chat",
   "newChatComingSoon": "Chats arrive in the next milestone.",
-  "marketplaceTitle": "Marketplace",
+  "marketplaceTitle": "Plugins",
   "marketplacePluginsTab": "Plugins",
   "marketplaceMarketplacesTab": "Marketplaces",
   "marketplaceEmptyTitle": "Nothing installed yet",
@@ -317,9 +317,6 @@
       }
     }
   },
-  "chatModelCustom": "Custom model…",
-  "chatCustomModelTitle": "Custom model",
-  "chatCustomModelHint": "Model ID",
   "chatAttach": "Attach",
   "chatAttachPhoto": "Photo",
   "chatAttachFile": "File",

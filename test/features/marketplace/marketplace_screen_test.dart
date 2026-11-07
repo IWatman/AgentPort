@@ -50,7 +50,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Plugins'), findsOneWidget);
+    expect(find.text('Plugins'), findsWidgets);
     await tester.tap(find.text('Marketplaces'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));

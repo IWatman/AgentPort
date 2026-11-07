@@ -524,12 +524,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     : null,
                 onTap: () => Navigator.of(sheetContext).pop(option.id),
               ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.edit_rounded),
-              title: Text(l10n.chatModelCustom),
-              onTap: () => Navigator.of(sheetContext).pop(_customModelValue),
-            ),
           ],
         ),
       ),
@@ -544,49 +538,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       await controller.selectModel(null);
       return;
     }
-    if (selected == _customModelValue) {
-      final custom = await _promptCustomModel(l10n, current);
-      if (custom != null && custom.isNotEmpty) {
-        await controller.selectModel(custom);
-      }
-      return;
-    }
     await controller.selectModel(selected);
-  }
-
-  Future<String?> _promptCustomModel(
-    AppLocalizations l10n,
-    String current,
-  ) async {
-    final controller = TextEditingController(text: current);
-    final value = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.chatCustomModelTitle),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          autocorrect: false,
-          decoration: InputDecoration(
-            hintText: l10n.chatCustomModelHint,
-            border: const OutlineInputBorder(),
-          ),
-          onSubmitted: (text) => Navigator.of(dialogContext).pop(text),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-            child: Text(l10n.commonSave),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    return value?.trim();
   }
 
   List<ModelOption> _modelSuggestions(AiProvider provider) {
@@ -824,7 +776,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
 const _addProviderValue = '__add_provider__';
 const _defaultModelValue = '__default_model__';
-const _customModelValue = '__custom_model__';
 const _maxAttachmentBytes = 8 * 1024 * 1024;
 const _maxAttachments = 4;
 const _maxTextAttachmentChars = 200000;

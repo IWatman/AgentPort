@@ -15,7 +15,7 @@
   "onboardingFeatureOpenCodeBody": "Пары по QR, отправка промптов и живой вывод с телефона.",
   "onboardingLocalFirst": "Local-first. Ключи и история остаются на этом устройстве.",
   "tabChats": "Чаты",
-  "tabMarketplace": "Маркетплейс",
+  "tabMarketplace": "Плагины",
   "tabConnections": "Подключения",
   "tabSettings": "Настройки",
   "chatsTitle": "Чаты",
@@ -23,7 +23,7 @@
   "chatsEmptyBody": "Начните диалог. История и API-ключи останутся зашифрованными на устройстве.",
   "newChat": "Новый чат",
   "newChatComingSoon": "Чаты появятся на следующем этапе.",
-  "marketplaceTitle": "Маркетплейс",
+  "marketplaceTitle": "Плагины",
   "marketplacePluginsTab": "Плагины",
   "marketplaceMarketplacesTab": "Маркетплейсы",
   "marketplaceEmptyTitle": "Пока ничего не установлено",
@@ -302,9 +302,6 @@
       }
     }
   },
-  "chatModelCustom": "Своя модель…",
-  "chatCustomModelTitle": "Своя модель",
-  "chatCustomModelHint": "ID модели",
   "chatAttach": "Прикрепить",
   "chatAttachPhoto": "Фото",
   "chatAttachFile": "Файл",
