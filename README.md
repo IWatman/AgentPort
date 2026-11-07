@@ -12,9 +12,9 @@ Android AI chat client with a built-in MCP marketplace and remote control for [O
 - Browse MCP connectors from Claude-compatible plugin marketplaces.
 - Install remote MCP servers from marketplace plugins and configure header authorization in Connections.
 - Let the model call MCP tools from chat, with automatic read-only calls and approval for write tools.
-- OpenCode pairing and API client are implemented; the remote-control UI is in progress.
+- Control OpenCode sessions from your phone: pair by QR or URL, read transcripts, send prompts, stream replies, stop, and switch agent/model.
 - Local encrypted storage for chats, keys, and tokens.
-- Updates from GitHub Releases (stable channel).
+- Stable-channel update client with signed APK downloads; in-app update prompts are in progress.
 - English and Russian UI.
 
 ## Platform
@@ -108,9 +108,11 @@ opencode service start
 opencode pair
 ```
 
-Scan the QR code in AgentPort. For a remote connection use `opencode pair --remote`, or pass a custom URL with `opencode pair --url https://your-host`.
+In AgentPort, open **Settings → OpenCode → Pair**. Scan the QR code shown by `opencode pair`, or switch to **Manual** and enter the server URL plus the service password. For a remote connection use `opencode pair --remote`, or pass a custom URL with `opencode pair --url https://your-host`.
 
-Minimum supported OpenCode version: **2.2.5**. The OpenCode API v2 is experimental. The pairing parser, code redemption, REST client, and SSE event stream are implemented; the pairing and session screens are next.
+After pairing, open the connection to browse sessions, read the transcript, and send prompts. The session screen streams live output, shows reasoning blocks and tool chips, supports stop, and lets you switch the agent or model.
+
+Minimum supported OpenCode version: **2.2.5**. The OpenCode API v2 is experimental.
 
 ## Documentation
 

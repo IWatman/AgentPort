@@ -80,7 +80,6 @@ No Google Cloud project, no per-user `client_id`, no native Google OAuth impleme
 - OpenCode approvals, files, diff, terminal, git.
 - Windows client.
 - Cross-device sync.
-- Voice input.
 - Play Store release.
 
 ---
@@ -784,7 +783,7 @@ Done: a user installs a plugin, taps "Connect", logs in through the browser, and
 - Manual URL entry.
 - Minimum supported OpenCode version: 2.2.5.
 
-Current status: pairing payload/link parser, code redemption, Basic auth, REST endpoints, SSE events, and the version check are implemented and tested. The QR scanner and session UI remain.
+Current status: complete. Pairing by QR or manual URL/password, connection storage, session list, transcript with reasoning and tool chips, prompt streaming, stop, agent/model switching, and the 2.2.5 version check are implemented. Verified against OpenCode 2.2.6 over a local tunnel. Automatic reconnect after an idle SSE timeout is still manual.
 
 Done: the phone controls an OpenCode session.
 
@@ -798,6 +797,8 @@ Done: the phone controls an OpenCode session.
 - PackageInstaller.
 - Release workflow.
 - First `v0.1.0`.
+
+Current status: the stable release client, semantic version checks, streaming downloader with SHA-256 verification, PackageInstaller bridge, signed GitHub release workflow, and release docs are implemented. Automatic check scheduling, the update popup, and the first `v0.1.0` release remain.
 
 Done: an older version sees the popup and updates.
 
