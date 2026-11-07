@@ -7,6 +7,7 @@ import '../features/chat/chat_screen.dart';
 import '../features/chats/chats_screen.dart';
 import '../features/connections/connections_screen.dart';
 import '../features/marketplace/marketplace_screen.dart';
+import '../features/marketplace/plugin_detail_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/providers/provider_editor_screen.dart';
 import '../features/providers/providers_screen.dart';
@@ -102,6 +103,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             ChatScreen(conversationId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/marketplace/plugins/:id',
+        name: 'marketplacePlugin',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            PluginDetailScreen(pluginId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/providers',

@@ -18,7 +18,7 @@ Features:
 - DeepSeek and any OpenAI-compatible API with a user-supplied key.
 - Browse and install ready-made MCP connectors from plugin marketplaces.
 - Default marketplace: `anthropics/claude-plugins-official`.
-- Add any compatible marketplace by URL.
+- Add compatible marketplaces by `owner/repo`, GitHub URL, or direct `marketplace.json` URL.
 - One-click authorization for remote MCP servers that support OAuth.
 - OpenCode pairing via QR code (`opencode pair`).
 - Local encrypted storage for chats, keys, and tokens.
@@ -59,7 +59,7 @@ No Google Cloud project, no per-user `client_id`, no native Google OAuth impleme
 - MCP marketplace: browse, search, plugin details, install.
 - Plugin manager with Plugins and Marketplaces tabs.
 - Default Claude plugins marketplace and custom marketplace URLs.
-- Add marketplace by GitHub repo, URL, or path.
+- Add marketplace by `owner/repo`, GitHub URL, or direct `marketplace.json` URL.
 - Enable/disable, refresh, and delete installed plugins.
 - Install remote MCP servers from plugins.
 - MCP OAuth authorization in the browser.
@@ -194,6 +194,8 @@ Marketplace manifest:
 https://raw.githubusercontent.com/anthropics/claude-plugins-official/main/.claude-plugin/marketplace.json
 ```
 
+The source is seeded as a built-in, non-deletable marketplace. The catalog is cached locally and refreshed on first use if the cache is older than 24 hours.
+
 The app reads the Claude plugin marketplace schema:
 
 ```json
@@ -222,8 +224,8 @@ Supported `source` types:
 
 Resolution:
 
-1. Fetch `.claude-plugin/plugin.json`.
-2. Fetch `.mcp.json`.
+1. Resolve the plugin source to a raw-content base.
+2. Fetch `.mcp.json` lazily when the plugin detail is opened or installation starts.
 3. Parse `mcpServers`.
 4. Show remote servers. Mark stdio-only plugins as unsupported on Android.
 
@@ -287,36 +289,37 @@ Plugin detail:
 Add field:
 
 ```
-GitHub repo, URL, or path...
+owner/repo, GitHub URL, or marketplace.json URL...
 ```
 
 - **Add** button.
-- Accepts `owner/repo`, full GitHub URL, `marketplace.json` URL, or a local path (desktop only).
+- Accepts `owner/repo`, a full GitHub URL, or a direct `marketplace.json` URL.
 - Marketplace row:
   - Name and icon.
   - `GitHub: owner/repo` link.
   - Refresh icon.
   - Delete icon.
-- Deleting a marketplace removes its catalog but keeps installed plugins unless the user confirms removal.
+- Deleting a marketplace removes its catalog and its installed plugins after confirmation.
 
 #### Behavior
 
-- Refresh catalog keeps installed plugins.
+- Installation state is stored locally; refresh keeps installed plugins.
 - Toggle enables/disables the plugin's MCP server.
 - Delete uninstalls the plugin and removes its MCP server.
 - Refresh checks for plugin updates and MCP URL changes.
 - If a plugin changes its MCP URL, require re-consent before enabling.
 - Search filters by name, description, author, and category.
 - Trust labels:
-  - Anthropic
-  - Verified partner
-  - Community / unverified
+  - Author Anthropic: Anthropic.
+  - Other plugins in the official marketplace: Verified partner.
+  - Custom marketplaces: Community / unverified.
+- Marketplace tables store no secret values (OAuth tokens, API keys, or resolved header values); authorization is handled in Connections (M4).
 - Empty state: "No marketplaces yet. Add the official Claude marketplace."
 
 ### 7.4. Limitations
 
-- Android supports only remote MCP servers (`http`, `streamable-http`, `sse`).
-- `stdio` servers (`command`, `args`, `env`) are not supported.
+- Android supports only remote HTTPS MCP servers (`http`, `streamable-http`, `sse`).
+- `stdio` servers (`command`, `args`, `env`) are cataloged but cannot be installed on Android.
 - Plugin commands, agents, hooks, and skills are ignored in MVP.
 - Plugins that require a desktop setup script are marked "Desktop setup required".
 
@@ -743,7 +746,7 @@ Done: the model invokes an external MCP tool.
 - Marketplace manager with **Plugins** and **Marketplaces** tabs.
 - Search, Installed/Available sections.
 - Plugin rows with status dot, `name@marketplace`, `Scope: user`, toggle, refresh, delete.
-- Add marketplace field: GitHub repo, URL, or path.
+- Add marketplace field: `owner/repo`, GitHub URL, or direct `marketplace.json` URL.
 - Conflict warning for duplicate plugin names.
 - Marketplace rows with GitHub link, refresh, delete.
 

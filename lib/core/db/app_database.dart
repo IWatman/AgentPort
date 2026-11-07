@@ -94,14 +94,168 @@ class Messages extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// A Claude-compatible plugin marketplace.
+class MarketplaceEntries extends Table {
+  @override
+  String get tableName => 'marketplaces';
+
+  TextColumn get id => text()();
+
+  TextColumn get name => text()();
+
+  TextColumn get description => text().withDefault(const Constant(''))();
+
+  /// Repository or page the user added, for display and re-resolution.
+  TextColumn get sourceUrl => text()();
+
+  /// Direct URL of `.claude-plugin/marketplace.json`.
+  TextColumn get manifestUrl => text()();
+
+  BoolColumn get builtIn => boolean().withDefault(const Constant(false))();
+
+  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+
+  TextColumn get etag => text().nullable()();
+
+  IntColumn get lastSyncedAt => integer().nullable()();
+
+  TextColumn get lastError => text().nullable()();
+
+  IntColumn get createdAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+/// A plugin listed by a marketplace.
+///
+/// Catalog metadata is refreshed from the network. Installation state is local
+/// and survives catalog refreshes.
+class MarketplacePluginEntries extends Table {
+  @override
+  String get tableName => 'marketplace_plugins';
+
+  TextColumn get id => text()();
+
+  TextColumn get marketplaceId =>
+      text().references(MarketplaceEntries, #id, onDelete: KeyAction.cascade)();
+
+  TextColumn get name => text()();
+
+  TextColumn get displayName => text().nullable()();
+
+  TextColumn get description => text().withDefault(const Constant(''))();
+
+  TextColumn get author => text().nullable()();
+
+  TextColumn get category => text().nullable()();
+
+  TextColumn get homepage => text().nullable()();
+
+  TextColumn get version => text().nullable()();
+
+  /// Raw `source` value from the marketplace manifest.
+  TextColumn get sourceJson => text()();
+
+  /// `path`, `git-subdir`, `url`, or `command`.
+  TextColumn get sourceKind => text()();
+
+  TextColumn get sourceUrl => text().nullable()();
+
+  TextColumn get sourcePath => text().nullable()();
+
+  TextColumn get sourceRef => text().nullable()();
+
+  TextColumn get sourceSha => text().nullable()();
+
+  BoolColumn get installed => boolean().withDefault(const Constant(false))();
+
+  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+
+  /// `unknown`, `none`, `remote`, `stdio`, `mixed`, `unsupported`, or `error`.
+  TextColumn get mcpStatus => text().withDefault(const Constant('unknown'))();
+
+  /// Parsed server configurations, without secrets.
+  TextColumn get mcpConfigJson => text().nullable()();
+
+  IntColumn get mcpCheckedAt => integer().nullable()();
+
+  /// Remote server configs captured at install time for change detection.
+  TextColumn get installedConfigJson => text().nullable()();
+
+  BoolColumn get needsReconsent =>
+      boolean().withDefault(const Constant(false))();
+
+  TextColumn get lastError => text().nullable()();
+
+  IntColumn get lastSeenAt => integer()();
+
+  IntColumn get createdAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+/// An installed remote MCP server.
+///
+/// Secrets are never stored here. Header names and placeholder expressions are
+/// kept so the authorization flow can ask for the missing values.
+class McpServerEntries extends Table {
+  @override
+  String get tableName => 'mcp_servers';
+
+  TextColumn get id => text()();
+
+  TextColumn get pluginId => text().nullable().references(
+    MarketplacePluginEntries,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+
+  TextColumn get marketplaceId => text().nullable()();
+
+  TextColumn get name => text()();
+
+  TextColumn get url => text()();
+
+  /// `http` or `sse`.
+  TextColumn get transport => text()();
+
+  /// `oauth`, `api-key`, `none`, or `unknown`.
+  TextColumn get authType => text()();
+
+  /// JSON array of header names that require values.
+  TextColumn get headerNamesJson => text().nullable()();
+
+  TextColumn get configHash => text()();
+
+  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+
+  BoolColumn get needsReconsent =>
+      boolean().withDefault(const Constant(false))();
+
+  IntColumn get createdAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 @DriftDatabase(
-  tables: [SettingEntries, ProviderEntries, Conversations, Messages],
+  tables: [
+    SettingEntries,
+    ProviderEntries,
+    Conversations,
+    Messages,
+    MarketplaceEntries,
+    MarketplacePluginEntries,
+    McpServerEntries,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -111,6 +265,11 @@ class AppDatabase extends _$AppDatabase {
         await migrator.createTable(providerEntries);
         await migrator.createTable(conversations);
         await migrator.createTable(messages);
+      }
+      if (from < 3) {
+        await migrator.createTable(marketplaceEntries);
+        await migrator.createTable(marketplacePluginEntries);
+        await migrator.createTable(mcpServerEntries);
       }
     },
     beforeOpen: (details) async {

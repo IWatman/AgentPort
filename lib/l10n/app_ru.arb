@@ -131,6 +131,166 @@
   "providerDeleteBody": "Удалить «{providerName}»? Чаты переключатся на другого провайдера.",
   "settingsSectionAi": "AI",
   "settingsProvidersSubtitle": "API-ключи, эндпоинты и модели",
+  "marketplaceSearchHint": "Поиск плагинов…",
+  "marketplaceFilterAll": "Все",
+  "marketplaceFilterMcp": "С MCP",
+  "marketplaceFilterInstalled": "Установленные",
+  "marketplaceInstalledSection": "Установленные",
+  "marketplaceAvailableSection": "Доступные",
+  "marketplaceNoResultsTitle": "Ничего не найдено",
+  "marketplaceNoResultsBody": "Измените запрос или фильтр.",
+  "marketplaceAdd": "Добавить",
+  "marketplaceAddHint": "owner/repo или URL маркетплейса",
+  "marketplaceAddHelp": "Добавьте любой совместимый с Claude маркетплейс. Официальный маркетплейс Anthropic уже встроен.",
+  "marketplaceBuiltIn": "Встроенный",
+  "marketplacePluginCount": "{count, plural, =1{{count} плагин} few{{count} плагина} many{{count} плагинов} other{{count} плагина}}",
+  "@marketplacePluginCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "marketplaceLastSynced": "Обновлено {date}",
+  "@marketplaceLastSynced": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "marketplaceNeverSynced": "Ещё не синхронизировано",
+  "marketplaceRefresh": "Обновить",
+  "marketplaceDelete": "Удалить",
+  "marketplaceDeleteTitle": "Удалить маркетплейс?",
+  "marketplaceDeleteBody": "Каталог «{name}» будет удалён с этого устройства.",
+  "@marketplaceDeleteBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "marketplaceDeleteWithInstalledBody": "Каталог «{name}» и {count} установленных плагинов будут удалены с этого устройства.",
+  "@marketplaceDeleteWithInstalledBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "marketplaceDeleteBuiltIn": "Встроенный официальный маркетплейс нельзя удалить.",
+  "marketplaceAdded": "Маркетплейс добавлен.",
+  "marketplaceDeleted": "Маркетплейс удалён.",
+  "marketplaceRefreshed": "Маркетплейс обновлён.",
+  "marketplaceRefreshFailed": "Не удалось обновить.",
+  "marketplaceInstall": "Установить",
+  "marketplaceUninstall": "Удалить",
+  "marketplaceInstalled": "Установлено",
+  "marketplaceDisabled": "Отключено",
+  "marketplaceNotInstalled": "Не установлено",
+  "marketplaceInstallSuccess": "Плагин установлен. Авторизацию можно будет настроить в разделе «Подключения».",
+  "marketplaceUninstallSuccess": "Плагин удалён.",
+  "marketplaceUninstallTitle": "Удалить плагин?",
+  "marketplaceUninstallBody": "Удалить «{name}» и его MCP-серверы с этого устройства?",
+  "@marketplaceUninstallBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "marketplaceScopeUser": "Область: пользователь",
+  "marketplaceServers": "MCP-серверы",
+  "marketplaceServersEmpty": "У этого плагина нет файла .mcp.json.",
+  "marketplaceServersEmptyBody": "Возможно, он содержит команды, навыки или агентов для настольных клиентов Claude. Такие плагины нельзя установить на Android.",
+  "marketplaceServersChecking": "Проверяем конфигурацию MCP…",
+  "marketplaceServersUnsupported": "Плагин объявляет только локальные MCP-серверы. AgentPort не запускает локальные команды на Android.",
+  "marketplaceTransport": "Транспорт",
+  "marketplaceAuth": "Авторизация",
+  "marketplaceAuthOAuth": "OAuth",
+  "marketplaceAuthApiKey": "API-ключ",
+  "marketplaceAuthNone": "Без авторизации",
+  "marketplaceAuthUnknown": "OAuth или без авторизации",
+  "marketplaceHeader": "Заголовок",
+  "marketplaceHomepage": "Сайт",
+  "marketplaceCopyLink": "Скопировать ссылку",
+  "marketplaceCopied": "Скопировано.",
+  "marketplaceVersion": "Версия {version}",
+  "@marketplaceVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "marketplaceSource": "Источник",
+  "marketplaceTrustAnthropic": "Anthropic",
+  "marketplaceTrustPartner": "Проверенный партнёр",
+  "marketplaceTrustCommunity": "Сообщество / без проверки",
+  "marketplaceNeedsReconsent": "Конфигурация MCP изменилась",
+  "marketplaceNeedsReconsentBody": "MCP-серверы плагина изменились после установки. Проверьте новые серверы перед включением.",
+  "marketplaceCategory": "Категория",
+  "marketplaceByAuthor": "от {author}",
+  "@marketplaceByAuthor": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "marketplaceNoMarketplacesTitle": "Нет маркетплейсов",
+  "marketplaceNoMarketplacesBody": "Добавьте совместимый с Claude маркетплейс, чтобы просматривать плагины.",
+  "marketplaceOfficialError": "Не удалось синхронизировать официальный маркетплейс.",
+  "marketplaceOfficialEmpty": "В официальном маркетплейсе нет плагинов.",
+  "marketplaceOfficialLoading": "Загружаем официальный маркетплейс…",
+  "marketplacePluginNotFoundTitle": "Плагин не найден",
+  "marketplacePluginNotFoundBody": "Обновите маркетплейс и попробуйте снова.",
+  "marketplaceUnsupportedInstallTitle": "Нельзя установить на Android",
+  "marketplaceUnsupportedInstallBody": "У этого плагина нет удалённых MCP-серверов. Локальные команды на Android не поддерживаются.",
+  "marketplaceRefreshPlugin": "Проверить MCP",
+  "marketplaceConflictWarning": "Другой установленный плагин имеет такое же имя.",
+  "marketplaceDesktopSetup": "Нужна настройка на компьютере",
+  "marketplaceMcpRemote": "Удалённый MCP",
+  "marketplaceMcpMixed": "Удалённый и настольный MCP",
+  "marketplaceMcpNone": "Нет удалённого MCP",
+  "marketplaceMcpStdio": "Нужна настройка на компьютере",
+  "marketplaceMcpUnsupported": "Не поддерживается на Android",
+  "marketplaceMcpError": "Ошибка проверки MCP",
+  "marketplaceMcpUnknown": "Статус MCP не проверен",
+  "marketplaceServersUnsupportedList": "Неподдерживаемые серверы: {names}",
+  "@marketplaceServersUnsupportedList": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "marketplaceErrorInvalidInput": "Введите owner/repo, ссылку GitHub или URL manifest.json.",
+  "marketplaceErrorNetwork": "Ошибка сети. Проверьте подключение и повторите попытку.",
+  "marketplaceErrorNotFound": "Манифест маркетплейса не найден.",
+  "marketplaceErrorInvalidManifest": "Манифест маркетплейса повреждён.",
+  "marketplaceErrorNoRemoteMcp": "В плагине нет удалённых MCP-серверов, поддерживаемых на Android.",
+  "marketplaceErrorUnsupportedSource": "Этот источник маркетплейса не поддерживается.",
+  "marketplaceErrorUnsupportedPlatform": "Локальные пути на Android не поддерживаются.",
+  "marketplaceErrorDuplicate": "Этот маркетплейс уже добавлен.",
+  "marketplaceErrorStorage": "Не удалось сохранить маркетплейс на устройстве.",
+  "marketplaceErrorUnknown": "Что-то пошло не так.",
+  "marketplaceReconsentAccept": "Проверить и включить",
+  "marketplaceReconsentAccepted": "Плагин включён с новой конфигурацией MCP.",
+  "marketplaceCommunityInstallTitle": "Установить непроверенный плагин?",
+  "marketplaceCommunityInstallBody": "Плагин из маркетплейса сообщества. Он подключится к:\n{servers}\n\nПродолжайте только если доверяете источнику.",
+  "@marketplaceCommunityInstallBody": {
+    "placeholders": {
+      "servers": {
+        "type": "String"
+      }
+    }
+  },
+  "marketplaceServersMixedWarning": "Некоторые серверы плагина требуют настройки на компьютере и недоступны на Android.",
   "commonCancel": "Отмена",
   "commonDone": "Готово",
   "commonSave": "Сохранить",

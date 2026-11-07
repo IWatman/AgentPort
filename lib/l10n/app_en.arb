@@ -145,6 +145,166 @@
   },
   "settingsSectionAi": "AI",
   "settingsProvidersSubtitle": "API keys, endpoints, and models",
+  "marketplaceSearchHint": "Search plugins...",
+  "marketplaceFilterAll": "All",
+  "marketplaceFilterMcp": "MCP available",
+  "marketplaceFilterInstalled": "Installed",
+  "marketplaceInstalledSection": "Installed",
+  "marketplaceAvailableSection": "Available",
+  "marketplaceNoResultsTitle": "Nothing found",
+  "marketplaceNoResultsBody": "Try a different search or filter.",
+  "marketplaceAdd": "Add",
+  "marketplaceAddHint": "owner/repo or marketplace URL",
+  "marketplaceAddHelp": "Add any Claude-compatible marketplace. The official Anthropic marketplace is built in.",
+  "marketplaceBuiltIn": "Built in",
+  "marketplacePluginCount": "{count, plural, =1{{count} plugin} other{{count} plugins}}",
+  "@marketplacePluginCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "marketplaceLastSynced": "Updated {date}",
+  "@marketplaceLastSynced": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "marketplaceNeverSynced": "Not synced yet",
+  "marketplaceRefresh": "Refresh",
+  "marketplaceDelete": "Delete",
+  "marketplaceDeleteTitle": "Delete marketplace?",
+  "marketplaceDeleteBody": "The catalog of “{name}” will be removed from this device.",
+  "@marketplaceDeleteBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "marketplaceDeleteWithInstalledBody": "The catalog of “{name}” and its {count} installed plugin(s) will be removed from this device.",
+  "@marketplaceDeleteWithInstalledBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "marketplaceDeleteBuiltIn": "The built-in official marketplace cannot be deleted.",
+  "marketplaceAdded": "Marketplace added.",
+  "marketplaceDeleted": "Marketplace deleted.",
+  "marketplaceRefreshed": "Marketplace refreshed.",
+  "marketplaceRefreshFailed": "Refresh failed.",
+  "marketplaceInstall": "Install",
+  "marketplaceUninstall": "Uninstall",
+  "marketplaceInstalled": "Installed",
+  "marketplaceDisabled": "Disabled",
+  "marketplaceNotInstalled": "Not installed",
+  "marketplaceInstallSuccess": "Plugin installed. Configure authorization in Connections when available.",
+  "marketplaceUninstallSuccess": "Plugin uninstalled.",
+  "marketplaceUninstallTitle": "Uninstall plugin?",
+  "marketplaceUninstallBody": "Remove “{name}” and its MCP servers from this device?",
+  "@marketplaceUninstallBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "marketplaceScopeUser": "Scope: user",
+  "marketplaceServers": "MCP servers",
+  "marketplaceServersEmpty": "This plugin has no .mcp.json file.",
+  "marketplaceServersEmptyBody": "It may contain commands, skills, or agents for desktop Claude clients. Such plugins are not installable on Android.",
+  "marketplaceServersChecking": "Checking MCP configuration...",
+  "marketplaceServersUnsupported": "This plugin only declares local MCP servers. AgentPort cannot run local commands on Android.",
+  "marketplaceTransport": "Transport",
+  "marketplaceAuth": "Authorization",
+  "marketplaceAuthOAuth": "OAuth",
+  "marketplaceAuthApiKey": "API key",
+  "marketplaceAuthNone": "No auth",
+  "marketplaceAuthUnknown": "OAuth or no auth",
+  "marketplaceHeader": "Header",
+  "marketplaceHomepage": "Homepage",
+  "marketplaceCopyLink": "Copy link",
+  "marketplaceCopied": "Copied.",
+  "marketplaceVersion": "Version {version}",
+  "@marketplaceVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "marketplaceSource": "Source",
+  "marketplaceTrustAnthropic": "Anthropic",
+  "marketplaceTrustPartner": "Verified partner",
+  "marketplaceTrustCommunity": "Community / unverified",
+  "marketplaceNeedsReconsent": "MCP configuration changed",
+  "marketplaceNeedsReconsentBody": "The plugin's MCP servers changed after installation. Review the new servers before enabling it.",
+  "marketplaceCategory": "Category",
+  "marketplaceByAuthor": "by {author}",
+  "@marketplaceByAuthor": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "marketplaceNoMarketplacesTitle": "No marketplaces",
+  "marketplaceNoMarketplacesBody": "Add a Claude-compatible marketplace to browse plugins.",
+  "marketplaceOfficialError": "The official marketplace could not be synced.",
+  "marketplaceOfficialEmpty": "The official marketplace contains no plugins.",
+  "marketplaceOfficialLoading": "Loading the official marketplace...",
+  "marketplacePluginNotFoundTitle": "Plugin not found",
+  "marketplacePluginNotFoundBody": "Refresh the marketplace and try again.",
+  "marketplaceUnsupportedInstallTitle": "Cannot install on Android",
+  "marketplaceUnsupportedInstallBody": "This plugin has no remote MCP servers. Local commands are not supported on Android.",
+  "marketplaceRefreshPlugin": "Re-check MCP",
+  "marketplaceConflictWarning": "Another installed plugin has the same name.",
+  "marketplaceDesktopSetup": "Desktop setup required",
+  "marketplaceMcpRemote": "Remote MCP",
+  "marketplaceMcpMixed": "Remote + desktop MCP",
+  "marketplaceMcpNone": "No remote MCP",
+  "marketplaceMcpStdio": "Desktop setup required",
+  "marketplaceMcpUnsupported": "Unsupported on Android",
+  "marketplaceMcpError": "MCP check failed",
+  "marketplaceMcpUnknown": "MCP status not checked",
+  "marketplaceServersUnsupportedList": "Unsupported servers: {names}",
+  "@marketplaceServersUnsupportedList": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "marketplaceErrorInvalidInput": "Enter owner/repo, a GitHub URL, or a manifest.json URL.",
+  "marketplaceErrorNetwork": "Network error. Check your connection and try again.",
+  "marketplaceErrorNotFound": "Marketplace manifest not found.",
+  "marketplaceErrorInvalidManifest": "The marketplace manifest is invalid.",
+  "marketplaceErrorNoRemoteMcp": "This plugin has no remote MCP servers supported on Android.",
+  "marketplaceErrorUnsupportedSource": "This marketplace source is not supported.",
+  "marketplaceErrorUnsupportedPlatform": "Local paths are not supported on Android.",
+  "marketplaceErrorDuplicate": "This marketplace is already added.",
+  "marketplaceErrorStorage": "The marketplace could not be saved on this device.",
+  "marketplaceErrorUnknown": "Something went wrong.",
+  "marketplaceReconsentAccept": "Review and enable",
+  "marketplaceReconsentAccepted": "Plugin enabled with the updated MCP configuration.",
+  "marketplaceCommunityInstallTitle": "Install unverified plugin?",
+  "marketplaceCommunityInstallBody": "This plugin comes from a community marketplace. It will connect to:\n{servers}\n\nOnly continue if you trust the source.",
+  "@marketplaceCommunityInstallBody": {
+    "placeholders": {
+      "servers": {
+        "type": "String"
+      }
+    }
+  },
+  "marketplaceServersMixedWarning": "Some servers in this plugin need desktop setup and are unavailable on Android.",
   "commonCancel": "Cancel",
   "commonDone": "Done",
   "commonSave": "Save",

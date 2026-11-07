@@ -1663,6 +1663,2822 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   }
 }
 
+class $MarketplaceEntriesTable extends MarketplaceEntries
+    with TableInfo<$MarketplaceEntriesTable, MarketplaceEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MarketplaceEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _sourceUrlMeta = const VerificationMeta(
+    'sourceUrl',
+  );
+  @override
+  late final GeneratedColumn<String> sourceUrl = GeneratedColumn<String>(
+    'source_url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _manifestUrlMeta = const VerificationMeta(
+    'manifestUrl',
+  );
+  @override
+  late final GeneratedColumn<String> manifestUrl = GeneratedColumn<String>(
+    'manifest_url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _builtInMeta = const VerificationMeta(
+    'builtIn',
+  );
+  @override
+  late final GeneratedColumn<bool> builtIn = GeneratedColumn<bool>(
+    'built_in',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("built_in" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _etagMeta = const VerificationMeta('etag');
+  @override
+  late final GeneratedColumn<String> etag = GeneratedColumn<String>(
+    'etag',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastSyncedAtMeta = const VerificationMeta(
+    'lastSyncedAt',
+  );
+  @override
+  late final GeneratedColumn<int> lastSyncedAt = GeneratedColumn<int>(
+    'last_synced_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastErrorMeta = const VerificationMeta(
+    'lastError',
+  );
+  @override
+  late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
+    'last_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    description,
+    sourceUrl,
+    manifestUrl,
+    builtIn,
+    enabled,
+    etag,
+    lastSyncedAt,
+    lastError,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'marketplaces';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MarketplaceEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('source_url')) {
+      context.handle(
+        _sourceUrlMeta,
+        sourceUrl.isAcceptableOrUnknown(data['source_url']!, _sourceUrlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceUrlMeta);
+    }
+    if (data.containsKey('manifest_url')) {
+      context.handle(
+        _manifestUrlMeta,
+        manifestUrl.isAcceptableOrUnknown(
+          data['manifest_url']!,
+          _manifestUrlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_manifestUrlMeta);
+    }
+    if (data.containsKey('built_in')) {
+      context.handle(
+        _builtInMeta,
+        builtIn.isAcceptableOrUnknown(data['built_in']!, _builtInMeta),
+      );
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    }
+    if (data.containsKey('etag')) {
+      context.handle(
+        _etagMeta,
+        etag.isAcceptableOrUnknown(data['etag']!, _etagMeta),
+      );
+    }
+    if (data.containsKey('last_synced_at')) {
+      context.handle(
+        _lastSyncedAtMeta,
+        lastSyncedAt.isAcceptableOrUnknown(
+          data['last_synced_at']!,
+          _lastSyncedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_error')) {
+      context.handle(
+        _lastErrorMeta,
+        lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MarketplaceEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MarketplaceEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
+      sourceUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_url'],
+      )!,
+      manifestUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manifest_url'],
+      )!,
+      builtIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}built_in'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+      etag: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}etag'],
+      ),
+      lastSyncedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_synced_at'],
+      ),
+      lastError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $MarketplaceEntriesTable createAlias(String alias) {
+    return $MarketplaceEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class MarketplaceEntry extends DataClass
+    implements Insertable<MarketplaceEntry> {
+  final String id;
+  final String name;
+  final String description;
+
+  /// Repository or page the user added, for display and re-resolution.
+  final String sourceUrl;
+
+  /// Direct URL of `.claude-plugin/marketplace.json`.
+  final String manifestUrl;
+  final bool builtIn;
+  final bool enabled;
+  final String? etag;
+  final int? lastSyncedAt;
+  final String? lastError;
+  final int createdAt;
+  const MarketplaceEntry({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.sourceUrl,
+    required this.manifestUrl,
+    required this.builtIn,
+    required this.enabled,
+    this.etag,
+    this.lastSyncedAt,
+    this.lastError,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['description'] = Variable<String>(description);
+    map['source_url'] = Variable<String>(sourceUrl);
+    map['manifest_url'] = Variable<String>(manifestUrl);
+    map['built_in'] = Variable<bool>(builtIn);
+    map['enabled'] = Variable<bool>(enabled);
+    if (!nullToAbsent || etag != null) {
+      map['etag'] = Variable<String>(etag);
+    }
+    if (!nullToAbsent || lastSyncedAt != null) {
+      map['last_synced_at'] = Variable<int>(lastSyncedAt);
+    }
+    if (!nullToAbsent || lastError != null) {
+      map['last_error'] = Variable<String>(lastError);
+    }
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  MarketplaceEntriesCompanion toCompanion(bool nullToAbsent) {
+    return MarketplaceEntriesCompanion(
+      id: Value(id),
+      name: Value(name),
+      description: Value(description),
+      sourceUrl: Value(sourceUrl),
+      manifestUrl: Value(manifestUrl),
+      builtIn: Value(builtIn),
+      enabled: Value(enabled),
+      etag: etag == null && nullToAbsent ? const Value.absent() : Value(etag),
+      lastSyncedAt: lastSyncedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncedAt),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory MarketplaceEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MarketplaceEntry(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String>(json['description']),
+      sourceUrl: serializer.fromJson<String>(json['sourceUrl']),
+      manifestUrl: serializer.fromJson<String>(json['manifestUrl']),
+      builtIn: serializer.fromJson<bool>(json['builtIn']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+      etag: serializer.fromJson<String?>(json['etag']),
+      lastSyncedAt: serializer.fromJson<int?>(json['lastSyncedAt']),
+      lastError: serializer.fromJson<String?>(json['lastError']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String>(description),
+      'sourceUrl': serializer.toJson<String>(sourceUrl),
+      'manifestUrl': serializer.toJson<String>(manifestUrl),
+      'builtIn': serializer.toJson<bool>(builtIn),
+      'enabled': serializer.toJson<bool>(enabled),
+      'etag': serializer.toJson<String?>(etag),
+      'lastSyncedAt': serializer.toJson<int?>(lastSyncedAt),
+      'lastError': serializer.toJson<String?>(lastError),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  MarketplaceEntry copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? sourceUrl,
+    String? manifestUrl,
+    bool? builtIn,
+    bool? enabled,
+    Value<String?> etag = const Value.absent(),
+    Value<int?> lastSyncedAt = const Value.absent(),
+    Value<String?> lastError = const Value.absent(),
+    int? createdAt,
+  }) => MarketplaceEntry(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    description: description ?? this.description,
+    sourceUrl: sourceUrl ?? this.sourceUrl,
+    manifestUrl: manifestUrl ?? this.manifestUrl,
+    builtIn: builtIn ?? this.builtIn,
+    enabled: enabled ?? this.enabled,
+    etag: etag.present ? etag.value : this.etag,
+    lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
+    lastError: lastError.present ? lastError.value : this.lastError,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  MarketplaceEntry copyWithCompanion(MarketplaceEntriesCompanion data) {
+    return MarketplaceEntry(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      sourceUrl: data.sourceUrl.present ? data.sourceUrl.value : this.sourceUrl,
+      manifestUrl: data.manifestUrl.present
+          ? data.manifestUrl.value
+          : this.manifestUrl,
+      builtIn: data.builtIn.present ? data.builtIn.value : this.builtIn,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      etag: data.etag.present ? data.etag.value : this.etag,
+      lastSyncedAt: data.lastSyncedAt.present
+          ? data.lastSyncedAt.value
+          : this.lastSyncedAt,
+      lastError: data.lastError.present ? data.lastError.value : this.lastError,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MarketplaceEntry(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('sourceUrl: $sourceUrl, ')
+          ..write('manifestUrl: $manifestUrl, ')
+          ..write('builtIn: $builtIn, ')
+          ..write('enabled: $enabled, ')
+          ..write('etag: $etag, ')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('lastError: $lastError, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    description,
+    sourceUrl,
+    manifestUrl,
+    builtIn,
+    enabled,
+    etag,
+    lastSyncedAt,
+    lastError,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MarketplaceEntry &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.sourceUrl == this.sourceUrl &&
+          other.manifestUrl == this.manifestUrl &&
+          other.builtIn == this.builtIn &&
+          other.enabled == this.enabled &&
+          other.etag == this.etag &&
+          other.lastSyncedAt == this.lastSyncedAt &&
+          other.lastError == this.lastError &&
+          other.createdAt == this.createdAt);
+}
+
+class MarketplaceEntriesCompanion extends UpdateCompanion<MarketplaceEntry> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> description;
+  final Value<String> sourceUrl;
+  final Value<String> manifestUrl;
+  final Value<bool> builtIn;
+  final Value<bool> enabled;
+  final Value<String?> etag;
+  final Value<int?> lastSyncedAt;
+  final Value<String?> lastError;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const MarketplaceEntriesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.sourceUrl = const Value.absent(),
+    this.manifestUrl = const Value.absent(),
+    this.builtIn = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.etag = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MarketplaceEntriesCompanion.insert({
+    required String id,
+    required String name,
+    this.description = const Value.absent(),
+    required String sourceUrl,
+    required String manifestUrl,
+    this.builtIn = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.etag = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+    this.lastError = const Value.absent(),
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       sourceUrl = Value(sourceUrl),
+       manifestUrl = Value(manifestUrl),
+       createdAt = Value(createdAt);
+  static Insertable<MarketplaceEntry> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<String>? sourceUrl,
+    Expression<String>? manifestUrl,
+    Expression<bool>? builtIn,
+    Expression<bool>? enabled,
+    Expression<String>? etag,
+    Expression<int>? lastSyncedAt,
+    Expression<String>? lastError,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (sourceUrl != null) 'source_url': sourceUrl,
+      if (manifestUrl != null) 'manifest_url': manifestUrl,
+      if (builtIn != null) 'built_in': builtIn,
+      if (enabled != null) 'enabled': enabled,
+      if (etag != null) 'etag': etag,
+      if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
+      if (lastError != null) 'last_error': lastError,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MarketplaceEntriesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? description,
+    Value<String>? sourceUrl,
+    Value<String>? manifestUrl,
+    Value<bool>? builtIn,
+    Value<bool>? enabled,
+    Value<String?>? etag,
+    Value<int?>? lastSyncedAt,
+    Value<String?>? lastError,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return MarketplaceEntriesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      sourceUrl: sourceUrl ?? this.sourceUrl,
+      manifestUrl: manifestUrl ?? this.manifestUrl,
+      builtIn: builtIn ?? this.builtIn,
+      enabled: enabled ?? this.enabled,
+      etag: etag ?? this.etag,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      lastError: lastError ?? this.lastError,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (sourceUrl.present) {
+      map['source_url'] = Variable<String>(sourceUrl.value);
+    }
+    if (manifestUrl.present) {
+      map['manifest_url'] = Variable<String>(manifestUrl.value);
+    }
+    if (builtIn.present) {
+      map['built_in'] = Variable<bool>(builtIn.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (etag.present) {
+      map['etag'] = Variable<String>(etag.value);
+    }
+    if (lastSyncedAt.present) {
+      map['last_synced_at'] = Variable<int>(lastSyncedAt.value);
+    }
+    if (lastError.present) {
+      map['last_error'] = Variable<String>(lastError.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MarketplaceEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('sourceUrl: $sourceUrl, ')
+          ..write('manifestUrl: $manifestUrl, ')
+          ..write('builtIn: $builtIn, ')
+          ..write('enabled: $enabled, ')
+          ..write('etag: $etag, ')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('lastError: $lastError, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MarketplacePluginEntriesTable extends MarketplacePluginEntries
+    with TableInfo<$MarketplacePluginEntriesTable, MarketplacePluginEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MarketplacePluginEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _marketplaceIdMeta = const VerificationMeta(
+    'marketplaceId',
+  );
+  @override
+  late final GeneratedColumn<String> marketplaceId = GeneratedColumn<String>(
+    'marketplace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES marketplaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _authorMeta = const VerificationMeta('author');
+  @override
+  late final GeneratedColumn<String> author = GeneratedColumn<String>(
+    'author',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _homepageMeta = const VerificationMeta(
+    'homepage',
+  );
+  @override
+  late final GeneratedColumn<String> homepage = GeneratedColumn<String>(
+    'homepage',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<String> version = GeneratedColumn<String>(
+    'version',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceJsonMeta = const VerificationMeta(
+    'sourceJson',
+  );
+  @override
+  late final GeneratedColumn<String> sourceJson = GeneratedColumn<String>(
+    'source_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceKindMeta = const VerificationMeta(
+    'sourceKind',
+  );
+  @override
+  late final GeneratedColumn<String> sourceKind = GeneratedColumn<String>(
+    'source_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceUrlMeta = const VerificationMeta(
+    'sourceUrl',
+  );
+  @override
+  late final GeneratedColumn<String> sourceUrl = GeneratedColumn<String>(
+    'source_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourcePathMeta = const VerificationMeta(
+    'sourcePath',
+  );
+  @override
+  late final GeneratedColumn<String> sourcePath = GeneratedColumn<String>(
+    'source_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceRefMeta = const VerificationMeta(
+    'sourceRef',
+  );
+  @override
+  late final GeneratedColumn<String> sourceRef = GeneratedColumn<String>(
+    'source_ref',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceShaMeta = const VerificationMeta(
+    'sourceSha',
+  );
+  @override
+  late final GeneratedColumn<String> sourceSha = GeneratedColumn<String>(
+    'source_sha',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _installedMeta = const VerificationMeta(
+    'installed',
+  );
+  @override
+  late final GeneratedColumn<bool> installed = GeneratedColumn<bool>(
+    'installed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("installed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _mcpStatusMeta = const VerificationMeta(
+    'mcpStatus',
+  );
+  @override
+  late final GeneratedColumn<String> mcpStatus = GeneratedColumn<String>(
+    'mcp_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('unknown'),
+  );
+  static const VerificationMeta _mcpConfigJsonMeta = const VerificationMeta(
+    'mcpConfigJson',
+  );
+  @override
+  late final GeneratedColumn<String> mcpConfigJson = GeneratedColumn<String>(
+    'mcp_config_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _mcpCheckedAtMeta = const VerificationMeta(
+    'mcpCheckedAt',
+  );
+  @override
+  late final GeneratedColumn<int> mcpCheckedAt = GeneratedColumn<int>(
+    'mcp_checked_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _installedConfigJsonMeta =
+      const VerificationMeta('installedConfigJson');
+  @override
+  late final GeneratedColumn<String> installedConfigJson =
+      GeneratedColumn<String>(
+        'installed_config_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _needsReconsentMeta = const VerificationMeta(
+    'needsReconsent',
+  );
+  @override
+  late final GeneratedColumn<bool> needsReconsent = GeneratedColumn<bool>(
+    'needs_reconsent',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_reconsent" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _lastErrorMeta = const VerificationMeta(
+    'lastError',
+  );
+  @override
+  late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
+    'last_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastSeenAtMeta = const VerificationMeta(
+    'lastSeenAt',
+  );
+  @override
+  late final GeneratedColumn<int> lastSeenAt = GeneratedColumn<int>(
+    'last_seen_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    marketplaceId,
+    name,
+    displayName,
+    description,
+    author,
+    category,
+    homepage,
+    version,
+    sourceJson,
+    sourceKind,
+    sourceUrl,
+    sourcePath,
+    sourceRef,
+    sourceSha,
+    installed,
+    enabled,
+    mcpStatus,
+    mcpConfigJson,
+    mcpCheckedAt,
+    installedConfigJson,
+    needsReconsent,
+    lastError,
+    lastSeenAt,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'marketplace_plugins';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MarketplacePluginEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('marketplace_id')) {
+      context.handle(
+        _marketplaceIdMeta,
+        marketplaceId.isAcceptableOrUnknown(
+          data['marketplace_id']!,
+          _marketplaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_marketplaceIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('author')) {
+      context.handle(
+        _authorMeta,
+        author.isAcceptableOrUnknown(data['author']!, _authorMeta),
+      );
+    }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    }
+    if (data.containsKey('homepage')) {
+      context.handle(
+        _homepageMeta,
+        homepage.isAcceptableOrUnknown(data['homepage']!, _homepageMeta),
+      );
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
+    if (data.containsKey('source_json')) {
+      context.handle(
+        _sourceJsonMeta,
+        sourceJson.isAcceptableOrUnknown(data['source_json']!, _sourceJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceJsonMeta);
+    }
+    if (data.containsKey('source_kind')) {
+      context.handle(
+        _sourceKindMeta,
+        sourceKind.isAcceptableOrUnknown(data['source_kind']!, _sourceKindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceKindMeta);
+    }
+    if (data.containsKey('source_url')) {
+      context.handle(
+        _sourceUrlMeta,
+        sourceUrl.isAcceptableOrUnknown(data['source_url']!, _sourceUrlMeta),
+      );
+    }
+    if (data.containsKey('source_path')) {
+      context.handle(
+        _sourcePathMeta,
+        sourcePath.isAcceptableOrUnknown(data['source_path']!, _sourcePathMeta),
+      );
+    }
+    if (data.containsKey('source_ref')) {
+      context.handle(
+        _sourceRefMeta,
+        sourceRef.isAcceptableOrUnknown(data['source_ref']!, _sourceRefMeta),
+      );
+    }
+    if (data.containsKey('source_sha')) {
+      context.handle(
+        _sourceShaMeta,
+        sourceSha.isAcceptableOrUnknown(data['source_sha']!, _sourceShaMeta),
+      );
+    }
+    if (data.containsKey('installed')) {
+      context.handle(
+        _installedMeta,
+        installed.isAcceptableOrUnknown(data['installed']!, _installedMeta),
+      );
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    }
+    if (data.containsKey('mcp_status')) {
+      context.handle(
+        _mcpStatusMeta,
+        mcpStatus.isAcceptableOrUnknown(data['mcp_status']!, _mcpStatusMeta),
+      );
+    }
+    if (data.containsKey('mcp_config_json')) {
+      context.handle(
+        _mcpConfigJsonMeta,
+        mcpConfigJson.isAcceptableOrUnknown(
+          data['mcp_config_json']!,
+          _mcpConfigJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mcp_checked_at')) {
+      context.handle(
+        _mcpCheckedAtMeta,
+        mcpCheckedAt.isAcceptableOrUnknown(
+          data['mcp_checked_at']!,
+          _mcpCheckedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('installed_config_json')) {
+      context.handle(
+        _installedConfigJsonMeta,
+        installedConfigJson.isAcceptableOrUnknown(
+          data['installed_config_json']!,
+          _installedConfigJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('needs_reconsent')) {
+      context.handle(
+        _needsReconsentMeta,
+        needsReconsent.isAcceptableOrUnknown(
+          data['needs_reconsent']!,
+          _needsReconsentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_error')) {
+      context.handle(
+        _lastErrorMeta,
+        lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta),
+      );
+    }
+    if (data.containsKey('last_seen_at')) {
+      context.handle(
+        _lastSeenAtMeta,
+        lastSeenAt.isAcceptableOrUnknown(
+          data['last_seen_at']!,
+          _lastSeenAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastSeenAtMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MarketplacePluginEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MarketplacePluginEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      marketplaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}marketplace_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      ),
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
+      author: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}author'],
+      ),
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      ),
+      homepage: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}homepage'],
+      ),
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}version'],
+      ),
+      sourceJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_json'],
+      )!,
+      sourceKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_kind'],
+      )!,
+      sourceUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_url'],
+      ),
+      sourcePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_path'],
+      ),
+      sourceRef: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_ref'],
+      ),
+      sourceSha: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_sha'],
+      ),
+      installed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}installed'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+      mcpStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mcp_status'],
+      )!,
+      mcpConfigJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mcp_config_json'],
+      ),
+      mcpCheckedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}mcp_checked_at'],
+      ),
+      installedConfigJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}installed_config_json'],
+      ),
+      needsReconsent: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_reconsent'],
+      )!,
+      lastError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error'],
+      ),
+      lastSeenAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_seen_at'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $MarketplacePluginEntriesTable createAlias(String alias) {
+    return $MarketplacePluginEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class MarketplacePluginEntry extends DataClass
+    implements Insertable<MarketplacePluginEntry> {
+  final String id;
+  final String marketplaceId;
+  final String name;
+  final String? displayName;
+  final String description;
+  final String? author;
+  final String? category;
+  final String? homepage;
+  final String? version;
+
+  /// Raw `source` value from the marketplace manifest.
+  final String sourceJson;
+
+  /// `path`, `git-subdir`, `url`, or `command`.
+  final String sourceKind;
+  final String? sourceUrl;
+  final String? sourcePath;
+  final String? sourceRef;
+  final String? sourceSha;
+  final bool installed;
+  final bool enabled;
+
+  /// `unknown`, `none`, `remote`, `stdio`, `mixed`, `unsupported`, or `error`.
+  final String mcpStatus;
+
+  /// Parsed server configurations, without secrets.
+  final String? mcpConfigJson;
+  final int? mcpCheckedAt;
+
+  /// Remote server configs captured at install time for change detection.
+  final String? installedConfigJson;
+  final bool needsReconsent;
+  final String? lastError;
+  final int lastSeenAt;
+  final int createdAt;
+  const MarketplacePluginEntry({
+    required this.id,
+    required this.marketplaceId,
+    required this.name,
+    this.displayName,
+    required this.description,
+    this.author,
+    this.category,
+    this.homepage,
+    this.version,
+    required this.sourceJson,
+    required this.sourceKind,
+    this.sourceUrl,
+    this.sourcePath,
+    this.sourceRef,
+    this.sourceSha,
+    required this.installed,
+    required this.enabled,
+    required this.mcpStatus,
+    this.mcpConfigJson,
+    this.mcpCheckedAt,
+    this.installedConfigJson,
+    required this.needsReconsent,
+    this.lastError,
+    required this.lastSeenAt,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['marketplace_id'] = Variable<String>(marketplaceId);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || displayName != null) {
+      map['display_name'] = Variable<String>(displayName);
+    }
+    map['description'] = Variable<String>(description);
+    if (!nullToAbsent || author != null) {
+      map['author'] = Variable<String>(author);
+    }
+    if (!nullToAbsent || category != null) {
+      map['category'] = Variable<String>(category);
+    }
+    if (!nullToAbsent || homepage != null) {
+      map['homepage'] = Variable<String>(homepage);
+    }
+    if (!nullToAbsent || version != null) {
+      map['version'] = Variable<String>(version);
+    }
+    map['source_json'] = Variable<String>(sourceJson);
+    map['source_kind'] = Variable<String>(sourceKind);
+    if (!nullToAbsent || sourceUrl != null) {
+      map['source_url'] = Variable<String>(sourceUrl);
+    }
+    if (!nullToAbsent || sourcePath != null) {
+      map['source_path'] = Variable<String>(sourcePath);
+    }
+    if (!nullToAbsent || sourceRef != null) {
+      map['source_ref'] = Variable<String>(sourceRef);
+    }
+    if (!nullToAbsent || sourceSha != null) {
+      map['source_sha'] = Variable<String>(sourceSha);
+    }
+    map['installed'] = Variable<bool>(installed);
+    map['enabled'] = Variable<bool>(enabled);
+    map['mcp_status'] = Variable<String>(mcpStatus);
+    if (!nullToAbsent || mcpConfigJson != null) {
+      map['mcp_config_json'] = Variable<String>(mcpConfigJson);
+    }
+    if (!nullToAbsent || mcpCheckedAt != null) {
+      map['mcp_checked_at'] = Variable<int>(mcpCheckedAt);
+    }
+    if (!nullToAbsent || installedConfigJson != null) {
+      map['installed_config_json'] = Variable<String>(installedConfigJson);
+    }
+    map['needs_reconsent'] = Variable<bool>(needsReconsent);
+    if (!nullToAbsent || lastError != null) {
+      map['last_error'] = Variable<String>(lastError);
+    }
+    map['last_seen_at'] = Variable<int>(lastSeenAt);
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  MarketplacePluginEntriesCompanion toCompanion(bool nullToAbsent) {
+    return MarketplacePluginEntriesCompanion(
+      id: Value(id),
+      marketplaceId: Value(marketplaceId),
+      name: Value(name),
+      displayName: displayName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayName),
+      description: Value(description),
+      author: author == null && nullToAbsent
+          ? const Value.absent()
+          : Value(author),
+      category: category == null && nullToAbsent
+          ? const Value.absent()
+          : Value(category),
+      homepage: homepage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(homepage),
+      version: version == null && nullToAbsent
+          ? const Value.absent()
+          : Value(version),
+      sourceJson: Value(sourceJson),
+      sourceKind: Value(sourceKind),
+      sourceUrl: sourceUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceUrl),
+      sourcePath: sourcePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourcePath),
+      sourceRef: sourceRef == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceRef),
+      sourceSha: sourceSha == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceSha),
+      installed: Value(installed),
+      enabled: Value(enabled),
+      mcpStatus: Value(mcpStatus),
+      mcpConfigJson: mcpConfigJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mcpConfigJson),
+      mcpCheckedAt: mcpCheckedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mcpCheckedAt),
+      installedConfigJson: installedConfigJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(installedConfigJson),
+      needsReconsent: Value(needsReconsent),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
+      lastSeenAt: Value(lastSeenAt),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory MarketplacePluginEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MarketplacePluginEntry(
+      id: serializer.fromJson<String>(json['id']),
+      marketplaceId: serializer.fromJson<String>(json['marketplaceId']),
+      name: serializer.fromJson<String>(json['name']),
+      displayName: serializer.fromJson<String?>(json['displayName']),
+      description: serializer.fromJson<String>(json['description']),
+      author: serializer.fromJson<String?>(json['author']),
+      category: serializer.fromJson<String?>(json['category']),
+      homepage: serializer.fromJson<String?>(json['homepage']),
+      version: serializer.fromJson<String?>(json['version']),
+      sourceJson: serializer.fromJson<String>(json['sourceJson']),
+      sourceKind: serializer.fromJson<String>(json['sourceKind']),
+      sourceUrl: serializer.fromJson<String?>(json['sourceUrl']),
+      sourcePath: serializer.fromJson<String?>(json['sourcePath']),
+      sourceRef: serializer.fromJson<String?>(json['sourceRef']),
+      sourceSha: serializer.fromJson<String?>(json['sourceSha']),
+      installed: serializer.fromJson<bool>(json['installed']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+      mcpStatus: serializer.fromJson<String>(json['mcpStatus']),
+      mcpConfigJson: serializer.fromJson<String?>(json['mcpConfigJson']),
+      mcpCheckedAt: serializer.fromJson<int?>(json['mcpCheckedAt']),
+      installedConfigJson: serializer.fromJson<String?>(
+        json['installedConfigJson'],
+      ),
+      needsReconsent: serializer.fromJson<bool>(json['needsReconsent']),
+      lastError: serializer.fromJson<String?>(json['lastError']),
+      lastSeenAt: serializer.fromJson<int>(json['lastSeenAt']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'marketplaceId': serializer.toJson<String>(marketplaceId),
+      'name': serializer.toJson<String>(name),
+      'displayName': serializer.toJson<String?>(displayName),
+      'description': serializer.toJson<String>(description),
+      'author': serializer.toJson<String?>(author),
+      'category': serializer.toJson<String?>(category),
+      'homepage': serializer.toJson<String?>(homepage),
+      'version': serializer.toJson<String?>(version),
+      'sourceJson': serializer.toJson<String>(sourceJson),
+      'sourceKind': serializer.toJson<String>(sourceKind),
+      'sourceUrl': serializer.toJson<String?>(sourceUrl),
+      'sourcePath': serializer.toJson<String?>(sourcePath),
+      'sourceRef': serializer.toJson<String?>(sourceRef),
+      'sourceSha': serializer.toJson<String?>(sourceSha),
+      'installed': serializer.toJson<bool>(installed),
+      'enabled': serializer.toJson<bool>(enabled),
+      'mcpStatus': serializer.toJson<String>(mcpStatus),
+      'mcpConfigJson': serializer.toJson<String?>(mcpConfigJson),
+      'mcpCheckedAt': serializer.toJson<int?>(mcpCheckedAt),
+      'installedConfigJson': serializer.toJson<String?>(installedConfigJson),
+      'needsReconsent': serializer.toJson<bool>(needsReconsent),
+      'lastError': serializer.toJson<String?>(lastError),
+      'lastSeenAt': serializer.toJson<int>(lastSeenAt),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  MarketplacePluginEntry copyWith({
+    String? id,
+    String? marketplaceId,
+    String? name,
+    Value<String?> displayName = const Value.absent(),
+    String? description,
+    Value<String?> author = const Value.absent(),
+    Value<String?> category = const Value.absent(),
+    Value<String?> homepage = const Value.absent(),
+    Value<String?> version = const Value.absent(),
+    String? sourceJson,
+    String? sourceKind,
+    Value<String?> sourceUrl = const Value.absent(),
+    Value<String?> sourcePath = const Value.absent(),
+    Value<String?> sourceRef = const Value.absent(),
+    Value<String?> sourceSha = const Value.absent(),
+    bool? installed,
+    bool? enabled,
+    String? mcpStatus,
+    Value<String?> mcpConfigJson = const Value.absent(),
+    Value<int?> mcpCheckedAt = const Value.absent(),
+    Value<String?> installedConfigJson = const Value.absent(),
+    bool? needsReconsent,
+    Value<String?> lastError = const Value.absent(),
+    int? lastSeenAt,
+    int? createdAt,
+  }) => MarketplacePluginEntry(
+    id: id ?? this.id,
+    marketplaceId: marketplaceId ?? this.marketplaceId,
+    name: name ?? this.name,
+    displayName: displayName.present ? displayName.value : this.displayName,
+    description: description ?? this.description,
+    author: author.present ? author.value : this.author,
+    category: category.present ? category.value : this.category,
+    homepage: homepage.present ? homepage.value : this.homepage,
+    version: version.present ? version.value : this.version,
+    sourceJson: sourceJson ?? this.sourceJson,
+    sourceKind: sourceKind ?? this.sourceKind,
+    sourceUrl: sourceUrl.present ? sourceUrl.value : this.sourceUrl,
+    sourcePath: sourcePath.present ? sourcePath.value : this.sourcePath,
+    sourceRef: sourceRef.present ? sourceRef.value : this.sourceRef,
+    sourceSha: sourceSha.present ? sourceSha.value : this.sourceSha,
+    installed: installed ?? this.installed,
+    enabled: enabled ?? this.enabled,
+    mcpStatus: mcpStatus ?? this.mcpStatus,
+    mcpConfigJson: mcpConfigJson.present
+        ? mcpConfigJson.value
+        : this.mcpConfigJson,
+    mcpCheckedAt: mcpCheckedAt.present ? mcpCheckedAt.value : this.mcpCheckedAt,
+    installedConfigJson: installedConfigJson.present
+        ? installedConfigJson.value
+        : this.installedConfigJson,
+    needsReconsent: needsReconsent ?? this.needsReconsent,
+    lastError: lastError.present ? lastError.value : this.lastError,
+    lastSeenAt: lastSeenAt ?? this.lastSeenAt,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  MarketplacePluginEntry copyWithCompanion(
+    MarketplacePluginEntriesCompanion data,
+  ) {
+    return MarketplacePluginEntry(
+      id: data.id.present ? data.id.value : this.id,
+      marketplaceId: data.marketplaceId.present
+          ? data.marketplaceId.value
+          : this.marketplaceId,
+      name: data.name.present ? data.name.value : this.name,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      author: data.author.present ? data.author.value : this.author,
+      category: data.category.present ? data.category.value : this.category,
+      homepage: data.homepage.present ? data.homepage.value : this.homepage,
+      version: data.version.present ? data.version.value : this.version,
+      sourceJson: data.sourceJson.present
+          ? data.sourceJson.value
+          : this.sourceJson,
+      sourceKind: data.sourceKind.present
+          ? data.sourceKind.value
+          : this.sourceKind,
+      sourceUrl: data.sourceUrl.present ? data.sourceUrl.value : this.sourceUrl,
+      sourcePath: data.sourcePath.present
+          ? data.sourcePath.value
+          : this.sourcePath,
+      sourceRef: data.sourceRef.present ? data.sourceRef.value : this.sourceRef,
+      sourceSha: data.sourceSha.present ? data.sourceSha.value : this.sourceSha,
+      installed: data.installed.present ? data.installed.value : this.installed,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      mcpStatus: data.mcpStatus.present ? data.mcpStatus.value : this.mcpStatus,
+      mcpConfigJson: data.mcpConfigJson.present
+          ? data.mcpConfigJson.value
+          : this.mcpConfigJson,
+      mcpCheckedAt: data.mcpCheckedAt.present
+          ? data.mcpCheckedAt.value
+          : this.mcpCheckedAt,
+      installedConfigJson: data.installedConfigJson.present
+          ? data.installedConfigJson.value
+          : this.installedConfigJson,
+      needsReconsent: data.needsReconsent.present
+          ? data.needsReconsent.value
+          : this.needsReconsent,
+      lastError: data.lastError.present ? data.lastError.value : this.lastError,
+      lastSeenAt: data.lastSeenAt.present
+          ? data.lastSeenAt.value
+          : this.lastSeenAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MarketplacePluginEntry(')
+          ..write('id: $id, ')
+          ..write('marketplaceId: $marketplaceId, ')
+          ..write('name: $name, ')
+          ..write('displayName: $displayName, ')
+          ..write('description: $description, ')
+          ..write('author: $author, ')
+          ..write('category: $category, ')
+          ..write('homepage: $homepage, ')
+          ..write('version: $version, ')
+          ..write('sourceJson: $sourceJson, ')
+          ..write('sourceKind: $sourceKind, ')
+          ..write('sourceUrl: $sourceUrl, ')
+          ..write('sourcePath: $sourcePath, ')
+          ..write('sourceRef: $sourceRef, ')
+          ..write('sourceSha: $sourceSha, ')
+          ..write('installed: $installed, ')
+          ..write('enabled: $enabled, ')
+          ..write('mcpStatus: $mcpStatus, ')
+          ..write('mcpConfigJson: $mcpConfigJson, ')
+          ..write('mcpCheckedAt: $mcpCheckedAt, ')
+          ..write('installedConfigJson: $installedConfigJson, ')
+          ..write('needsReconsent: $needsReconsent, ')
+          ..write('lastError: $lastError, ')
+          ..write('lastSeenAt: $lastSeenAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    marketplaceId,
+    name,
+    displayName,
+    description,
+    author,
+    category,
+    homepage,
+    version,
+    sourceJson,
+    sourceKind,
+    sourceUrl,
+    sourcePath,
+    sourceRef,
+    sourceSha,
+    installed,
+    enabled,
+    mcpStatus,
+    mcpConfigJson,
+    mcpCheckedAt,
+    installedConfigJson,
+    needsReconsent,
+    lastError,
+    lastSeenAt,
+    createdAt,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MarketplacePluginEntry &&
+          other.id == this.id &&
+          other.marketplaceId == this.marketplaceId &&
+          other.name == this.name &&
+          other.displayName == this.displayName &&
+          other.description == this.description &&
+          other.author == this.author &&
+          other.category == this.category &&
+          other.homepage == this.homepage &&
+          other.version == this.version &&
+          other.sourceJson == this.sourceJson &&
+          other.sourceKind == this.sourceKind &&
+          other.sourceUrl == this.sourceUrl &&
+          other.sourcePath == this.sourcePath &&
+          other.sourceRef == this.sourceRef &&
+          other.sourceSha == this.sourceSha &&
+          other.installed == this.installed &&
+          other.enabled == this.enabled &&
+          other.mcpStatus == this.mcpStatus &&
+          other.mcpConfigJson == this.mcpConfigJson &&
+          other.mcpCheckedAt == this.mcpCheckedAt &&
+          other.installedConfigJson == this.installedConfigJson &&
+          other.needsReconsent == this.needsReconsent &&
+          other.lastError == this.lastError &&
+          other.lastSeenAt == this.lastSeenAt &&
+          other.createdAt == this.createdAt);
+}
+
+class MarketplacePluginEntriesCompanion
+    extends UpdateCompanion<MarketplacePluginEntry> {
+  final Value<String> id;
+  final Value<String> marketplaceId;
+  final Value<String> name;
+  final Value<String?> displayName;
+  final Value<String> description;
+  final Value<String?> author;
+  final Value<String?> category;
+  final Value<String?> homepage;
+  final Value<String?> version;
+  final Value<String> sourceJson;
+  final Value<String> sourceKind;
+  final Value<String?> sourceUrl;
+  final Value<String?> sourcePath;
+  final Value<String?> sourceRef;
+  final Value<String?> sourceSha;
+  final Value<bool> installed;
+  final Value<bool> enabled;
+  final Value<String> mcpStatus;
+  final Value<String?> mcpConfigJson;
+  final Value<int?> mcpCheckedAt;
+  final Value<String?> installedConfigJson;
+  final Value<bool> needsReconsent;
+  final Value<String?> lastError;
+  final Value<int> lastSeenAt;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const MarketplacePluginEntriesCompanion({
+    this.id = const Value.absent(),
+    this.marketplaceId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.description = const Value.absent(),
+    this.author = const Value.absent(),
+    this.category = const Value.absent(),
+    this.homepage = const Value.absent(),
+    this.version = const Value.absent(),
+    this.sourceJson = const Value.absent(),
+    this.sourceKind = const Value.absent(),
+    this.sourceUrl = const Value.absent(),
+    this.sourcePath = const Value.absent(),
+    this.sourceRef = const Value.absent(),
+    this.sourceSha = const Value.absent(),
+    this.installed = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.mcpStatus = const Value.absent(),
+    this.mcpConfigJson = const Value.absent(),
+    this.mcpCheckedAt = const Value.absent(),
+    this.installedConfigJson = const Value.absent(),
+    this.needsReconsent = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.lastSeenAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MarketplacePluginEntriesCompanion.insert({
+    required String id,
+    required String marketplaceId,
+    required String name,
+    this.displayName = const Value.absent(),
+    this.description = const Value.absent(),
+    this.author = const Value.absent(),
+    this.category = const Value.absent(),
+    this.homepage = const Value.absent(),
+    this.version = const Value.absent(),
+    required String sourceJson,
+    required String sourceKind,
+    this.sourceUrl = const Value.absent(),
+    this.sourcePath = const Value.absent(),
+    this.sourceRef = const Value.absent(),
+    this.sourceSha = const Value.absent(),
+    this.installed = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.mcpStatus = const Value.absent(),
+    this.mcpConfigJson = const Value.absent(),
+    this.mcpCheckedAt = const Value.absent(),
+    this.installedConfigJson = const Value.absent(),
+    this.needsReconsent = const Value.absent(),
+    this.lastError = const Value.absent(),
+    required int lastSeenAt,
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       marketplaceId = Value(marketplaceId),
+       name = Value(name),
+       sourceJson = Value(sourceJson),
+       sourceKind = Value(sourceKind),
+       lastSeenAt = Value(lastSeenAt),
+       createdAt = Value(createdAt);
+  static Insertable<MarketplacePluginEntry> custom({
+    Expression<String>? id,
+    Expression<String>? marketplaceId,
+    Expression<String>? name,
+    Expression<String>? displayName,
+    Expression<String>? description,
+    Expression<String>? author,
+    Expression<String>? category,
+    Expression<String>? homepage,
+    Expression<String>? version,
+    Expression<String>? sourceJson,
+    Expression<String>? sourceKind,
+    Expression<String>? sourceUrl,
+    Expression<String>? sourcePath,
+    Expression<String>? sourceRef,
+    Expression<String>? sourceSha,
+    Expression<bool>? installed,
+    Expression<bool>? enabled,
+    Expression<String>? mcpStatus,
+    Expression<String>? mcpConfigJson,
+    Expression<int>? mcpCheckedAt,
+    Expression<String>? installedConfigJson,
+    Expression<bool>? needsReconsent,
+    Expression<String>? lastError,
+    Expression<int>? lastSeenAt,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (marketplaceId != null) 'marketplace_id': marketplaceId,
+      if (name != null) 'name': name,
+      if (displayName != null) 'display_name': displayName,
+      if (description != null) 'description': description,
+      if (author != null) 'author': author,
+      if (category != null) 'category': category,
+      if (homepage != null) 'homepage': homepage,
+      if (version != null) 'version': version,
+      if (sourceJson != null) 'source_json': sourceJson,
+      if (sourceKind != null) 'source_kind': sourceKind,
+      if (sourceUrl != null) 'source_url': sourceUrl,
+      if (sourcePath != null) 'source_path': sourcePath,
+      if (sourceRef != null) 'source_ref': sourceRef,
+      if (sourceSha != null) 'source_sha': sourceSha,
+      if (installed != null) 'installed': installed,
+      if (enabled != null) 'enabled': enabled,
+      if (mcpStatus != null) 'mcp_status': mcpStatus,
+      if (mcpConfigJson != null) 'mcp_config_json': mcpConfigJson,
+      if (mcpCheckedAt != null) 'mcp_checked_at': mcpCheckedAt,
+      if (installedConfigJson != null)
+        'installed_config_json': installedConfigJson,
+      if (needsReconsent != null) 'needs_reconsent': needsReconsent,
+      if (lastError != null) 'last_error': lastError,
+      if (lastSeenAt != null) 'last_seen_at': lastSeenAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MarketplacePluginEntriesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? marketplaceId,
+    Value<String>? name,
+    Value<String?>? displayName,
+    Value<String>? description,
+    Value<String?>? author,
+    Value<String?>? category,
+    Value<String?>? homepage,
+    Value<String?>? version,
+    Value<String>? sourceJson,
+    Value<String>? sourceKind,
+    Value<String?>? sourceUrl,
+    Value<String?>? sourcePath,
+    Value<String?>? sourceRef,
+    Value<String?>? sourceSha,
+    Value<bool>? installed,
+    Value<bool>? enabled,
+    Value<String>? mcpStatus,
+    Value<String?>? mcpConfigJson,
+    Value<int?>? mcpCheckedAt,
+    Value<String?>? installedConfigJson,
+    Value<bool>? needsReconsent,
+    Value<String?>? lastError,
+    Value<int>? lastSeenAt,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return MarketplacePluginEntriesCompanion(
+      id: id ?? this.id,
+      marketplaceId: marketplaceId ?? this.marketplaceId,
+      name: name ?? this.name,
+      displayName: displayName ?? this.displayName,
+      description: description ?? this.description,
+      author: author ?? this.author,
+      category: category ?? this.category,
+      homepage: homepage ?? this.homepage,
+      version: version ?? this.version,
+      sourceJson: sourceJson ?? this.sourceJson,
+      sourceKind: sourceKind ?? this.sourceKind,
+      sourceUrl: sourceUrl ?? this.sourceUrl,
+      sourcePath: sourcePath ?? this.sourcePath,
+      sourceRef: sourceRef ?? this.sourceRef,
+      sourceSha: sourceSha ?? this.sourceSha,
+      installed: installed ?? this.installed,
+      enabled: enabled ?? this.enabled,
+      mcpStatus: mcpStatus ?? this.mcpStatus,
+      mcpConfigJson: mcpConfigJson ?? this.mcpConfigJson,
+      mcpCheckedAt: mcpCheckedAt ?? this.mcpCheckedAt,
+      installedConfigJson: installedConfigJson ?? this.installedConfigJson,
+      needsReconsent: needsReconsent ?? this.needsReconsent,
+      lastError: lastError ?? this.lastError,
+      lastSeenAt: lastSeenAt ?? this.lastSeenAt,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (marketplaceId.present) {
+      map['marketplace_id'] = Variable<String>(marketplaceId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (author.present) {
+      map['author'] = Variable<String>(author.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (homepage.present) {
+      map['homepage'] = Variable<String>(homepage.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<String>(version.value);
+    }
+    if (sourceJson.present) {
+      map['source_json'] = Variable<String>(sourceJson.value);
+    }
+    if (sourceKind.present) {
+      map['source_kind'] = Variable<String>(sourceKind.value);
+    }
+    if (sourceUrl.present) {
+      map['source_url'] = Variable<String>(sourceUrl.value);
+    }
+    if (sourcePath.present) {
+      map['source_path'] = Variable<String>(sourcePath.value);
+    }
+    if (sourceRef.present) {
+      map['source_ref'] = Variable<String>(sourceRef.value);
+    }
+    if (sourceSha.present) {
+      map['source_sha'] = Variable<String>(sourceSha.value);
+    }
+    if (installed.present) {
+      map['installed'] = Variable<bool>(installed.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (mcpStatus.present) {
+      map['mcp_status'] = Variable<String>(mcpStatus.value);
+    }
+    if (mcpConfigJson.present) {
+      map['mcp_config_json'] = Variable<String>(mcpConfigJson.value);
+    }
+    if (mcpCheckedAt.present) {
+      map['mcp_checked_at'] = Variable<int>(mcpCheckedAt.value);
+    }
+    if (installedConfigJson.present) {
+      map['installed_config_json'] = Variable<String>(
+        installedConfigJson.value,
+      );
+    }
+    if (needsReconsent.present) {
+      map['needs_reconsent'] = Variable<bool>(needsReconsent.value);
+    }
+    if (lastError.present) {
+      map['last_error'] = Variable<String>(lastError.value);
+    }
+    if (lastSeenAt.present) {
+      map['last_seen_at'] = Variable<int>(lastSeenAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MarketplacePluginEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('marketplaceId: $marketplaceId, ')
+          ..write('name: $name, ')
+          ..write('displayName: $displayName, ')
+          ..write('description: $description, ')
+          ..write('author: $author, ')
+          ..write('category: $category, ')
+          ..write('homepage: $homepage, ')
+          ..write('version: $version, ')
+          ..write('sourceJson: $sourceJson, ')
+          ..write('sourceKind: $sourceKind, ')
+          ..write('sourceUrl: $sourceUrl, ')
+          ..write('sourcePath: $sourcePath, ')
+          ..write('sourceRef: $sourceRef, ')
+          ..write('sourceSha: $sourceSha, ')
+          ..write('installed: $installed, ')
+          ..write('enabled: $enabled, ')
+          ..write('mcpStatus: $mcpStatus, ')
+          ..write('mcpConfigJson: $mcpConfigJson, ')
+          ..write('mcpCheckedAt: $mcpCheckedAt, ')
+          ..write('installedConfigJson: $installedConfigJson, ')
+          ..write('needsReconsent: $needsReconsent, ')
+          ..write('lastError: $lastError, ')
+          ..write('lastSeenAt: $lastSeenAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $McpServerEntriesTable extends McpServerEntries
+    with TableInfo<$McpServerEntriesTable, McpServerEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $McpServerEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pluginIdMeta = const VerificationMeta(
+    'pluginId',
+  );
+  @override
+  late final GeneratedColumn<String> pluginId = GeneratedColumn<String>(
+    'plugin_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES marketplace_plugins (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _marketplaceIdMeta = const VerificationMeta(
+    'marketplaceId',
+  );
+  @override
+  late final GeneratedColumn<String> marketplaceId = GeneratedColumn<String>(
+    'marketplace_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _urlMeta = const VerificationMeta('url');
+  @override
+  late final GeneratedColumn<String> url = GeneratedColumn<String>(
+    'url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _transportMeta = const VerificationMeta(
+    'transport',
+  );
+  @override
+  late final GeneratedColumn<String> transport = GeneratedColumn<String>(
+    'transport',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _authTypeMeta = const VerificationMeta(
+    'authType',
+  );
+  @override
+  late final GeneratedColumn<String> authType = GeneratedColumn<String>(
+    'auth_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _headerNamesJsonMeta = const VerificationMeta(
+    'headerNamesJson',
+  );
+  @override
+  late final GeneratedColumn<String> headerNamesJson = GeneratedColumn<String>(
+    'header_names_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _configHashMeta = const VerificationMeta(
+    'configHash',
+  );
+  @override
+  late final GeneratedColumn<String> configHash = GeneratedColumn<String>(
+    'config_hash',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _needsReconsentMeta = const VerificationMeta(
+    'needsReconsent',
+  );
+  @override
+  late final GeneratedColumn<bool> needsReconsent = GeneratedColumn<bool>(
+    'needs_reconsent',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_reconsent" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    pluginId,
+    marketplaceId,
+    name,
+    url,
+    transport,
+    authType,
+    headerNamesJson,
+    configHash,
+    enabled,
+    needsReconsent,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mcp_servers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<McpServerEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('plugin_id')) {
+      context.handle(
+        _pluginIdMeta,
+        pluginId.isAcceptableOrUnknown(data['plugin_id']!, _pluginIdMeta),
+      );
+    }
+    if (data.containsKey('marketplace_id')) {
+      context.handle(
+        _marketplaceIdMeta,
+        marketplaceId.isAcceptableOrUnknown(
+          data['marketplace_id']!,
+          _marketplaceIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('url')) {
+      context.handle(
+        _urlMeta,
+        url.isAcceptableOrUnknown(data['url']!, _urlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_urlMeta);
+    }
+    if (data.containsKey('transport')) {
+      context.handle(
+        _transportMeta,
+        transport.isAcceptableOrUnknown(data['transport']!, _transportMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_transportMeta);
+    }
+    if (data.containsKey('auth_type')) {
+      context.handle(
+        _authTypeMeta,
+        authType.isAcceptableOrUnknown(data['auth_type']!, _authTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_authTypeMeta);
+    }
+    if (data.containsKey('header_names_json')) {
+      context.handle(
+        _headerNamesJsonMeta,
+        headerNamesJson.isAcceptableOrUnknown(
+          data['header_names_json']!,
+          _headerNamesJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('config_hash')) {
+      context.handle(
+        _configHashMeta,
+        configHash.isAcceptableOrUnknown(data['config_hash']!, _configHashMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_configHashMeta);
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    }
+    if (data.containsKey('needs_reconsent')) {
+      context.handle(
+        _needsReconsentMeta,
+        needsReconsent.isAcceptableOrUnknown(
+          data['needs_reconsent']!,
+          _needsReconsentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  McpServerEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return McpServerEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      pluginId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plugin_id'],
+      ),
+      marketplaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}marketplace_id'],
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      url: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}url'],
+      )!,
+      transport: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}transport'],
+      )!,
+      authType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}auth_type'],
+      )!,
+      headerNamesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}header_names_json'],
+      ),
+      configHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}config_hash'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+      needsReconsent: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_reconsent'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $McpServerEntriesTable createAlias(String alias) {
+    return $McpServerEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class McpServerEntry extends DataClass implements Insertable<McpServerEntry> {
+  final String id;
+  final String? pluginId;
+  final String? marketplaceId;
+  final String name;
+  final String url;
+
+  /// `http` or `sse`.
+  final String transport;
+
+  /// `oauth`, `api-key`, `none`, or `unknown`.
+  final String authType;
+
+  /// JSON array of header names that require values.
+  final String? headerNamesJson;
+  final String configHash;
+  final bool enabled;
+  final bool needsReconsent;
+  final int createdAt;
+  const McpServerEntry({
+    required this.id,
+    this.pluginId,
+    this.marketplaceId,
+    required this.name,
+    required this.url,
+    required this.transport,
+    required this.authType,
+    this.headerNamesJson,
+    required this.configHash,
+    required this.enabled,
+    required this.needsReconsent,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    if (!nullToAbsent || pluginId != null) {
+      map['plugin_id'] = Variable<String>(pluginId);
+    }
+    if (!nullToAbsent || marketplaceId != null) {
+      map['marketplace_id'] = Variable<String>(marketplaceId);
+    }
+    map['name'] = Variable<String>(name);
+    map['url'] = Variable<String>(url);
+    map['transport'] = Variable<String>(transport);
+    map['auth_type'] = Variable<String>(authType);
+    if (!nullToAbsent || headerNamesJson != null) {
+      map['header_names_json'] = Variable<String>(headerNamesJson);
+    }
+    map['config_hash'] = Variable<String>(configHash);
+    map['enabled'] = Variable<bool>(enabled);
+    map['needs_reconsent'] = Variable<bool>(needsReconsent);
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  McpServerEntriesCompanion toCompanion(bool nullToAbsent) {
+    return McpServerEntriesCompanion(
+      id: Value(id),
+      pluginId: pluginId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pluginId),
+      marketplaceId: marketplaceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(marketplaceId),
+      name: Value(name),
+      url: Value(url),
+      transport: Value(transport),
+      authType: Value(authType),
+      headerNamesJson: headerNamesJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(headerNamesJson),
+      configHash: Value(configHash),
+      enabled: Value(enabled),
+      needsReconsent: Value(needsReconsent),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory McpServerEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return McpServerEntry(
+      id: serializer.fromJson<String>(json['id']),
+      pluginId: serializer.fromJson<String?>(json['pluginId']),
+      marketplaceId: serializer.fromJson<String?>(json['marketplaceId']),
+      name: serializer.fromJson<String>(json['name']),
+      url: serializer.fromJson<String>(json['url']),
+      transport: serializer.fromJson<String>(json['transport']),
+      authType: serializer.fromJson<String>(json['authType']),
+      headerNamesJson: serializer.fromJson<String?>(json['headerNamesJson']),
+      configHash: serializer.fromJson<String>(json['configHash']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+      needsReconsent: serializer.fromJson<bool>(json['needsReconsent']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'pluginId': serializer.toJson<String?>(pluginId),
+      'marketplaceId': serializer.toJson<String?>(marketplaceId),
+      'name': serializer.toJson<String>(name),
+      'url': serializer.toJson<String>(url),
+      'transport': serializer.toJson<String>(transport),
+      'authType': serializer.toJson<String>(authType),
+      'headerNamesJson': serializer.toJson<String?>(headerNamesJson),
+      'configHash': serializer.toJson<String>(configHash),
+      'enabled': serializer.toJson<bool>(enabled),
+      'needsReconsent': serializer.toJson<bool>(needsReconsent),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  McpServerEntry copyWith({
+    String? id,
+    Value<String?> pluginId = const Value.absent(),
+    Value<String?> marketplaceId = const Value.absent(),
+    String? name,
+    String? url,
+    String? transport,
+    String? authType,
+    Value<String?> headerNamesJson = const Value.absent(),
+    String? configHash,
+    bool? enabled,
+    bool? needsReconsent,
+    int? createdAt,
+  }) => McpServerEntry(
+    id: id ?? this.id,
+    pluginId: pluginId.present ? pluginId.value : this.pluginId,
+    marketplaceId: marketplaceId.present
+        ? marketplaceId.value
+        : this.marketplaceId,
+    name: name ?? this.name,
+    url: url ?? this.url,
+    transport: transport ?? this.transport,
+    authType: authType ?? this.authType,
+    headerNamesJson: headerNamesJson.present
+        ? headerNamesJson.value
+        : this.headerNamesJson,
+    configHash: configHash ?? this.configHash,
+    enabled: enabled ?? this.enabled,
+    needsReconsent: needsReconsent ?? this.needsReconsent,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  McpServerEntry copyWithCompanion(McpServerEntriesCompanion data) {
+    return McpServerEntry(
+      id: data.id.present ? data.id.value : this.id,
+      pluginId: data.pluginId.present ? data.pluginId.value : this.pluginId,
+      marketplaceId: data.marketplaceId.present
+          ? data.marketplaceId.value
+          : this.marketplaceId,
+      name: data.name.present ? data.name.value : this.name,
+      url: data.url.present ? data.url.value : this.url,
+      transport: data.transport.present ? data.transport.value : this.transport,
+      authType: data.authType.present ? data.authType.value : this.authType,
+      headerNamesJson: data.headerNamesJson.present
+          ? data.headerNamesJson.value
+          : this.headerNamesJson,
+      configHash: data.configHash.present
+          ? data.configHash.value
+          : this.configHash,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      needsReconsent: data.needsReconsent.present
+          ? data.needsReconsent.value
+          : this.needsReconsent,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpServerEntry(')
+          ..write('id: $id, ')
+          ..write('pluginId: $pluginId, ')
+          ..write('marketplaceId: $marketplaceId, ')
+          ..write('name: $name, ')
+          ..write('url: $url, ')
+          ..write('transport: $transport, ')
+          ..write('authType: $authType, ')
+          ..write('headerNamesJson: $headerNamesJson, ')
+          ..write('configHash: $configHash, ')
+          ..write('enabled: $enabled, ')
+          ..write('needsReconsent: $needsReconsent, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    pluginId,
+    marketplaceId,
+    name,
+    url,
+    transport,
+    authType,
+    headerNamesJson,
+    configHash,
+    enabled,
+    needsReconsent,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is McpServerEntry &&
+          other.id == this.id &&
+          other.pluginId == this.pluginId &&
+          other.marketplaceId == this.marketplaceId &&
+          other.name == this.name &&
+          other.url == this.url &&
+          other.transport == this.transport &&
+          other.authType == this.authType &&
+          other.headerNamesJson == this.headerNamesJson &&
+          other.configHash == this.configHash &&
+          other.enabled == this.enabled &&
+          other.needsReconsent == this.needsReconsent &&
+          other.createdAt == this.createdAt);
+}
+
+class McpServerEntriesCompanion extends UpdateCompanion<McpServerEntry> {
+  final Value<String> id;
+  final Value<String?> pluginId;
+  final Value<String?> marketplaceId;
+  final Value<String> name;
+  final Value<String> url;
+  final Value<String> transport;
+  final Value<String> authType;
+  final Value<String?> headerNamesJson;
+  final Value<String> configHash;
+  final Value<bool> enabled;
+  final Value<bool> needsReconsent;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const McpServerEntriesCompanion({
+    this.id = const Value.absent(),
+    this.pluginId = const Value.absent(),
+    this.marketplaceId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.url = const Value.absent(),
+    this.transport = const Value.absent(),
+    this.authType = const Value.absent(),
+    this.headerNamesJson = const Value.absent(),
+    this.configHash = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.needsReconsent = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  McpServerEntriesCompanion.insert({
+    required String id,
+    this.pluginId = const Value.absent(),
+    this.marketplaceId = const Value.absent(),
+    required String name,
+    required String url,
+    required String transport,
+    required String authType,
+    this.headerNamesJson = const Value.absent(),
+    required String configHash,
+    this.enabled = const Value.absent(),
+    this.needsReconsent = const Value.absent(),
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       url = Value(url),
+       transport = Value(transport),
+       authType = Value(authType),
+       configHash = Value(configHash),
+       createdAt = Value(createdAt);
+  static Insertable<McpServerEntry> custom({
+    Expression<String>? id,
+    Expression<String>? pluginId,
+    Expression<String>? marketplaceId,
+    Expression<String>? name,
+    Expression<String>? url,
+    Expression<String>? transport,
+    Expression<String>? authType,
+    Expression<String>? headerNamesJson,
+    Expression<String>? configHash,
+    Expression<bool>? enabled,
+    Expression<bool>? needsReconsent,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (pluginId != null) 'plugin_id': pluginId,
+      if (marketplaceId != null) 'marketplace_id': marketplaceId,
+      if (name != null) 'name': name,
+      if (url != null) 'url': url,
+      if (transport != null) 'transport': transport,
+      if (authType != null) 'auth_type': authType,
+      if (headerNamesJson != null) 'header_names_json': headerNamesJson,
+      if (configHash != null) 'config_hash': configHash,
+      if (enabled != null) 'enabled': enabled,
+      if (needsReconsent != null) 'needs_reconsent': needsReconsent,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  McpServerEntriesCompanion copyWith({
+    Value<String>? id,
+    Value<String?>? pluginId,
+    Value<String?>? marketplaceId,
+    Value<String>? name,
+    Value<String>? url,
+    Value<String>? transport,
+    Value<String>? authType,
+    Value<String?>? headerNamesJson,
+    Value<String>? configHash,
+    Value<bool>? enabled,
+    Value<bool>? needsReconsent,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return McpServerEntriesCompanion(
+      id: id ?? this.id,
+      pluginId: pluginId ?? this.pluginId,
+      marketplaceId: marketplaceId ?? this.marketplaceId,
+      name: name ?? this.name,
+      url: url ?? this.url,
+      transport: transport ?? this.transport,
+      authType: authType ?? this.authType,
+      headerNamesJson: headerNamesJson ?? this.headerNamesJson,
+      configHash: configHash ?? this.configHash,
+      enabled: enabled ?? this.enabled,
+      needsReconsent: needsReconsent ?? this.needsReconsent,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (pluginId.present) {
+      map['plugin_id'] = Variable<String>(pluginId.value);
+    }
+    if (marketplaceId.present) {
+      map['marketplace_id'] = Variable<String>(marketplaceId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (url.present) {
+      map['url'] = Variable<String>(url.value);
+    }
+    if (transport.present) {
+      map['transport'] = Variable<String>(transport.value);
+    }
+    if (authType.present) {
+      map['auth_type'] = Variable<String>(authType.value);
+    }
+    if (headerNamesJson.present) {
+      map['header_names_json'] = Variable<String>(headerNamesJson.value);
+    }
+    if (configHash.present) {
+      map['config_hash'] = Variable<String>(configHash.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (needsReconsent.present) {
+      map['needs_reconsent'] = Variable<bool>(needsReconsent.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpServerEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('pluginId: $pluginId, ')
+          ..write('marketplaceId: $marketplaceId, ')
+          ..write('name: $name, ')
+          ..write('url: $url, ')
+          ..write('transport: $transport, ')
+          ..write('authType: $authType, ')
+          ..write('headerNamesJson: $headerNamesJson, ')
+          ..write('configHash: $configHash, ')
+          ..write('enabled: $enabled, ')
+          ..write('needsReconsent: $needsReconsent, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1672,6 +4488,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $ConversationsTable conversations = $ConversationsTable(this);
   late final $MessagesTable messages = $MessagesTable(this);
+  late final $MarketplaceEntriesTable marketplaceEntries =
+      $MarketplaceEntriesTable(this);
+  late final $MarketplacePluginEntriesTable marketplacePluginEntries =
+      $MarketplacePluginEntriesTable(this);
+  late final $McpServerEntriesTable mcpServerEntries = $McpServerEntriesTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1681,6 +4504,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     providerEntries,
     conversations,
     messages,
+    marketplaceEntries,
+    marketplacePluginEntries,
+    mcpServerEntries,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -1697,6 +4523,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('messages', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'marketplaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('marketplace_plugins', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'marketplace_plugins',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('mcp_servers', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -3022,6 +5862,1764 @@ typedef $$MessagesTableProcessedTableManager =
       Message,
       PrefetchHooks Function({bool conversationId})
     >;
+typedef $$MarketplaceEntriesTableCreateCompanionBuilder =
+    MarketplaceEntriesCompanion Function({
+      required String id,
+      required String name,
+      Value<String> description,
+      required String sourceUrl,
+      required String manifestUrl,
+      Value<bool> builtIn,
+      Value<bool> enabled,
+      Value<String?> etag,
+      Value<int?> lastSyncedAt,
+      Value<String?> lastError,
+      required int createdAt,
+      Value<int> rowid,
+    });
+typedef $$MarketplaceEntriesTableUpdateCompanionBuilder =
+    MarketplaceEntriesCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> description,
+      Value<String> sourceUrl,
+      Value<String> manifestUrl,
+      Value<bool> builtIn,
+      Value<bool> enabled,
+      Value<String?> etag,
+      Value<int?> lastSyncedAt,
+      Value<String?> lastError,
+      Value<int> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$MarketplaceEntriesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $MarketplaceEntriesTable,
+          MarketplaceEntry
+        > {
+  $$MarketplaceEntriesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<
+    $MarketplacePluginEntriesTable,
+    List<MarketplacePluginEntry>
+  >
+  _marketplacePluginEntriesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.marketplacePluginEntries,
+        aliasName: 'marketplaces__id__marketplace_plugins__marketplace_id',
+      );
+
+  $$MarketplacePluginEntriesTableProcessedTableManager
+  get marketplacePluginEntriesRefs {
+    final manager = $$MarketplacePluginEntriesTableTableManager(
+      $_db,
+      $_db.marketplacePluginEntries,
+    ).filter((f) => f.marketplaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _marketplacePluginEntriesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$MarketplaceEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $MarketplaceEntriesTable> {
+  $$MarketplaceEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceUrl => $composableBuilder(
+    column: $table.sourceUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manifestUrl => $composableBuilder(
+    column: $table.manifestUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get builtIn => $composableBuilder(
+    column: $table.builtIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get etag => $composableBuilder(
+    column: $table.etag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> marketplacePluginEntriesRefs(
+    Expression<bool> Function($$MarketplacePluginEntriesTableFilterComposer f)
+    f,
+  ) {
+    final $$MarketplacePluginEntriesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.marketplacePluginEntries,
+          getReferencedColumn: (t) => t.marketplaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MarketplacePluginEntriesTableFilterComposer(
+                $db: $db,
+                $table: $db.marketplacePluginEntries,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$MarketplaceEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MarketplaceEntriesTable> {
+  $$MarketplaceEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceUrl => $composableBuilder(
+    column: $table.sourceUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manifestUrl => $composableBuilder(
+    column: $table.manifestUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get builtIn => $composableBuilder(
+    column: $table.builtIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get etag => $composableBuilder(
+    column: $table.etag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MarketplaceEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MarketplaceEntriesTable> {
+  $$MarketplaceEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceUrl =>
+      $composableBuilder(column: $table.sourceUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get manifestUrl => $composableBuilder(
+    column: $table.manifestUrl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get builtIn =>
+      $composableBuilder(column: $table.builtIn, builder: (column) => column);
+
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<String> get etag =>
+      $composableBuilder(column: $table.etag, builder: (column) => column);
+
+  GeneratedColumn<int> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> marketplacePluginEntriesRefs<T extends Object>(
+    Expression<T> Function($$MarketplacePluginEntriesTableAnnotationComposer a)
+    f,
+  ) {
+    final $$MarketplacePluginEntriesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.marketplacePluginEntries,
+          getReferencedColumn: (t) => t.marketplaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MarketplacePluginEntriesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.marketplacePluginEntries,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$MarketplaceEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MarketplaceEntriesTable,
+          MarketplaceEntry,
+          $$MarketplaceEntriesTableFilterComposer,
+          $$MarketplaceEntriesTableOrderingComposer,
+          $$MarketplaceEntriesTableAnnotationComposer,
+          $$MarketplaceEntriesTableCreateCompanionBuilder,
+          $$MarketplaceEntriesTableUpdateCompanionBuilder,
+          (MarketplaceEntry, $$MarketplaceEntriesTableReferences),
+          MarketplaceEntry,
+          PrefetchHooks Function({bool marketplacePluginEntriesRefs})
+        > {
+  $$MarketplaceEntriesTableTableManager(
+    _$AppDatabase db,
+    $MarketplaceEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MarketplaceEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MarketplaceEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MarketplaceEntriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<String> sourceUrl = const Value.absent(),
+                Value<String> manifestUrl = const Value.absent(),
+                Value<bool> builtIn = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<String?> etag = const Value.absent(),
+                Value<int?> lastSyncedAt = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MarketplaceEntriesCompanion(
+                id: id,
+                name: name,
+                description: description,
+                sourceUrl: sourceUrl,
+                manifestUrl: manifestUrl,
+                builtIn: builtIn,
+                enabled: enabled,
+                etag: etag,
+                lastSyncedAt: lastSyncedAt,
+                lastError: lastError,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String> description = const Value.absent(),
+                required String sourceUrl,
+                required String manifestUrl,
+                Value<bool> builtIn = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<String?> etag = const Value.absent(),
+                Value<int?> lastSyncedAt = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => MarketplaceEntriesCompanion.insert(
+                id: id,
+                name: name,
+                description: description,
+                sourceUrl: sourceUrl,
+                manifestUrl: manifestUrl,
+                builtIn: builtIn,
+                enabled: enabled,
+                etag: etag,
+                lastSyncedAt: lastSyncedAt,
+                lastError: lastError,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$MarketplaceEntriesTable, MarketplaceEntry>(
+                    table,
+                  ),
+                  $$MarketplaceEntriesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({marketplacePluginEntriesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (marketplacePluginEntriesRefs) db.marketplacePluginEntries,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (marketplacePluginEntriesRefs)
+                    await $_getPrefetchedDataByColumns<
+                      MarketplaceEntry,
+                      $MarketplaceEntriesTable,
+                      MarketplacePluginEntry,
+                      $MarketplacePluginEntriesTable
+                    >(
+                      currentTable: table,
+                      referencedTable: $$MarketplaceEntriesTableReferences
+                          ._marketplacePluginEntriesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$MarketplaceEntriesTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).marketplacePluginEntriesRefs,
+                      currentColumn: 'id',
+                      referencedColumn: 'marketplace_id',
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$MarketplaceEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MarketplaceEntriesTable,
+      MarketplaceEntry,
+      $$MarketplaceEntriesTableFilterComposer,
+      $$MarketplaceEntriesTableOrderingComposer,
+      $$MarketplaceEntriesTableAnnotationComposer,
+      $$MarketplaceEntriesTableCreateCompanionBuilder,
+      $$MarketplaceEntriesTableUpdateCompanionBuilder,
+      (MarketplaceEntry, $$MarketplaceEntriesTableReferences),
+      MarketplaceEntry,
+      PrefetchHooks Function({bool marketplacePluginEntriesRefs})
+    >;
+typedef $$MarketplacePluginEntriesTableCreateCompanionBuilder =
+    MarketplacePluginEntriesCompanion Function({
+      required String id,
+      required String marketplaceId,
+      required String name,
+      Value<String?> displayName,
+      Value<String> description,
+      Value<String?> author,
+      Value<String?> category,
+      Value<String?> homepage,
+      Value<String?> version,
+      required String sourceJson,
+      required String sourceKind,
+      Value<String?> sourceUrl,
+      Value<String?> sourcePath,
+      Value<String?> sourceRef,
+      Value<String?> sourceSha,
+      Value<bool> installed,
+      Value<bool> enabled,
+      Value<String> mcpStatus,
+      Value<String?> mcpConfigJson,
+      Value<int?> mcpCheckedAt,
+      Value<String?> installedConfigJson,
+      Value<bool> needsReconsent,
+      Value<String?> lastError,
+      required int lastSeenAt,
+      required int createdAt,
+      Value<int> rowid,
+    });
+typedef $$MarketplacePluginEntriesTableUpdateCompanionBuilder =
+    MarketplacePluginEntriesCompanion Function({
+      Value<String> id,
+      Value<String> marketplaceId,
+      Value<String> name,
+      Value<String?> displayName,
+      Value<String> description,
+      Value<String?> author,
+      Value<String?> category,
+      Value<String?> homepage,
+      Value<String?> version,
+      Value<String> sourceJson,
+      Value<String> sourceKind,
+      Value<String?> sourceUrl,
+      Value<String?> sourcePath,
+      Value<String?> sourceRef,
+      Value<String?> sourceSha,
+      Value<bool> installed,
+      Value<bool> enabled,
+      Value<String> mcpStatus,
+      Value<String?> mcpConfigJson,
+      Value<int?> mcpCheckedAt,
+      Value<String?> installedConfigJson,
+      Value<bool> needsReconsent,
+      Value<String?> lastError,
+      Value<int> lastSeenAt,
+      Value<int> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$MarketplacePluginEntriesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $MarketplacePluginEntriesTable,
+          MarketplacePluginEntry
+        > {
+  $$MarketplacePluginEntriesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $MarketplaceEntriesTable _marketplaceIdTable(_$AppDatabase db) => db
+      .marketplaceEntries
+      .createAlias('marketplace_plugins__marketplace_id__marketplaces__id');
+
+  $$MarketplaceEntriesTableProcessedTableManager get marketplaceId {
+    final $_column = $_itemColumn<String>('marketplace_id')!;
+
+    final manager = $$MarketplaceEntriesTableTableManager(
+      $_db,
+      $_db.marketplaceEntries,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_marketplaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$McpServerEntriesTable, List<McpServerEntry>>
+  _mcpServerEntriesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.mcpServerEntries,
+    aliasName: 'marketplace_plugins__id__mcp_servers__plugin_id',
+  );
+
+  $$McpServerEntriesTableProcessedTableManager get mcpServerEntriesRefs {
+    final manager = $$McpServerEntriesTableTableManager(
+      $_db,
+      $_db.mcpServerEntries,
+    ).filter((f) => f.pluginId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _mcpServerEntriesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$MarketplacePluginEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $MarketplacePluginEntriesTable> {
+  $$MarketplacePluginEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get author => $composableBuilder(
+    column: $table.author,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get homepage => $composableBuilder(
+    column: $table.homepage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceJson => $composableBuilder(
+    column: $table.sourceJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceKind => $composableBuilder(
+    column: $table.sourceKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceUrl => $composableBuilder(
+    column: $table.sourceUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourcePath => $composableBuilder(
+    column: $table.sourcePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceRef => $composableBuilder(
+    column: $table.sourceRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceSha => $composableBuilder(
+    column: $table.sourceSha,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get installed => $composableBuilder(
+    column: $table.installed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mcpStatus => $composableBuilder(
+    column: $table.mcpStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mcpConfigJson => $composableBuilder(
+    column: $table.mcpConfigJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mcpCheckedAt => $composableBuilder(
+    column: $table.mcpCheckedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get installedConfigJson => $composableBuilder(
+    column: $table.installedConfigJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsReconsent => $composableBuilder(
+    column: $table.needsReconsent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastSeenAt => $composableBuilder(
+    column: $table.lastSeenAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$MarketplaceEntriesTableFilterComposer get marketplaceId {
+    final $$MarketplaceEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.marketplaceId,
+      referencedTable: $db.marketplaceEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MarketplaceEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.marketplaceEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> mcpServerEntriesRefs(
+    Expression<bool> Function($$McpServerEntriesTableFilterComposer f) f,
+  ) {
+    final $$McpServerEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mcpServerEntries,
+      getReferencedColumn: (t) => t.pluginId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$McpServerEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.mcpServerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$MarketplacePluginEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MarketplacePluginEntriesTable> {
+  $$MarketplacePluginEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get author => $composableBuilder(
+    column: $table.author,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get homepage => $composableBuilder(
+    column: $table.homepage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceJson => $composableBuilder(
+    column: $table.sourceJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceKind => $composableBuilder(
+    column: $table.sourceKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceUrl => $composableBuilder(
+    column: $table.sourceUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourcePath => $composableBuilder(
+    column: $table.sourcePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceRef => $composableBuilder(
+    column: $table.sourceRef,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceSha => $composableBuilder(
+    column: $table.sourceSha,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get installed => $composableBuilder(
+    column: $table.installed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mcpStatus => $composableBuilder(
+    column: $table.mcpStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mcpConfigJson => $composableBuilder(
+    column: $table.mcpConfigJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get mcpCheckedAt => $composableBuilder(
+    column: $table.mcpCheckedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get installedConfigJson => $composableBuilder(
+    column: $table.installedConfigJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsReconsent => $composableBuilder(
+    column: $table.needsReconsent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastSeenAt => $composableBuilder(
+    column: $table.lastSeenAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$MarketplaceEntriesTableOrderingComposer get marketplaceId {
+    final $$MarketplaceEntriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.marketplaceId,
+      referencedTable: $db.marketplaceEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MarketplaceEntriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.marketplaceEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MarketplacePluginEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MarketplacePluginEntriesTable> {
+  $$MarketplacePluginEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get author =>
+      $composableBuilder(column: $table.author, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get homepage =>
+      $composableBuilder(column: $table.homepage, builder: (column) => column);
+
+  GeneratedColumn<String> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceJson => $composableBuilder(
+    column: $table.sourceJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceKind => $composableBuilder(
+    column: $table.sourceKind,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceUrl =>
+      $composableBuilder(column: $table.sourceUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get sourcePath => $composableBuilder(
+    column: $table.sourcePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceRef =>
+      $composableBuilder(column: $table.sourceRef, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceSha =>
+      $composableBuilder(column: $table.sourceSha, builder: (column) => column);
+
+  GeneratedColumn<bool> get installed =>
+      $composableBuilder(column: $table.installed, builder: (column) => column);
+
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<String> get mcpStatus =>
+      $composableBuilder(column: $table.mcpStatus, builder: (column) => column);
+
+  GeneratedColumn<String> get mcpConfigJson => $composableBuilder(
+    column: $table.mcpConfigJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get mcpCheckedAt => $composableBuilder(
+    column: $table.mcpCheckedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get installedConfigJson => $composableBuilder(
+    column: $table.installedConfigJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get needsReconsent => $composableBuilder(
+    column: $table.needsReconsent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
+
+  GeneratedColumn<int> get lastSeenAt => $composableBuilder(
+    column: $table.lastSeenAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$MarketplaceEntriesTableAnnotationComposer get marketplaceId {
+    final $$MarketplaceEntriesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.marketplaceId,
+          referencedTable: $db.marketplaceEntries,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MarketplaceEntriesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.marketplaceEntries,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  Expression<T> mcpServerEntriesRefs<T extends Object>(
+    Expression<T> Function($$McpServerEntriesTableAnnotationComposer a) f,
+  ) {
+    final $$McpServerEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mcpServerEntries,
+      getReferencedColumn: (t) => t.pluginId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$McpServerEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mcpServerEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$MarketplacePluginEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MarketplacePluginEntriesTable,
+          MarketplacePluginEntry,
+          $$MarketplacePluginEntriesTableFilterComposer,
+          $$MarketplacePluginEntriesTableOrderingComposer,
+          $$MarketplacePluginEntriesTableAnnotationComposer,
+          $$MarketplacePluginEntriesTableCreateCompanionBuilder,
+          $$MarketplacePluginEntriesTableUpdateCompanionBuilder,
+          (MarketplacePluginEntry, $$MarketplacePluginEntriesTableReferences),
+          MarketplacePluginEntry,
+          PrefetchHooks Function({
+            bool marketplaceId,
+            bool mcpServerEntriesRefs,
+          })
+        > {
+  $$MarketplacePluginEntriesTableTableManager(
+    _$AppDatabase db,
+    $MarketplacePluginEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MarketplacePluginEntriesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$MarketplacePluginEntriesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$MarketplacePluginEntriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> marketplaceId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> displayName = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<String?> author = const Value.absent(),
+                Value<String?> category = const Value.absent(),
+                Value<String?> homepage = const Value.absent(),
+                Value<String?> version = const Value.absent(),
+                Value<String> sourceJson = const Value.absent(),
+                Value<String> sourceKind = const Value.absent(),
+                Value<String?> sourceUrl = const Value.absent(),
+                Value<String?> sourcePath = const Value.absent(),
+                Value<String?> sourceRef = const Value.absent(),
+                Value<String?> sourceSha = const Value.absent(),
+                Value<bool> installed = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<String> mcpStatus = const Value.absent(),
+                Value<String?> mcpConfigJson = const Value.absent(),
+                Value<int?> mcpCheckedAt = const Value.absent(),
+                Value<String?> installedConfigJson = const Value.absent(),
+                Value<bool> needsReconsent = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<int> lastSeenAt = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MarketplacePluginEntriesCompanion(
+                id: id,
+                marketplaceId: marketplaceId,
+                name: name,
+                displayName: displayName,
+                description: description,
+                author: author,
+                category: category,
+                homepage: homepage,
+                version: version,
+                sourceJson: sourceJson,
+                sourceKind: sourceKind,
+                sourceUrl: sourceUrl,
+                sourcePath: sourcePath,
+                sourceRef: sourceRef,
+                sourceSha: sourceSha,
+                installed: installed,
+                enabled: enabled,
+                mcpStatus: mcpStatus,
+                mcpConfigJson: mcpConfigJson,
+                mcpCheckedAt: mcpCheckedAt,
+                installedConfigJson: installedConfigJson,
+                needsReconsent: needsReconsent,
+                lastError: lastError,
+                lastSeenAt: lastSeenAt,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String marketplaceId,
+                required String name,
+                Value<String?> displayName = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<String?> author = const Value.absent(),
+                Value<String?> category = const Value.absent(),
+                Value<String?> homepage = const Value.absent(),
+                Value<String?> version = const Value.absent(),
+                required String sourceJson,
+                required String sourceKind,
+                Value<String?> sourceUrl = const Value.absent(),
+                Value<String?> sourcePath = const Value.absent(),
+                Value<String?> sourceRef = const Value.absent(),
+                Value<String?> sourceSha = const Value.absent(),
+                Value<bool> installed = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<String> mcpStatus = const Value.absent(),
+                Value<String?> mcpConfigJson = const Value.absent(),
+                Value<int?> mcpCheckedAt = const Value.absent(),
+                Value<String?> installedConfigJson = const Value.absent(),
+                Value<bool> needsReconsent = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                required int lastSeenAt,
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => MarketplacePluginEntriesCompanion.insert(
+                id: id,
+                marketplaceId: marketplaceId,
+                name: name,
+                displayName: displayName,
+                description: description,
+                author: author,
+                category: category,
+                homepage: homepage,
+                version: version,
+                sourceJson: sourceJson,
+                sourceKind: sourceKind,
+                sourceUrl: sourceUrl,
+                sourcePath: sourcePath,
+                sourceRef: sourceRef,
+                sourceSha: sourceSha,
+                installed: installed,
+                enabled: enabled,
+                mcpStatus: mcpStatus,
+                mcpConfigJson: mcpConfigJson,
+                mcpCheckedAt: mcpCheckedAt,
+                installedConfigJson: installedConfigJson,
+                needsReconsent: needsReconsent,
+                lastError: lastError,
+                lastSeenAt: lastSeenAt,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $MarketplacePluginEntriesTable,
+                    MarketplacePluginEntry
+                  >(table),
+                  $$MarketplacePluginEntriesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({marketplaceId = false, mcpServerEntriesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (mcpServerEntriesRefs) db.mcpServerEntries,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (marketplaceId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.marketplaceId,
+                            referencedTable:
+                                $$MarketplacePluginEntriesTableReferences
+                                    ._marketplaceIdTable(db),
+                            referencedColumn:
+                                $$MarketplacePluginEntriesTableReferences
+                                    ._marketplaceIdTable(db)
+                                    .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (mcpServerEntriesRefs)
+                        await $_getPrefetchedDataByColumns<
+                          MarketplacePluginEntry,
+                          $MarketplacePluginEntriesTable,
+                          McpServerEntry,
+                          $McpServerEntriesTable
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $$MarketplacePluginEntriesTableReferences
+                                  ._mcpServerEntriesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$MarketplacePluginEntriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).mcpServerEntriesRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'plugin_id',
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$MarketplacePluginEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MarketplacePluginEntriesTable,
+      MarketplacePluginEntry,
+      $$MarketplacePluginEntriesTableFilterComposer,
+      $$MarketplacePluginEntriesTableOrderingComposer,
+      $$MarketplacePluginEntriesTableAnnotationComposer,
+      $$MarketplacePluginEntriesTableCreateCompanionBuilder,
+      $$MarketplacePluginEntriesTableUpdateCompanionBuilder,
+      (MarketplacePluginEntry, $$MarketplacePluginEntriesTableReferences),
+      MarketplacePluginEntry,
+      PrefetchHooks Function({bool marketplaceId, bool mcpServerEntriesRefs})
+    >;
+typedef $$McpServerEntriesTableCreateCompanionBuilder =
+    McpServerEntriesCompanion Function({
+      required String id,
+      Value<String?> pluginId,
+      Value<String?> marketplaceId,
+      required String name,
+      required String url,
+      required String transport,
+      required String authType,
+      Value<String?> headerNamesJson,
+      required String configHash,
+      Value<bool> enabled,
+      Value<bool> needsReconsent,
+      required int createdAt,
+      Value<int> rowid,
+    });
+typedef $$McpServerEntriesTableUpdateCompanionBuilder =
+    McpServerEntriesCompanion Function({
+      Value<String> id,
+      Value<String?> pluginId,
+      Value<String?> marketplaceId,
+      Value<String> name,
+      Value<String> url,
+      Value<String> transport,
+      Value<String> authType,
+      Value<String?> headerNamesJson,
+      Value<String> configHash,
+      Value<bool> enabled,
+      Value<bool> needsReconsent,
+      Value<int> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$McpServerEntriesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $McpServerEntriesTable, McpServerEntry> {
+  $$McpServerEntriesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $MarketplacePluginEntriesTable _pluginIdTable(_$AppDatabase db) => db
+      .marketplacePluginEntries
+      .createAlias('mcp_servers__plugin_id__marketplace_plugins__id');
+
+  $$MarketplacePluginEntriesTableProcessedTableManager? get pluginId {
+    final $_column = $_itemColumn<String>('plugin_id');
+    if ($_column == null) return null;
+    final manager = $$MarketplacePluginEntriesTableTableManager(
+      $_db,
+      $_db.marketplacePluginEntries,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_pluginIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$McpServerEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $McpServerEntriesTable> {
+  $$McpServerEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get marketplaceId => $composableBuilder(
+    column: $table.marketplaceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get url => $composableBuilder(
+    column: $table.url,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get transport => $composableBuilder(
+    column: $table.transport,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authType => $composableBuilder(
+    column: $table.authType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get headerNamesJson => $composableBuilder(
+    column: $table.headerNamesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get configHash => $composableBuilder(
+    column: $table.configHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsReconsent => $composableBuilder(
+    column: $table.needsReconsent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$MarketplacePluginEntriesTableFilterComposer get pluginId {
+    final $$MarketplacePluginEntriesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.pluginId,
+          referencedTable: $db.marketplacePluginEntries,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MarketplacePluginEntriesTableFilterComposer(
+                $db: $db,
+                $table: $db.marketplacePluginEntries,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$McpServerEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $McpServerEntriesTable> {
+  $$McpServerEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get marketplaceId => $composableBuilder(
+    column: $table.marketplaceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get url => $composableBuilder(
+    column: $table.url,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get transport => $composableBuilder(
+    column: $table.transport,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get authType => $composableBuilder(
+    column: $table.authType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get headerNamesJson => $composableBuilder(
+    column: $table.headerNamesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get configHash => $composableBuilder(
+    column: $table.configHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsReconsent => $composableBuilder(
+    column: $table.needsReconsent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$MarketplacePluginEntriesTableOrderingComposer get pluginId {
+    final $$MarketplacePluginEntriesTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.pluginId,
+          referencedTable: $db.marketplacePluginEntries,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MarketplacePluginEntriesTableOrderingComposer(
+                $db: $db,
+                $table: $db.marketplacePluginEntries,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$McpServerEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $McpServerEntriesTable> {
+  $$McpServerEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get marketplaceId => $composableBuilder(
+    column: $table.marketplaceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get url =>
+      $composableBuilder(column: $table.url, builder: (column) => column);
+
+  GeneratedColumn<String> get transport =>
+      $composableBuilder(column: $table.transport, builder: (column) => column);
+
+  GeneratedColumn<String> get authType =>
+      $composableBuilder(column: $table.authType, builder: (column) => column);
+
+  GeneratedColumn<String> get headerNamesJson => $composableBuilder(
+    column: $table.headerNamesJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get configHash => $composableBuilder(
+    column: $table.configHash,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsReconsent => $composableBuilder(
+    column: $table.needsReconsent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$MarketplacePluginEntriesTableAnnotationComposer get pluginId {
+    final $$MarketplacePluginEntriesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.pluginId,
+          referencedTable: $db.marketplacePluginEntries,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MarketplacePluginEntriesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.marketplacePluginEntries,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$McpServerEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $McpServerEntriesTable,
+          McpServerEntry,
+          $$McpServerEntriesTableFilterComposer,
+          $$McpServerEntriesTableOrderingComposer,
+          $$McpServerEntriesTableAnnotationComposer,
+          $$McpServerEntriesTableCreateCompanionBuilder,
+          $$McpServerEntriesTableUpdateCompanionBuilder,
+          (McpServerEntry, $$McpServerEntriesTableReferences),
+          McpServerEntry,
+          PrefetchHooks Function({bool pluginId})
+        > {
+  $$McpServerEntriesTableTableManager(
+    _$AppDatabase db,
+    $McpServerEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$McpServerEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$McpServerEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$McpServerEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String?> pluginId = const Value.absent(),
+                Value<String?> marketplaceId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> url = const Value.absent(),
+                Value<String> transport = const Value.absent(),
+                Value<String> authType = const Value.absent(),
+                Value<String?> headerNamesJson = const Value.absent(),
+                Value<String> configHash = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<bool> needsReconsent = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => McpServerEntriesCompanion(
+                id: id,
+                pluginId: pluginId,
+                marketplaceId: marketplaceId,
+                name: name,
+                url: url,
+                transport: transport,
+                authType: authType,
+                headerNamesJson: headerNamesJson,
+                configHash: configHash,
+                enabled: enabled,
+                needsReconsent: needsReconsent,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<String?> pluginId = const Value.absent(),
+                Value<String?> marketplaceId = const Value.absent(),
+                required String name,
+                required String url,
+                required String transport,
+                required String authType,
+                Value<String?> headerNamesJson = const Value.absent(),
+                required String configHash,
+                Value<bool> enabled = const Value.absent(),
+                Value<bool> needsReconsent = const Value.absent(),
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => McpServerEntriesCompanion.insert(
+                id: id,
+                pluginId: pluginId,
+                marketplaceId: marketplaceId,
+                name: name,
+                url: url,
+                transport: transport,
+                authType: authType,
+                headerNamesJson: headerNamesJson,
+                configHash: configHash,
+                enabled: enabled,
+                needsReconsent: needsReconsent,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$McpServerEntriesTable, McpServerEntry>(table),
+                  $$McpServerEntriesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({pluginId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (pluginId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.pluginId,
+                        referencedTable: $$McpServerEntriesTableReferences
+                            ._pluginIdTable(db),
+                        referencedColumn: $$McpServerEntriesTableReferences
+                            ._pluginIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$McpServerEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $McpServerEntriesTable,
+      McpServerEntry,
+      $$McpServerEntriesTableFilterComposer,
+      $$McpServerEntriesTableOrderingComposer,
+      $$McpServerEntriesTableAnnotationComposer,
+      $$McpServerEntriesTableCreateCompanionBuilder,
+      $$McpServerEntriesTableUpdateCompanionBuilder,
+      (McpServerEntry, $$McpServerEntriesTableReferences),
+      McpServerEntry,
+      PrefetchHooks Function({bool pluginId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3034,4 +7632,13 @@ class $AppDatabaseManager {
       $$ConversationsTableTableManager(_db, _db.conversations);
   $$MessagesTableTableManager get messages =>
       $$MessagesTableTableManager(_db, _db.messages);
+  $$MarketplaceEntriesTableTableManager get marketplaceEntries =>
+      $$MarketplaceEntriesTableTableManager(_db, _db.marketplaceEntries);
+  $$MarketplacePluginEntriesTableTableManager get marketplacePluginEntries =>
+      $$MarketplacePluginEntriesTableTableManager(
+        _db,
+        _db.marketplacePluginEntries,
+      );
+  $$McpServerEntriesTableTableManager get mcpServerEntries =>
+      $$McpServerEntriesTableTableManager(_db, _db.mcpServerEntries);
 }
