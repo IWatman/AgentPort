@@ -19,16 +19,100 @@ class SettingEntries extends Table {
   Set<Column<Object>> get primaryKey => {key};
 }
 
-@DriftDatabase(tables: [SettingEntries])
+/// An AI provider configured by the user.
+///
+/// The API key itself is stored in the Android Keystore; [apiKeyRef] is only
+/// the lookup key.
+class ProviderEntries extends Table {
+  @override
+  String get tableName => 'providers';
+
+  TextColumn get id => text()();
+
+  TextColumn get name => text()();
+
+  /// `deepseek` or `openai`.
+  TextColumn get type => text()();
+
+  TextColumn get baseUrl => text()();
+
+  TextColumn get model => text()();
+
+  TextColumn get apiKeyRef => text()();
+
+  IntColumn get createdAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+class Conversations extends Table {
+  TextColumn get id => text()();
+
+  /// Empty until the first user message arrives.
+  TextColumn get title => text().withDefault(const Constant(''))();
+
+  TextColumn get providerId => text().nullable().references(
+    ProviderEntries,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
+
+  TextColumn get systemPrompt => text().nullable()();
+
+  BoolColumn get archived => boolean().withDefault(const Constant(false))();
+
+  IntColumn get createdAt => integer()();
+
+  IntColumn get updatedAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+class Messages extends Table {
+  TextColumn get id => text()();
+
+  TextColumn get conversationId =>
+      text().references(Conversations, #id, onDelete: KeyAction.cascade)();
+
+  /// `system`, `user`, `assistant`, or `tool`.
+  TextColumn get role => text()();
+
+  TextColumn get content => text().withDefault(const Constant(''))();
+
+  TextColumn get reasoning => text().nullable()();
+
+  TextColumn get toolCallsJson => text().nullable()();
+
+  /// `complete`, `stopped`, or `error`.
+  TextColumn get status => text().withDefault(const Constant('complete'))();
+
+  IntColumn get createdAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+@DriftDatabase(
+  tables: [SettingEntries, ProviderEntries, Conversations, Messages],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) => migrator.createAll(),
+    onUpgrade: (migrator, from, to) async {
+      if (from < 2) {
+        await migrator.createTable(providerEntries);
+        await migrator.createTable(conversations);
+        await migrator.createTable(messages);
+      }
+    },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },

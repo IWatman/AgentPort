@@ -45,6 +45,17 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
+          _SectionHeader(text: l10n.settingsSectionAi),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.key_rounded),
+              title: Text(l10n.providersTitle),
+              subtitle: Text(l10n.settingsProvidersSubtitle),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/providers'),
+            ),
+          ),
+          const SizedBox(height: 24),
           _SectionHeader(text: l10n.settingsSectionAbout),
           Card(
             child: FutureBuilder<PackageInfo>(

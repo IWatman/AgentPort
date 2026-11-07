@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/settings/settings_controller.dart';
+import '../features/chat/chat_screen.dart';
 import '../features/chats/chats_screen.dart';
 import '../features/connections/connections_screen.dart';
 import '../features/marketplace/marketplace_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
+import '../features/providers/provider_editor_screen.dart';
+import '../features/providers/providers_screen.dart';
 import '../features/settings/about_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/shell/home_shell.dart';
@@ -92,6 +95,32 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/chats/:id',
+        name: 'chat',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            ChatScreen(conversationId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/providers',
+        name: 'providers',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ProvidersScreen(),
+      ),
+      GoRoute(
+        path: '/providers/new',
+        name: 'providerNew',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ProviderEditorScreen(),
+      ),
+      GoRoute(
+        path: '/providers/:id',
+        name: 'providerEdit',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            ProviderEditorScreen(providerId: state.pathParameters['id']),
       ),
       GoRoute(
         path: '/about',
