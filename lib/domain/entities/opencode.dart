@@ -177,6 +177,23 @@ class OpenCodeModelRef {
   };
 }
 
+/// A file attached to a user message.
+class OpenCodeAttachment {
+  const OpenCodeAttachment({
+    required this.name,
+    required this.mime,
+    required this.data,
+  });
+
+  final String name;
+  final String mime;
+
+  /// Base64-encoded file bytes.
+  final String data;
+
+  bool get isImage => mime.toLowerCase().startsWith('image/');
+}
+
 /// A single user or assistant message in an OpenCode session.
 class OpenCodeMessage {
   const OpenCodeMessage({
@@ -185,6 +202,7 @@ class OpenCodeMessage {
     required this.text,
     this.reasoning = '',
     this.tools = const [],
+    this.attachments = const [],
     this.createdAt,
   });
 
@@ -196,6 +214,7 @@ class OpenCodeMessage {
   final String text;
   final String reasoning;
   final List<String> tools;
+  final List<OpenCodeAttachment> attachments;
   final DateTime? createdAt;
 
   bool get isUser => role == 'user';

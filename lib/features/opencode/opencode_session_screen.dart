@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -379,12 +380,30 @@ class _MessageBubble extends StatelessWidget {
               bottomRight: Radius.circular(6),
             ),
           ),
-          child: SelectableText(
-            message.text,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onPrimaryContainer,
-              height: 1.45,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (message.attachments.isNotEmpty) ...[
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final attachment in message.attachments)
+                      _AttachmentView(attachment: attachment),
+                  ],
+                ),
+                if (message.text.isNotEmpty) const SizedBox(height: 8),
+              ],
+              if (message.text.isNotEmpty)
+                SelectableText(
+                  message.text,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onPrimaryContainer,
+                    height: 1.45,
+                  ),
+                ),
+            ],
           ),
         ),
       );
@@ -429,6 +448,54 @@ class _MessageBubble extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _AttachmentView extends StatelessWidget {
+  const _AttachmentView({required this.attachment});
+
+  final OpenCodeAttachment attachment;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!attachment.isImage) {
+      return Chip(
+        avatar: const Icon(Icons.attach_file_rounded, size: 16),
+        label: Text(attachment.name),
+      );
+    }
+
+    try {
+      final bytes = base64Decode(attachment.data);
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.memory(
+          bytes,
+          width: 220,
+          height: 220,
+          fit: BoxFit.cover,
+          cacheWidth: 440,
+          errorBuilder: (context, error, stackTrace) =>
+              _AttachmentChip(attachment: attachment),
+        ),
+      );
+    } catch (_) {
+      return _AttachmentChip(attachment: attachment);
+    }
+  }
+}
+
+class _AttachmentChip extends StatelessWidget {
+  const _AttachmentChip({required this.attachment});
+
+  final OpenCodeAttachment attachment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      avatar: const Icon(Icons.attach_file_rounded, size: 16),
+      label: Text(attachment.name),
     );
   }
 }

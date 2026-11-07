@@ -325,6 +325,56 @@ void main() {
       });
     });
 
+    test(
+      'orders newest-first transcripts and parses image attachments',
+      () async {
+        String? requestedPath;
+        final client = OpenCodeClient(
+          baseUrl: 'https://example.com',
+          token: 't',
+          clientFactory: () => MockClient((request) async {
+            requestedPath = request.url.toString();
+            return _json({
+              'data': [
+                {
+                  'id': 'msg_new',
+                  'type': 'assistant',
+                  'time': {'created': 2000},
+                  'content': [
+                    {'type': 'text', 'text': 'Newest'},
+                  ],
+                },
+                {
+                  'id': 'msg_old',
+                  'type': 'user',
+                  'text': 'Look at this',
+                  'time': {'created': 1000},
+                  'files': [
+                    {
+                      'name': 'image.png',
+                      'mime': 'image/png',
+                      'data': 'aGVsbG8=',
+                    },
+                  ],
+                },
+              ],
+            });
+          }),
+        );
+
+        final messages = await client.messages('ses_1');
+
+        expect(messages, hasLength(2));
+        expect(messages.first.id, 'msg_old');
+        expect(messages.first.isUser, isTrue);
+        expect(messages.first.attachments.single.name, 'image.png');
+        expect(messages.first.attachments.single.mime, 'image/png');
+        expect(messages.first.attachments.single.data, 'aGVsbG8=');
+        expect(messages.last.id, 'msg_new');
+        expect(requestedPath, contains('limit=200'));
+      },
+    );
+
     test('parses user and assistant transcripts', () async {
       final client = OpenCodeClient(
         baseUrl: 'https://example.com',

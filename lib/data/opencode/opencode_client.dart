@@ -205,7 +205,9 @@ class OpenCodeClient {
 
   /// Fetches the transcript of a session.
   Future<List<OpenCodeMessage>> messages(String id) async {
-    final decoded = await _getJson('api/session/${_segment(id)}/message');
+    final decoded = await _getJson(
+      'api/session/${_segment(id)}/message?limit=200',
+    );
     final list = _readDataList(decoded);
     final messages = <OpenCodeMessage>[];
     for (final item in list) {
@@ -214,6 +216,12 @@ class OpenCodeClient {
         messages.add(message);
       }
     }
+    // The server returns the newest message first; the UI renders oldest first.
+    messages.sort((a, b) {
+      final left = a.createdAt?.millisecondsSinceEpoch ?? 0;
+      final right = b.createdAt?.millisecondsSinceEpoch ?? 0;
+      return left.compareTo(right);
+    });
     return List.unmodifiable(messages);
   }
 
@@ -614,6 +622,7 @@ class OpenCodeClient {
         id: id,
         role: 'user',
         text: _readString(map['text']) ?? '',
+        attachments: _readAttachments(map['files']),
         createdAt: _readTime(map['time'], 'created'),
       );
     }
@@ -664,6 +673,32 @@ class OpenCodeClient {
       tools: List.unmodifiable(tools),
       createdAt: _readTime(map['time'], 'created'),
     );
+  }
+
+  List<OpenCodeAttachment> _readAttachments(Object? value) {
+    if (value is! List) {
+      return const [];
+    }
+    final attachments = <OpenCodeAttachment>[];
+    for (final item in value) {
+      if (item is! Map) {
+        continue;
+      }
+      final map = Map<String, Object?>.from(item);
+      final data = _readString(map['data']);
+      final mime = _readString(map['mime']);
+      if (data == null || mime == null) {
+        continue;
+      }
+      attachments.add(
+        OpenCodeAttachment(
+          name: _readString(map['name']) ?? 'attachment',
+          mime: mime,
+          data: data,
+        ),
+      );
+    }
+    return List.unmodifiable(attachments);
   }
 
   DateTime? _readTime(Object? time, String key) {
