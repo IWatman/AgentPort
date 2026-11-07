@@ -712,9 +712,11 @@ Done: the app builds, opens, and shows its version.
 ### M1 — Chat and Providers, 4 days
 
 - Provider CRUD.
+- Presets for DeepSeek, OpenAI, OpenRouter, Groq, Mistral, Together AI, xAI, and Gemini.
 - DeepSeek preset.
 - Custom OpenAI-compatible.
 - Streaming, stop, retry.
+- Photo and text-file attachments, per-conversation model selection, voice input.
 - History, rename/delete.
 - Markdown and code blocks.
 - Error handling.

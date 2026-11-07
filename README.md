@@ -7,8 +7,10 @@ Android AI chat client with a built-in MCP marketplace and remote control for [O
 ## Features
 
 - Chat with DeepSeek and any OpenAI-compatible API using your own key.
+- Ready-made presets for DeepSeek, OpenAI, OpenRouter, Groq, Mistral, Together AI, xAI, and Google Gemini.
+- Attach photos and text files, switch models per conversation, and use voice input.
 - Browse MCP connectors from Claude-compatible plugin marketplaces.
-- Install remote MCP servers from marketplace plugins. OAuth, API keys, and custom headers are planned for the Connections milestone.
+- Install remote MCP servers from marketplace plugins and configure header authorization in Connections.
 - Control OpenCode sessions from your phone: pair by QR, send prompts, stream responses, stop, switch agent/model.
 - Local encrypted storage for chats, keys, and tokens.
 - Updates from GitHub Releases (stable channel).
@@ -19,7 +21,14 @@ Android AI chat client with a built-in MCP marketplace and remote control for [O
 - MVP: Android 8.0+ (API 26).
 - Windows: planned after MVP.
 
-Remote MCP servers only, over HTTPS (`http`, `streamable-http`, `sse`). Plugins that require local `stdio` commands are shown but cannot be installed on Android.
+Remote MCP servers only, over HTTPS (`http`, `streamable-http`, `sse`). Streamable HTTP is implemented; legacy SSE transport is listed but not connected yet. Plugins that require local `stdio` commands are shown but cannot be installed on Android.
+
+## Chat
+
+- Add a provider in Settings. Presets fill the name, base URL, and model for common OpenAI-compatible services; every field remains editable.
+- Use **+** in the composer to attach a photo or a text file. Attachments are stored in the encrypted database with the message.
+- Tap the model bar under the composer to choose a model for this conversation, or enter a custom model ID.
+- Use the microphone button for device speech recognition; recognized text is inserted into the composer.
 
 ## Marketplace
 
