@@ -225,6 +225,9 @@ void main() {
       'deepseek-reasoner',
     );
 
+    await notifier.selectProvider(provider);
+    expect((await conversations.get(conversation.id))?.model, isNull);
+
     await notifier.selectModel(null);
     await notifier.send('Again');
     expect(client.models.last, provider.model);

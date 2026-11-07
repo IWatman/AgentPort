@@ -284,7 +284,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (picked == null || !mounted) {
       return;
     }
-    final bytes = await picked.readAsBytes();
+    final List<int> bytes;
+    try {
+      bytes = await picked.readAsBytes();
+    } catch (_) {
+      _snack(l10n.chatFileUnsupported);
+      return;
+    }
     if (!mounted) {
       return;
     }
@@ -309,7 +315,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (file == null || !mounted) {
       return;
     }
-    final bytes = await file.readAsBytes();
+    final List<int> bytes;
+    try {
+      bytes = await file.readAsBytes();
+    } catch (_) {
+      _snack(l10n.chatFileUnsupported);
+      return;
+    }
     if (!mounted) {
       return;
     }

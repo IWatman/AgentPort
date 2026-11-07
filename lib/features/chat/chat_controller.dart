@@ -274,6 +274,8 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
     }
     final conversation = current.conversation.copyWith(
       providerId: provider.id,
+      model: null,
+      clearModel: true,
       updatedAt: DateTime.now(),
     );
     state = AsyncData(
@@ -282,6 +284,9 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
     await ref
         .read(conversationRepositoryProvider)
         .setProvider(conversationId, provider.id);
+    await ref
+        .read(conversationRepositoryProvider)
+        .setModel(conversationId, null);
     if (!ref.mounted) {
       return;
     }
