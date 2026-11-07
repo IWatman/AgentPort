@@ -5,8 +5,8 @@ import 'package:agentport/core/security/secure_store.dart';
 import 'package:agentport/data/opencode/opencode_client.dart';
 import 'package:agentport/data/repositories/opencode_repository.dart';
 import 'package:agentport/domain/entities/opencode.dart';
+import 'package:agentport/features/opencode/opencode_projects_controller.dart';
 import 'package:agentport/features/opencode/opencode_session_controller.dart';
-import 'package:agentport/features/opencode/opencode_sessions_controller.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,19 +50,44 @@ class _FakeOpenCodeClient extends OpenCodeClient {
     OpenCodeModel(id: 'fast', providerId: 'local', name: 'Fast'),
   ];
   List<OpenCodeMessage> history = [];
+  final List<String> createdDirectories = [];
+  final List<OpenCodeProject> projectList = const [
+    OpenCodeProject(
+      id: 'project-1',
+      directory: r'C:\Users\dushc\Desktop\AgentPort',
+      vcs: 'git',
+    ),
+  ];
 
   @override
   Stream<OpenCodeEvent> events() => eventsController.stream;
 
   @override
-  Future<List<OpenCodeSession>> sessions() async => [
+  Future<List<OpenCodeProject>> projects() async => projectList;
+
+  @override
+  Future<List<OpenCodeSession>> sessions({String? projectId}) async => [
     OpenCodeSession(
       id: 'session-1',
       title: 'Session',
-      project: 'agentport',
+      project: projectId ?? 'project-1',
       updatedAt: DateTime(2026, 1, 2, 3, 4),
     ),
   ];
+
+  @override
+  Future<OpenCodeSession> createSession({
+    required String directory,
+    String? title,
+  }) async {
+    createdDirectories.add(directory);
+    return OpenCodeSession(
+      id: 'session-new',
+      title: title ?? 'Untitled session',
+      project: 'project-1',
+      updatedAt: DateTime(2026, 1, 2, 3, 5),
+    );
+  }
 
   @override
   Future<OpenCodeSession> session(String id) async {
@@ -196,8 +221,8 @@ void main() {
     );
   }
 
-  test('sessions controller loads the server session list', () async {
-    final provider = openCodeSessionsControllerProvider('connection-1');
+  test('projects controller loads the server project list', () async {
+    final provider = openCodeProjectsControllerProvider('connection-1');
     final subscription = container.listen(
       provider,
       (previous, next) {},
@@ -208,8 +233,38 @@ void main() {
     final value = await container.read(provider.future);
 
     expect(value.connection.name, 'Home PC');
-    expect(value.sessions.single.id, 'session-1');
+    expect(value.projects.single.name, 'AgentPort');
+    expect(
+      value.projects.single.directory,
+      r'C:\Users\dushc\Desktop\AgentPort',
+    );
   });
+
+  test(
+    'project sessions are filtered and new sessions use the directory',
+    () async {
+      const key = (connectionId: 'connection-1', projectId: 'project-1');
+      final provider = openCodeProjectSessionsControllerProvider(key);
+      final subscription = container.listen(
+        provider,
+        (previous, next) {},
+        fireImmediately: true,
+      );
+      addTearDown(subscription.close);
+
+      final value = await container.read(provider.future);
+      expect(value.project.id, 'project-1');
+      expect(value.sessions.single.id, 'session-1');
+
+      final created = await container
+          .read(provider.notifier)
+          .createSession(title: 'Fresh');
+
+      expect(created.id, 'session-new');
+      expect(client.createdDirectories, [r'C:\Users\dushc\Desktop\AgentPort']);
+      expect(container.read(provider).value!.sessions.first.id, 'session-new');
+    },
+  );
 
   test('loads session details and history', () async {
     client.history = [

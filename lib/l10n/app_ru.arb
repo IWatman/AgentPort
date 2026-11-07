@@ -459,10 +459,16 @@
   "openCodeScannerPermission": "Для сканирования QR-кода нужен доступ к камере.",
   "openCodeScannerUnavailable": "Камера недоступна на этом устройстве.",
   "openCodeScannerError": "Не удалось запустить камеру.",
+  "openCodeProjectsTitle": "Проекты",
+  "openCodeProjectsError": "Не удалось загрузить проекты",
+  "openCodeProjectsEmptyTitle": "Нет проектов",
+  "openCodeProjectsEmptyBody": "OpenCode пока не зарегистрировал ни одной папки проекта.",
   "openCodeSessionsTitle": "Сессии",
   "openCodeSessionsEmptyTitle": "Нет сессий",
-  "openCodeSessionsEmptyBody": "Создайте сессию на сервере OpenCode или запустите её там.",
+  "openCodeSessionsEmptyBody": "Создайте новую сессию кнопкой ниже.",
   "openCodeSessionsError": "Не удалось загрузить сессии",
+  "openCodeNewSession": "Новая сессия",
+  "openCodeCreatingSession": "Создаю…",
   "openCodeSessionUpdated": "Обновлено {date}",
   "@openCodeSessionUpdated": {
     "placeholders": {

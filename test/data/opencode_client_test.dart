@@ -277,6 +277,54 @@ void main() {
       expect(paths, ['/api/agent', '/api/model']);
     });
 
+    test('lists projects, filters sessions, and creates a session', () async {
+      final requests = <http.Request>[];
+      final client = OpenCodeClient(
+        baseUrl: 'http://host:4096',
+        token: 't',
+        clientFactory: () => MockClient((request) async {
+          requests.add(request);
+          if (request.url.path == '/api/project') {
+            return _json([
+              {'id': 'project-1', 'canonical': r'C:\repo', 'vcs': 'git'},
+            ]);
+          }
+          if (request.method == 'POST') {
+            return _json({
+              'data': {
+                'id': 'ses_new',
+                'title': 'New',
+                'projectID': 'project-1',
+              },
+            });
+          }
+          return _json({
+            'data': [
+              {'id': 'ses_1', 'title': 'One', 'projectID': 'project-1'},
+            ],
+            'cursor': {'next': null, 'previous': null},
+          });
+        }),
+      );
+
+      final projects = await client.projects();
+      final sessions = await client.sessions(projectId: 'project-1');
+      final created = await client.createSession(
+        directory: r'C:\repo',
+        title: 'New',
+      );
+
+      expect(projects.single.name, 'repo');
+      expect(projects.single.vcs, 'git');
+      expect(sessions.single.id, 'ses_1');
+      expect(requests[1].url.queryParameters['project'], 'project-1');
+      expect(created.id, 'ses_new');
+      expect(jsonDecode(requests[2].body), {
+        'title': 'New',
+        'location': {'directory': r'C:\repo'},
+      });
+    });
+
     test('parses user and assistant transcripts', () async {
       final client = OpenCodeClient(
         baseUrl: 'https://example.com',

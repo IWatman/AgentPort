@@ -2,6 +2,9 @@ import 'package:agentport/domain/entities/opencode.dart';
 import 'package:agentport/features/opencode/opencode_connections_controller.dart';
 import 'package:agentport/features/opencode/opencode_connections_screen.dart';
 import 'package:agentport/features/opencode/opencode_pair_screen.dart';
+import 'package:agentport/features/opencode/opencode_project_sessions_screen.dart';
+import 'package:agentport/features/opencode/opencode_projects_controller.dart';
+import 'package:agentport/features/opencode/opencode_projects_screen.dart';
 import 'package:agentport/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,6 +34,38 @@ class _FakeConnectionsController extends OpenCodeConnectionsController {
     );
   }
 }
+
+class _FakeProjectsController extends OpenCodeProjectsController {
+  _FakeProjectsController(this.value) : super('connection-1');
+
+  final OpenCodeProjectsState value;
+
+  @override
+  Future<OpenCodeProjectsState> build() async => value;
+}
+
+class _FakeProjectSessionsController extends OpenCodeProjectSessionsController {
+  _FakeProjectSessionsController(this.value)
+    : super((connectionId: 'connection-1', projectId: 'project-1'));
+
+  final OpenCodeProjectSessionsState value;
+
+  @override
+  Future<OpenCodeProjectSessionsState> build() async => value;
+}
+
+const _connection = OpenCodeConnection(
+  id: 'connection-1',
+  name: 'Home PC',
+  baseUrl: 'http://192.168.1.10:4096',
+  tokenRef: 'token',
+);
+
+const _project = OpenCodeProject(
+  id: 'project-1',
+  directory: r'C:\Users\dushc\Desktop\AgentPort',
+  vcs: 'git',
+);
 
 Widget _app(Widget child) {
   return MaterialApp(
@@ -85,6 +120,64 @@ void main() {
     expect(find.text('http://192.168.1.10:4096'), findsOneWidget);
     expect(find.textContaining('Last seen'), findsOneWidget);
     expect(find.text('No OpenCode connections'), findsNothing);
+  });
+
+  testWidgets('projects screen lists projects and opens a project', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          openCodeProjectsControllerProvider('connection-1').overrideWith(
+            () => _FakeProjectsController(
+              const OpenCodeProjectsState(
+                connection: _connection,
+                projects: [_project],
+              ),
+            ),
+          ),
+        ],
+        child: _app(const OpenCodeProjectsScreen(connectionId: 'connection-1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Projects'), findsWidgets);
+    expect(find.text('AgentPort'), findsOneWidget);
+    expect(find.text(r'C:\Users\dushc\Desktop\AgentPort'), findsOneWidget);
+  });
+
+  testWidgets('project sessions screen shows the create button', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          openCodeProjectSessionsControllerProvider((
+            connectionId: 'connection-1',
+            projectId: 'project-1',
+          )).overrideWith(
+            () => _FakeProjectSessionsController(
+              const OpenCodeProjectSessionsState(
+                connection: _connection,
+                project: _project,
+                sessions: [OpenCodeSession(id: 'ses_1', title: 'Fix tests')],
+              ),
+            ),
+          ),
+        ],
+        child: _app(
+          const OpenCodeProjectSessionsScreen(
+            connectionId: 'connection-1',
+            projectId: 'project-1',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Fix tests'), findsOneWidget);
+    expect(find.text('New session'), findsOneWidget);
   });
 
   testWidgets('manual pairing form validates the URL and password', (

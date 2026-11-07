@@ -10,7 +10,10 @@ import 'opencode_failure_text.dart';
 import 'opencode_format.dart';
 
 class OpenCodeConnectionsScreen extends ConsumerWidget {
-  const OpenCodeConnectionsScreen({super.key});
+  const OpenCodeConnectionsScreen({this.embedded = false, super.key});
+
+  /// When embedded in the Chats tab, the parent supplies the app bar.
+  final bool embedded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,17 +21,19 @@ class OpenCodeConnectionsScreen extends ConsumerWidget {
     final state = ref.watch(openCodeConnectionsControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.openCodeTitle),
-        actions: [
-          IconButton(
-            onPressed: () =>
-                ref.invalidate(openCodeConnectionsControllerProvider),
-            tooltip: l10n.commonRetry,
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
-      ),
+      appBar: embedded
+          ? null
+          : AppBar(
+              title: Text(l10n.openCodeTitle),
+              actions: [
+                IconButton(
+                  onPressed: () =>
+                      ref.invalidate(openCodeConnectionsControllerProvider),
+                  tooltip: l10n.commonRetry,
+                  icon: const Icon(Icons.refresh_rounded),
+                ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/opencode/pair'),
         icon: const Icon(Icons.qr_code_scanner_rounded),
@@ -91,7 +96,7 @@ class _ConnectionCard extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => context.push(
-          '/opencode/${Uri.encodeComponent(connection.id)}/sessions',
+          '/opencode/${Uri.encodeComponent(connection.id)}/projects',
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 8, 4, 8),

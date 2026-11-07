@@ -474,10 +474,16 @@
   "openCodeScannerPermission": "Camera access is required to scan the QR code.",
   "openCodeScannerUnavailable": "The camera is not available on this device.",
   "openCodeScannerError": "Could not start the camera.",
+  "openCodeProjectsTitle": "Projects",
+  "openCodeProjectsError": "Could not load projects",
+  "openCodeProjectsEmptyTitle": "No projects",
+  "openCodeProjectsEmptyBody": "OpenCode has not registered any project directories yet.",
   "openCodeSessionsTitle": "Sessions",
   "openCodeSessionsEmptyTitle": "No sessions",
-  "openCodeSessionsEmptyBody": "Create a session on the OpenCode server or start one there.",
+  "openCodeSessionsEmptyBody": "Create a new session with the button below.",
   "openCodeSessionsError": "Could not load sessions",
+  "openCodeNewSession": "New session",
+  "openCodeCreatingSession": "Creating…",
   "openCodeSessionUpdated": "Updated {date}",
   "@openCodeSessionUpdated": {
     "placeholders": {

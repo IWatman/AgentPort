@@ -61,9 +61,72 @@ class OpenCodeClient {
     return info;
   }
 
-  /// Lists all sessions visible to the connected server.
-  Future<List<OpenCodeSession>> sessions() async {
-    final decoded = await _getJson('api/session');
+  /// Lists projects known to the server.
+  Future<List<OpenCodeProject>> projects() async {
+    final decoded = await _getJson('api/project');
+    final list = _readDataList(decoded);
+    final projects = <OpenCodeProject>[];
+    for (final item in list) {
+      if (item is! Map) {
+        continue;
+      }
+      final map = Map<String, Object?>.from(item);
+      final id = _readString(map['id']);
+      final directory =
+          _readString(map['canonical']) ?? _readString(map['directory']);
+      if (id == null || directory == null) {
+        continue;
+      }
+      projects.add(
+        OpenCodeProject(
+          id: id,
+          directory: directory,
+          vcs: _readString(map['vcs']),
+        ),
+      );
+    }
+    return List.unmodifiable(projects);
+  }
+
+  /// Creates a session at [directory].
+  Future<OpenCodeSession> createSession({
+    required String directory,
+    String? title,
+  }) async {
+    final response = await _request(
+      'POST',
+      'api/session',
+      body: {
+        if (title != null && title.trim().isNotEmpty) 'title': title.trim(),
+        'location': {'directory': directory},
+      },
+    );
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(response.body);
+    } on FormatException {
+      throw const OpenCodeFailure(
+        OpenCodeFailureKind.invalidResponse,
+        detail: 'The OpenCode server returned malformed JSON.',
+      );
+    }
+    final Object? value;
+    if (decoded is Map && decoded['data'] is Map) {
+      value = decoded['data'];
+    } else if (decoded is Map && decoded['session'] is Map) {
+      value = decoded['session'];
+    } else {
+      value = decoded;
+    }
+    return _parseSession(value);
+  }
+
+  /// Lists sessions, optionally filtered to one project.
+  Future<List<OpenCodeSession>> sessions({String? projectId}) async {
+    final query = projectId == null
+        ? 'api/session?limit=100'
+        : 'api/session?limit=100&project=${Uri.encodeQueryComponent(projectId)}';
+    final decoded = await _getJson(query);
     final Object? list;
     if (decoded is List) {
       list = decoded;

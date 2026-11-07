@@ -35,6 +35,29 @@ class OpenCodeConnection {
   final DateTime? lastSeen;
 }
 
+/// A project exposed by `GET /api/project`.
+class OpenCodeProject {
+  const OpenCodeProject({required this.id, required this.directory, this.vcs});
+
+  final String id;
+
+  /// Absolute project directory on the OpenCode host.
+  final String directory;
+
+  /// Version control system, for example `git`, when reported.
+  final String? vcs;
+
+  /// The last path segment, used as the display name.
+  String get name {
+    final normalized = directory.replaceAll('\\', '/');
+    final segments = normalized
+        .split('/')
+        .where((segment) => segment.trim().isNotEmpty)
+        .toList(growable: false);
+    return segments.isEmpty ? directory : segments.last;
+  }
+}
+
 /// A session exposed by an OpenCode server.
 class OpenCodeSession {
   const OpenCodeSession({

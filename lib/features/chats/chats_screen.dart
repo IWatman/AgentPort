@@ -7,69 +7,121 @@ import 'package:go_router/go_router.dart';
 import '../../domain/entities/ai_provider.dart';
 import '../../domain/entities/chat_conversation.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../opencode/opencode_connections_screen.dart';
 import '../providers/providers_controller.dart';
 import '../shared/empty_state.dart';
 import '../chat/conversations_controller.dart';
 
-class ChatsScreen extends ConsumerWidget {
+class ChatsScreen extends ConsumerStatefulWidget {
   const ChatsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ChatsScreen> createState() => _ChatsScreenState();
+}
+
+class _ChatsScreenState extends ConsumerState<ChatsScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabs;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs = TabController(length: 2, vsync: this)
+      ..addListener(() {
+        if (!_tabs.indexIsChanging) {
+          setState(() {});
+        }
+      });
+  }
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final conversations = ref.watch(conversationsControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.chatsTitle)),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _startChat(context, ref, l10n),
-        icon: const Icon(Icons.add_rounded),
-        label: Text(l10n.newChat),
-      ),
-      body: conversations.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => EmptyState(
-          icon: Icons.error_outline_rounded,
-          title: l10n.chatErrorUnknown,
-          body: error.toString(),
-          action: OutlinedButton(
-            onPressed: () =>
-                ref.read(conversationsControllerProvider.notifier).reload(),
-            child: Text(l10n.commonRetry),
-          ),
+      appBar: AppBar(
+        title: Text(l10n.chatsTitle),
+        bottom: TabBar(
+          controller: _tabs,
+          tabs: [
+            Tab(text: l10n.chatsTitle),
+            Tab(text: l10n.openCodeTitle),
+          ],
         ),
-        data: (items) {
-          if (items.isEmpty) {
-            return EmptyState(
-              icon: Icons.forum_outlined,
-              title: l10n.chatsEmptyTitle,
-              body: l10n.chatsEmptyBody,
-              action: FilledButton.icon(
-                onPressed: () => _startChat(context, ref, l10n),
-                icon: const Icon(Icons.add_rounded),
-                label: Text(l10n.newChat),
-              ),
-            );
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-            itemCount: items.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final conversation = items[index];
-              return _ConversationCard(
-                conversation: conversation,
-                onTap: () => context.push('/chats/${conversation.id}'),
-                onRename: () =>
-                    unawaited(_rename(context, ref, l10n, conversation)),
-                onDelete: () =>
-                    unawaited(_delete(context, ref, l10n, conversation)),
-              );
-            },
-          );
-        },
       ),
+      floatingActionButton: _tabs.index == 0
+          ? FloatingActionButton.extended(
+              onPressed: () => _startChat(context, ref, l10n),
+              icon: const Icon(Icons.add_rounded),
+              label: Text(l10n.newChat),
+            )
+          : null,
+      body: TabBarView(
+        controller: _tabs,
+        children: [
+          _buildChats(context, ref, l10n, conversations),
+          const OpenCodeConnectionsScreen(embedded: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChats(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+    AsyncValue<List<ChatConversation>> conversations,
+  ) {
+    return conversations.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) => EmptyState(
+        icon: Icons.error_outline_rounded,
+        title: l10n.chatErrorUnknown,
+        body: error.toString(),
+        action: OutlinedButton(
+          onPressed: () =>
+              ref.read(conversationsControllerProvider.notifier).reload(),
+          child: Text(l10n.commonRetry),
+        ),
+      ),
+      data: (items) {
+        if (items.isEmpty) {
+          return EmptyState(
+            icon: Icons.forum_outlined,
+            title: l10n.chatsEmptyTitle,
+            body: l10n.chatsEmptyBody,
+            action: FilledButton.icon(
+              onPressed: () => _startChat(context, ref, l10n),
+              icon: const Icon(Icons.add_rounded),
+              label: Text(l10n.newChat),
+            ),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+          itemCount: items.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 10),
+          itemBuilder: (context, index) {
+            final conversation = items[index];
+            return _ConversationCard(
+              conversation: conversation,
+              onTap: () => context.push('/chats/${conversation.id}'),
+              onRename: () =>
+                  unawaited(_rename(context, ref, l10n, conversation)),
+              onDelete: () =>
+                  unawaited(_delete(context, ref, l10n, conversation)),
+            );
+          },
+        );
+      },
     );
   }
 

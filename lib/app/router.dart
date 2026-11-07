@@ -12,8 +12,9 @@ import '../features/marketplace/plugin_detail_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/opencode/opencode_connections_screen.dart';
 import '../features/opencode/opencode_pair_screen.dart';
+import '../features/opencode/opencode_project_sessions_screen.dart';
+import '../features/opencode/opencode_projects_screen.dart';
 import '../features/opencode/opencode_session_screen.dart';
-import '../features/opencode/opencode_sessions_screen.dart';
 import '../features/providers/provider_editor_screen.dart';
 import '../features/providers/providers_screen.dart';
 import '../features/settings/about_screen.dart';
@@ -157,11 +158,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const OpenCodePairScreen(),
       ),
       GoRoute(
-        path: '/opencode/:id/sessions',
-        name: 'openCodeSessions',
+        path: '/opencode/:id/projects',
+        name: 'openCodeProjects',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
-            OpenCodeSessionsScreen(connectionId: state.pathParameters['id']!),
+            OpenCodeProjectsScreen(connectionId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/opencode/:id/projects/:projectId/sessions',
+        name: 'openCodeProjectSessions',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => OpenCodeProjectSessionsScreen(
+          connectionId: state.pathParameters['id']!,
+          projectId: state.pathParameters['projectId']!,
+        ),
       ),
       GoRoute(
         path: '/opencode/:id/sessions/:sessionId',
