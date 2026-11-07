@@ -1,14 +1,17 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/api/openai_compatible_client.dart';
 import '../../data/repositories/conversation_repository.dart';
+import '../../data/repositories/mcp_server_repository.dart';
 import '../../data/repositories/provider_repository.dart';
 import '../../domain/entities/ai_provider.dart';
 import '../../domain/entities/chat_conversation.dart';
 import '../../domain/entities/chat_failure.dart';
 import '../../domain/entities/chat_message.dart';
+import '../../domain/entities/mcp.dart';
 import 'conversations_controller.dart';
 
 const _unset = Object();
@@ -19,12 +22,16 @@ class ChatSessionState {
     required this.messages,
     this.streaming = false,
     this.failure,
+    this.activeTool,
+    this.pendingApproval,
   });
 
   final ChatConversation conversation;
   final List<ChatMessage> messages;
   final bool streaming;
   final ChatFailure? failure;
+  final String? activeTool;
+  final ChatToolApproval? pendingApproval;
 
   ChatMessage? get lastUserMessage {
     for (var index = messages.length - 1; index >= 0; index--) {
@@ -45,6 +52,8 @@ class ChatSessionState {
     List<ChatMessage>? messages,
     bool? streaming,
     Object? failure = _unset,
+    Object? activeTool = _unset,
+    Object? pendingApproval = _unset,
   }) {
     return ChatSessionState(
       conversation: conversation ?? this.conversation,
@@ -53,8 +62,26 @@ class ChatSessionState {
       failure: identical(failure, _unset)
           ? this.failure
           : failure as ChatFailure?,
+      activeTool: identical(activeTool, _unset)
+          ? this.activeTool
+          : activeTool as String?,
+      pendingApproval: identical(pendingApproval, _unset)
+          ? this.pendingApproval
+          : pendingApproval as ChatToolApproval?,
     );
   }
+}
+
+class ChatToolApproval {
+  const ChatToolApproval({
+    required this.id,
+    required this.toolName,
+    required this.arguments,
+  });
+
+  final String id;
+  final String toolName;
+  final String arguments;
 }
 
 final chatControllerProvider =
@@ -73,6 +100,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
   ConversationRepository? _repository;
   StreamSubscription<ChatDelta>? _subscription;
   Completer<void>? _completer;
+  Completer<bool>? _approvalCompleter;
   String? _streamingMessageId;
   String _contentBuffer = '';
   String _reasoningBuffer = '';
@@ -308,6 +336,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
       return;
     }
     _cancelRequested = true;
+    _cancelApproval();
     final completer = _completer;
     await _subscription?.cancel();
     _subscription = null;
@@ -424,16 +453,109 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
     _reasoningBuffer = '';
     _cancelRequested = false;
 
+    final registry = await _loadToolRegistry();
+    if (generation != _generation || !ref.mounted) {
+      return;
+    }
+
+    final messages = <ChatRequestMessage>[
+      ..._requestMessages(excludingId: assistantMessageId),
+    ];
+    final client = ref.read(openAiCompatibleClientProvider);
+
+    for (var round = 0; round < 4; round++) {
+      if (generation != _generation || !ref.mounted) {
+        return;
+      }
+      if (_cancelRequested) {
+        await _finishStreaming(status: ChatMessageStatus.stopped);
+        return;
+      }
+
+      final result = await _streamRound(
+        client: client,
+        provider: provider,
+        apiKey: apiKey,
+        messages: messages,
+        definitions: registry.definitions,
+        assistantMessageId: assistantMessageId,
+        generation: generation,
+      );
+      if (result == null || generation != _generation || !ref.mounted) {
+        return;
+      }
+      if (_cancelRequested) {
+        await _finishStreaming(status: ChatMessageStatus.stopped);
+        return;
+      }
+      if (result.toolCalls.isEmpty) {
+        await _finishStreaming(status: ChatMessageStatus.complete);
+        return;
+      }
+
+      messages.add(
+        ChatRequestMessage(
+          role: 'assistant',
+          content: result.content,
+          toolCalls: result.toolCalls,
+        ),
+      );
+
+      // Interim text before a tool call is not part of the final answer.
+      _contentBuffer = '';
+      _reasoningBuffer = '';
+      _publishStreaming(assistantMessageId);
+
+      final repository = ref.read(mcpServerRepositoryProvider);
+      for (final call in result.toolCalls) {
+        if (generation != _generation || !ref.mounted || _cancelRequested) {
+          await _finishStreaming(status: ChatMessageStatus.stopped);
+          return;
+        }
+        final output = await _executeTool(
+          binding: registry.bindings[call.name],
+          call: call,
+          repository: repository,
+        );
+        messages.add(
+          ChatRequestMessage(
+            role: 'tool',
+            content: output,
+            toolCallId: call.id,
+          ),
+        );
+      }
+    }
+
+    await _finishStreaming(
+      status: ChatMessageStatus.error,
+      failure: const ChatFailure(
+        ChatFailureKind.unknown,
+        detail: 'The model requested too many tool rounds.',
+      ),
+    );
+  }
+
+  Future<_ChatRoundResult?> _streamRound({
+    required OpenAiCompatibleClient client,
+    required AiProvider provider,
+    required String apiKey,
+    required List<ChatRequestMessage> messages,
+    required List<ChatToolDefinition> definitions,
+    required String assistantMessageId,
+    required int generation,
+  }) async {
+    final toolBuilders = <int, _ToolCallBuilder>{};
     final completer = Completer<void>();
     _completer = completer;
 
-    final subscription = ref
-        .read(openAiCompatibleClientProvider)
+    final subscription = client
         .streamChat(
           baseUrl: provider.baseUrl,
           apiKey: apiKey,
           model: _effectiveModel(provider),
-          messages: _requestMessages(excludingId: assistantMessageId),
+          messages: messages,
+          tools: definitions,
         )
         .listen(
           (delta) {
@@ -442,6 +564,11 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
             }
             _contentBuffer += delta.content;
             _reasoningBuffer += delta.reasoning;
+            for (final toolDelta in delta.toolCalls) {
+              toolBuilders
+                  .putIfAbsent(toolDelta.index, _ToolCallBuilder.new)
+                  .add(toolDelta);
+            }
             if (delta.content.isNotEmpty || delta.reasoning.isNotEmpty) {
               _publishStreaming(assistantMessageId);
             }
@@ -469,7 +596,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
           failure: failure,
         );
       }
-      return;
+      return null;
     } catch (error) {
       if (generation == _generation) {
         await _finishStreaming(
@@ -480,17 +607,158 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
           ),
         );
       }
-      return;
+      return null;
+    } finally {
+      _subscription = null;
+      _completer = null;
     }
 
-    if (generation != _generation || !ref.mounted) {
+    return _ChatRoundResult(
+      content: _contentBuffer,
+      toolCalls: [for (final builder in toolBuilders.values) ?builder.build()],
+    );
+  }
+
+  Future<_ToolRegistry> _loadToolRegistry() async {
+    final allTools = await ref.read(mcpServerRepositoryProvider).allTools();
+    final definitions = <ChatToolDefinition>[];
+    final bindings = <String, _ToolBinding>{};
+    final usedNames = <String>{};
+
+    for (final entry in allTools.entries) {
+      for (final tool in entry.value) {
+        var alias = _functionName(entry.key, tool.name);
+        if (!usedNames.add(alias)) {
+          var suffix = 2;
+          while (!usedNames.add('${alias}_$suffix')) {
+            suffix++;
+          }
+          alias = '${alias}_$suffix';
+        }
+        bindings[alias] = _ToolBinding(serverId: entry.key, tool: tool);
+        final description = tool.description.trim().isEmpty
+            ? tool.name
+            : tool.description;
+        definitions.add(
+          ChatToolDefinition(
+            name: alias,
+            description: description.length > 1024
+                ? description.substring(0, 1024)
+                : description,
+            parameters: tool.inputSchema.isEmpty
+                ? const {'type': 'object', 'properties': <String, Object?>{}}
+                : tool.inputSchema,
+          ),
+        );
+      }
+    }
+
+    return _ToolRegistry(
+      definitions: List.unmodifiable(definitions),
+      bindings: Map.unmodifiable(bindings),
+    );
+  }
+
+  String _functionName(String serverId, String toolName) {
+    final raw = 'mcp__${serverId}__$toolName'.replaceAll(
+      RegExp(r'[^A-Za-z0-9_-]'),
+      '_',
+    );
+    if (raw.length <= 64) {
+      return raw;
+    }
+    final hash = raw.hashCode.toUnsigned(32).toRadixString(16);
+    return '${raw.substring(0, 64 - hash.length - 1)}_$hash';
+  }
+
+  Future<String> _executeTool({
+    required _ToolBinding? binding,
+    required ChatToolCall call,
+    required McpServerRepository repository,
+  }) async {
+    if (binding == null) {
+      return 'error: unknown tool ${call.name}.';
+    }
+
+    final Map<String, Object?> arguments;
+    try {
+      final decoded = jsonDecode(
+        call.arguments.trim().isEmpty ? '{}' : call.arguments,
+      );
+      if (decoded is! Map) {
+        return 'error: tool arguments must be a JSON object.';
+      }
+      arguments = Map<String, Object?>.from(decoded);
+    } on FormatException {
+      return 'error: tool arguments are not valid JSON.';
+    }
+
+    if (binding.tool.needsApproval) {
+      final allowed = await _requestApproval(call, binding.tool);
+      if (!allowed) {
+        return 'permission denied by user.';
+      }
+    }
+
+    _setActiveTool(binding.tool.name);
+    try {
+      final result = await repository.callTool(
+        serverId: binding.serverId,
+        toolName: binding.tool.name,
+        arguments: arguments,
+      );
+      return result.isError ? 'tool error: ${result.content}' : result.content;
+    } on McpFailure catch (error) {
+      return 'tool error: ${error.details ?? error.kind.name}';
+    } catch (error) {
+      return 'tool error: $error';
+    } finally {
+      _setActiveTool(null);
+    }
+  }
+
+  Future<bool> _requestApproval(ChatToolCall call, McpTool tool) async {
+    final current = state.value;
+    if (current == null) {
+      return false;
+    }
+    final completer = Completer<bool>();
+    _approvalCompleter = completer;
+    state = AsyncData(
+      current.copyWith(
+        pendingApproval: ChatToolApproval(
+          id: call.id,
+          toolName: tool.name,
+          arguments: call.arguments,
+        ),
+      ),
+    );
+    try {
+      return await completer.future;
+    } finally {
+      if (identical(_approvalCompleter, completer)) {
+        _approvalCompleter = null;
+      }
+      final latest = state.value;
+      if (latest != null) {
+        state = AsyncData(latest.copyWith(pendingApproval: null));
+      }
+    }
+  }
+
+  Future<void> resolveToolApproval(bool allow) async {
+    final completer = _approvalCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete(allow);
+    }
+  }
+
+  void _setActiveTool(String? name) {
+    final current = state.value;
+    if (current == null || !ref.mounted) {
       return;
     }
-    await _finishStreaming(
-      status: _cancelRequested
-          ? ChatMessageStatus.stopped
-          : ChatMessageStatus.complete,
-    );
+    state = AsyncData(current.copyWith(activeTool: name));
   }
 
   List<ChatRequestMessage> _requestMessages({required String excludingId}) {
@@ -635,6 +903,8 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
         messages: messages,
         streaming: false,
         failure: failure,
+        activeTool: null,
+        pendingApproval: null,
       ),
     );
 
@@ -652,6 +922,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
   Future<void> _cancelStreaming() async {
     _generation++;
     _cancelRequested = true;
+    _cancelApproval();
     final completer = _completer;
     await _subscription?.cancel();
     _subscription = null;
@@ -661,6 +932,14 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
     _reasoningBuffer = '';
     if (completer != null && !completer.isCompleted) {
       completer.complete();
+    }
+  }
+
+  void _cancelApproval() {
+    final approval = _approvalCompleter;
+    _approvalCompleter = null;
+    if (approval != null && !approval.isCompleted) {
+      approval.complete(false);
     }
   }
 
@@ -689,6 +968,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
 
   void _handleDispose() {
     _generation++;
+    _cancelApproval();
     _subscription?.cancel();
     _subscription = null;
 
@@ -724,6 +1004,54 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
           createdAt: DateTime.now(),
         ),
       ),
+    );
+  }
+}
+
+class _ChatRoundResult {
+  const _ChatRoundResult({required this.content, required this.toolCalls});
+
+  final String content;
+  final List<ChatToolCall> toolCalls;
+}
+
+class _ToolRegistry {
+  const _ToolRegistry({required this.definitions, required this.bindings});
+
+  final List<ChatToolDefinition> definitions;
+  final Map<String, _ToolBinding> bindings;
+}
+
+class _ToolBinding {
+  const _ToolBinding({required this.serverId, required this.tool});
+
+  final String serverId;
+  final McpTool tool;
+}
+
+class _ToolCallBuilder {
+  String? _id;
+  String? _name;
+  final StringBuffer _arguments = StringBuffer();
+
+  void add(ChatToolCallDelta delta) {
+    _id ??= delta.id;
+    _name ??= delta.name;
+    final arguments = delta.arguments;
+    if (arguments != null) {
+      _arguments.write(arguments);
+    }
+  }
+
+  ChatToolCall? build() {
+    final name = _name;
+    if (name == null || name.isEmpty) {
+      return null;
+    }
+    return ChatToolCall(
+      id: _id ?? 'call_${name.hashCode.toUnsigned(32)}',
+      name: name,
+      arguments: _arguments.toString(),
     );
   }
 }

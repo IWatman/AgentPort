@@ -35,6 +35,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _attachments = <ChatMessageAttachment>[];
   final _speech = SpeechToText();
   String? _lastSignature;
+  String? _approvalId;
   bool _listening = false;
   String _voiceBaseText = '';
 
@@ -52,6 +53,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final session = ref.watch(chatControllerProvider(widget.conversationId));
     final providersAsync = ref.watch(providersControllerProvider);
     final providers = providersAsync.value ?? const <AiProvider>[];
+
+    final approval = session.value?.pendingApproval;
+    if (approval != null && approval.id != _approvalId) {
+      _approvalId = approval.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          unawaited(_showToolApproval(approval));
+        }
+      });
+    }
 
     return Scaffold(
       appBar: session.value == null
@@ -129,6 +140,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         .retry(),
                   ),
                   onOpenProviders: () => context.push('/providers'),
+                ),
+              if (state.activeTool != null)
+                Container(
+                  width: double.infinity,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  child: Text(
+                    l10n.chatToolRunning(state.activeTool!),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
               _Composer(
                 controller: _composer,
@@ -255,6 +281,47 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   String _modelFor(ChatSessionState state, AiProvider provider) {
     final model = state.conversation.model?.trim();
     return model == null || model.isEmpty ? provider.model : model;
+  }
+
+  Future<void> _showToolApproval(ChatToolApproval approval) async {
+    final l10n = AppLocalizations.of(context);
+    final arguments = approval.arguments.trim().isEmpty
+        ? '{}'
+        : approval.arguments;
+    final allowed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.chatToolApprovalTitle),
+        content: SingleChildScrollView(
+          child: SelectableText(
+            l10n.chatToolApprovalBody(
+              approval.toolName,
+              arguments.length > 2000
+                  ? '${arguments.substring(0, 2000)}…'
+                  : arguments,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.chatDeny),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.chatAllow),
+          ),
+        ],
+      ),
+    );
+    _approvalId = null;
+    if (!mounted) {
+      return;
+    }
+    await ref
+        .read(chatControllerProvider(widget.conversationId).notifier)
+        .resolveToolApproval(allowed == true);
   }
 
   String _modelBarLabel(

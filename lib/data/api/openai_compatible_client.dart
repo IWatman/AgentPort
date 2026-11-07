@@ -12,6 +12,8 @@ class ChatRequestMessage {
     required this.role,
     required this.content,
     this.contentParts = const [],
+    this.toolCallId,
+    this.toolCalls = const [],
   });
 
   final String role;
@@ -21,20 +23,96 @@ class ChatRequestMessage {
   /// these replace the plain string content.
   final List<Map<String, Object?>> contentParts;
 
+  /// Set for role `tool` messages.
+  final String? toolCallId;
+
+  /// Set for assistant messages that requested tools.
+  final List<ChatToolCall> toolCalls;
+
+  Map<String, Object?> toJson() {
+    if (toolCallId != null) {
+      return {'role': role, 'tool_call_id': toolCallId, 'content': content};
+    }
+    return {
+      'role': role,
+      if (toolCalls.isEmpty)
+        'content': contentParts.isEmpty ? content : contentParts,
+      if (toolCalls.isNotEmpty) 'content': content.isEmpty ? null : content,
+      if (toolCalls.isNotEmpty)
+        'tool_calls': toolCalls.map((call) => call.toJson()).toList(),
+    };
+  }
+}
+
+class ChatToolDefinition {
+  const ChatToolDefinition({
+    required this.name,
+    required this.description,
+    required this.parameters,
+  });
+
+  final String name;
+  final String description;
+  final Map<String, Object?> parameters;
+
   Map<String, Object?> toJson() => {
-    'role': role,
-    'content': contentParts.isEmpty ? content : contentParts,
+    'type': 'function',
+    'function': {
+      'name': name,
+      'description': description,
+      'parameters': parameters,
+    },
   };
 }
 
+class ChatToolCall {
+  const ChatToolCall({
+    required this.id,
+    required this.name,
+    required this.arguments,
+  });
+
+  final String id;
+  final String name;
+
+  /// Raw JSON string emitted by the model.
+  final String arguments;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'type': 'function',
+    'function': {'name': name, 'arguments': arguments},
+  };
+}
+
+class ChatToolCallDelta {
+  const ChatToolCallDelta({
+    required this.index,
+    this.id,
+    this.name,
+    this.arguments,
+  });
+
+  final int index;
+  final String? id;
+  final String? name;
+  final String? arguments;
+}
+
 class ChatDelta {
-  const ChatDelta({this.content = '', this.reasoning = '', this.finishReason});
+  const ChatDelta({
+    this.content = '',
+    this.reasoning = '',
+    this.finishReason,
+    this.toolCalls = const [],
+  });
 
   final String content;
   final String reasoning;
   final String? finishReason;
+  final List<ChatToolCallDelta> toolCalls;
 
-  bool get isEmpty => content.isEmpty && reasoning.isEmpty;
+  bool get isEmpty => content.isEmpty && reasoning.isEmpty && toolCalls.isEmpty;
 }
 
 typedef HttpClientFactory = http.Client Function();
@@ -54,6 +132,7 @@ class OpenAiCompatibleClient {
     required String apiKey,
     required String model,
     required List<ChatRequestMessage> messages,
+    List<ChatToolDefinition> tools = const [],
   }) async* {
     final client = _clientFactory();
     try {
@@ -67,6 +146,9 @@ class OpenAiCompatibleClient {
           'model': model,
           'messages': messages.map((message) => message.toJson()).toList(),
           'stream': true,
+          if (tools.isNotEmpty)
+            'tools': tools.map((tool) => tool.toJson()).toList(),
+          if (tools.isNotEmpty) 'tool_choice': 'auto',
         });
 
       final response = await client
@@ -139,6 +221,7 @@ class OpenAiCompatibleClient {
           content: content ?? '',
           reasoning: reasoning,
           finishReason: choice['finish_reason']?.toString(),
+          toolCalls: _readToolCalls(deltaMap['tool_calls']),
         );
       }
     } on ChatFailure {
@@ -275,6 +358,33 @@ class OpenAiCompatibleClient {
 
   String? _readString(Object? value) {
     return value is String && value.isNotEmpty ? value : null;
+  }
+
+  List<ChatToolCallDelta> _readToolCalls(Object? value) {
+    if (value is! List) {
+      return const [];
+    }
+    final result = <ChatToolCallDelta>[];
+    for (final item in value) {
+      if (item is! Map) {
+        continue;
+      }
+      final map = Map<String, Object?>.from(item);
+      final index = map['index'];
+      final function = map['function'];
+      final functionMap = function is Map
+          ? Map<String, Object?>.from(function)
+          : const <String, Object?>{};
+      result.add(
+        ChatToolCallDelta(
+          index: index is num ? index.toInt() : result.length,
+          id: _readString(map['id']),
+          name: _readString(functionMap['name']),
+          arguments: _readString(functionMap['arguments']),
+        ),
+      );
+    }
+    return result;
   }
 }
 

@@ -328,6 +328,28 @@
   "chatVoiceStop": "Stop voice input",
   "chatListening": "Listening…",
   "chatVoiceUnavailable": "Voice input is not available on this device.",
+  "chatToolRunning": "Using {tool}…",
+  "@chatToolRunning": {
+    "placeholders": {
+      "tool": {
+        "type": "String"
+      }
+    }
+  },
+  "chatToolApprovalTitle": "Allow tool?",
+  "chatToolApprovalBody": "The model wants to run “{tool}” with these arguments:\n{arguments}",
+  "@chatToolApprovalBody": {
+    "placeholders": {
+      "tool": {
+        "type": "String"
+      },
+      "arguments": {
+        "type": "String"
+      }
+    }
+  },
+  "chatAllow": "Allow",
+  "chatDeny": "Deny",
   "mcpNoServersTitle": "No MCP connections",
   "mcpNoServersBody": "Install a remote MCP plugin from the Marketplace to connect it here.",
   "mcpOpenMarketplace": "Open Marketplace",

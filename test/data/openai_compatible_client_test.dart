@@ -231,4 +231,32 @@ void main() {
     expect(json['content'], isA<List>());
     expect((json['content'] as List), hasLength(2));
   });
+
+  test('serializes assistant tool calls and tool results', () {
+    const assistant = ChatRequestMessage(
+      role: 'assistant',
+      content: '',
+      toolCalls: [
+        ChatToolCall(
+          id: 'call-1',
+          name: 'mcp__server__search',
+          arguments: '{"query":"x"}',
+        ),
+      ],
+    );
+    final assistantJson = assistant.toJson();
+    expect(assistantJson['content'], isNull);
+    expect((assistantJson['tool_calls'] as List), hasLength(1));
+
+    const tool = ChatRequestMessage(
+      role: 'tool',
+      content: 'result',
+      toolCallId: 'call-1',
+    );
+    expect(tool.toJson(), {
+      'role': 'tool',
+      'tool_call_id': 'call-1',
+      'content': 'result',
+    });
+  });
 }

@@ -313,6 +313,28 @@
   "chatVoiceStop": "Остановить голосовой ввод",
   "chatListening": "Слушаю…",
   "chatVoiceUnavailable": "Голосовой ввод недоступен на этом устройстве.",
+  "chatToolRunning": "Использую {tool}…",
+  "@chatToolRunning": {
+    "placeholders": {
+      "tool": {
+        "type": "String"
+      }
+    }
+  },
+  "chatToolApprovalTitle": "Разрешить инструмент?",
+  "chatToolApprovalBody": "Модель хочет запустить «{tool}» с аргументами:\n{arguments}",
+  "@chatToolApprovalBody": {
+    "placeholders": {
+      "tool": {
+        "type": "String"
+      },
+      "arguments": {
+        "type": "String"
+      }
+    }
+  },
+  "chatAllow": "Разрешить",
+  "chatDeny": "Запретить",
   "mcpNoServersTitle": "Нет MCP-подключений",
   "mcpNoServersBody": "Установите удалённый MCP-плагин в Маркетплейсе, чтобы подключить его здесь.",
   "mcpOpenMarketplace": "Открыть Маркетплейс",
