@@ -585,11 +585,19 @@ class OpenCodeClient {
       }
     }
 
+    final textValue = text.toString();
+    final reasoningValue = reasoning.toString();
+    if (textValue.trim().isEmpty &&
+        reasoningValue.trim().isEmpty &&
+        tools.isEmpty) {
+      return null;
+    }
+
     return OpenCodeMessage(
       id: id,
       role: 'assistant',
-      text: text.toString(),
-      reasoning: reasoning.toString(),
+      text: textValue,
+      reasoning: reasoningValue,
       tools: List.unmodifiable(tools),
       createdAt: _readTime(map['time'], 'created'),
     );

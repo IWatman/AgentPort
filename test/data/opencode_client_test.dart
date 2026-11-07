@@ -301,7 +301,22 @@ void main() {
                   {'type': 'tool', 'name': 'bash'},
                 ],
               },
-              {'id': 'msg_3', 'type': 'system'},
+              {
+                'id': 'msg_3',
+                'type': 'assistant',
+                'time': {'created': 1762584002000},
+                'content': [
+                  {'type': 'reasoning', 'text': 'Only thinking'},
+                  {'type': 'tool', 'name': 'read'},
+                ],
+              },
+              {
+                'id': 'msg_4',
+                'type': 'assistant',
+                'time': {'created': 1762584003000},
+                'content': <Object>[],
+              },
+              {'id': 'msg_5', 'type': 'system'},
             ],
             'cursor': {'next': null, 'previous': null},
           }),
@@ -310,13 +325,16 @@ void main() {
 
       final messages = await client.messages('ses_1');
 
-      expect(messages, hasLength(2));
+      expect(messages, hasLength(3));
       expect(messages.first.isUser, isTrue);
       expect(messages.first.text, 'Fix the build');
       expect(messages.first.createdAt, isNotNull);
       expect(messages[1].reasoning, 'Thinking');
       expect(messages[1].text, 'Done.Build is green.');
       expect(messages[1].tools, ['bash']);
+      expect(messages[2].text, isEmpty);
+      expect(messages[2].reasoning, 'Only thinking');
+      expect(messages[2].tools, ['read']);
     });
 
     test('sends interrupt, agent, and model requests', () async {

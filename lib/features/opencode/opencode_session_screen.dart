@@ -390,12 +390,88 @@ class _MessageBubble extends StatelessWidget {
       );
     }
 
+    final hasText = message.text.trim().isNotEmpty;
+    final hasReasoning = message.reasoning.trim().isNotEmpty;
+    if (!hasText && !hasReasoning && message.tools.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 20, right: 12),
-      child: MarkdownBody(
-        data: message.text,
-        selectable: true,
-        styleSheet: _markdownStyle(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasReasoning) ...[
+            _ReasoningBlock(text: message.reasoning),
+            if (hasText) const SizedBox(height: 10),
+          ],
+          if (hasText)
+            MarkdownBody(
+              data: message.text,
+              selectable: true,
+              styleSheet: _markdownStyle(context),
+            ),
+          if (message.tools.isNotEmpty) ...[
+            if (hasText || hasReasoning) const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final tool in message.tools)
+                  Chip(
+                    avatar: const Icon(Icons.build_rounded, size: 15),
+                    label: Text(tool),
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ReasoningBlock extends StatelessWidget {
+  const _ReasoningBlock({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        leading: Icon(
+          Icons.psychology_outlined,
+          size: 20,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+        title: Text(
+          l10n.chatReasoning,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: MarkdownBody(
+              data: text,
+              selectable: true,
+              styleSheet: _markdownStyle(context),
+            ),
+          ),
+        ],
       ),
     );
   }
