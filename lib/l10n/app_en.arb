@@ -389,6 +389,92 @@
   "mcpErrorInvalidResponse": "The MCP server returned an unexpected response.",
   "mcpErrorUnsupportedTransport": "Only Streamable HTTP MCP servers are supported right now.",
   "mcpErrorTool": "The tool call failed.",
+  "settingsOpenCodeSubtitle": "Control OpenCode sessions from your phone.",
+  "openCodeTitle": "OpenCode",
+  "openCodePair": "Pair",
+  "openCodePairTitle": "Pair OpenCode",
+  "openCodeNoConnectionsTitle": "No OpenCode connections",
+  "openCodeNoConnectionsBody": "Scan the QR code from “opencode pair” or connect manually by URL.",
+  "openCodeConnectionsError": "Could not load connections",
+  "openCodeLastSeen": "Last seen {date}",
+  "@openCodeLastSeen": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeNeverSeen": "Never connected",
+  "openCodeDeleteTitle": "Delete connection",
+  "openCodeDeleteBody": "Delete “{name}”? The saved token will be removed from this device.",
+  "@openCodeDeleteBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeConnectionMenu": "Connection actions",
+  "openCodePairModeQr": "QR code",
+  "openCodePairModeManual": "Manual",
+  "openCodeQrHint": "Point the camera at the QR code shown by “opencode pair”.",
+  "openCodeQrUnreadable": "Could not read the QR code. Try again.",
+  "openCodePairing": "Pairing…",
+  "openCodeServerUrl": "Server URL",
+  "openCodeServerUrlHint": "http://192.168.1.10:4096",
+  "openCodeUrlRequired": "Enter the server URL.",
+  "openCodeUrlInvalid": "Use an http:// or https:// URL.",
+  "openCodePassword": "Password",
+  "openCodePasswordRequired": "Enter the service password.",
+  "openCodeName": "Connection name (optional)",
+  "openCodeNameHint": "For example, Home PC",
+  "openCodeConnect": "Connect",
+  "openCodeConnecting": "Connecting…",
+  "openCodeScannerPermission": "Camera access is required to scan the QR code.",
+  "openCodeScannerUnavailable": "The camera is not available on this device.",
+  "openCodeScannerError": "Could not start the camera.",
+  "openCodeSessionsTitle": "Sessions",
+  "openCodeSessionsEmptyTitle": "No sessions",
+  "openCodeSessionsEmptyBody": "Create a session on the OpenCode server or start one there.",
+  "openCodeSessionsError": "Could not load sessions",
+  "openCodeSessionUpdated": "Updated {date}",
+  "@openCodeSessionUpdated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeConnected": "Connected",
+  "openCodeConnectionLost": "Connection lost",
+  "openCodeSessionInputHint": "Message",
+  "openCodeThinking": "OpenCode is working…",
+  "openCodeToolRunning": "Running {tool}…",
+  "@openCodeToolRunning": {
+    "placeholders": {
+      "tool": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeAgent": "Agent",
+  "openCodeAgentMenu": "Choose agent",
+  "openCodeAgentsEmpty": "No agents available.",
+  "openCodeModel": "Model",
+  "openCodeModelMenu": "Choose model",
+  "openCodeModelsEmpty": "No models available.",
+  "openCodeSessionEmptyTitle": "No messages yet",
+  "openCodeSessionEmptyBody": "Send a prompt to start the session.",
+  "openCodeSessionError": "Could not load the session",
+  "openCodeReconnect": "Reconnect",
+  "openCodeFailureInvalidPayload": "The pairing data is invalid.",
+  "openCodeFailureNetwork": "Network error. Check the server address and connection.",
+  "openCodeFailureTimeout": "The OpenCode server did not respond in time.",
+  "openCodeFailureUnauthorized": "Authorization failed. Pair the server again or check the password.",
+  "openCodeFailureUnsupportedVersion": "This OpenCode version is not supported. Update the server to 2.2.5 or newer.",
+  "openCodeFailureServer": "The OpenCode server returned an error.",
+  "openCodeFailureInvalidResponse": "The OpenCode server returned an unexpected response.",
+  "openCodeFailureUnknown": "Something went wrong.",
   "commonCancel": "Cancel",
   "commonDone": "Done",
   "commonSave": "Save",

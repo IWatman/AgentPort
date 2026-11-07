@@ -374,6 +374,92 @@
   "mcpErrorInvalidResponse": "MCP-сервер вернул неожиданный ответ.",
   "mcpErrorUnsupportedTransport": "Сейчас поддерживаются только Streamable HTTP MCP-серверы.",
   "mcpErrorTool": "Вызов инструмента завершился ошибкой.",
+  "settingsOpenCodeSubtitle": "Управляйте сессиями OpenCode с телефона.",
+  "openCodeTitle": "OpenCode",
+  "openCodePair": "Сопряжение",
+  "openCodePairTitle": "Сопряжение OpenCode",
+  "openCodeNoConnectionsTitle": "Нет подключений OpenCode",
+  "openCodeNoConnectionsBody": "Отсканируйте QR-код из команды «opencode pair» или подключитесь вручную по URL.",
+  "openCodeConnectionsError": "Не удалось загрузить подключения",
+  "openCodeLastSeen": "Последняя активность: {date}",
+  "@openCodeLastSeen": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeNeverSeen": "Ещё не подключалось",
+  "openCodeDeleteTitle": "Удалить подключение",
+  "openCodeDeleteBody": "Удалить «{name}»? Сохранённый токен будет удалён с этого устройства.",
+  "@openCodeDeleteBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeConnectionMenu": "Действия с подключением",
+  "openCodePairModeQr": "QR-код",
+  "openCodePairModeManual": "Вручную",
+  "openCodeQrHint": "Наведите камеру на QR-код из команды «opencode pair».",
+  "openCodeQrUnreadable": "Не удалось распознать QR-код. Попробуйте ещё раз.",
+  "openCodePairing": "Сопряжение…",
+  "openCodeServerUrl": "Адрес сервера",
+  "openCodeServerUrlHint": "http://192.168.1.10:4096",
+  "openCodeUrlRequired": "Введите адрес сервера.",
+  "openCodeUrlInvalid": "Используйте адрес http:// или https://.",
+  "openCodePassword": "Пароль",
+  "openCodePasswordRequired": "Введите пароль сервиса.",
+  "openCodeName": "Название подключения (необязательно)",
+  "openCodeNameHint": "Например, домашний компьютер",
+  "openCodeConnect": "Подключиться",
+  "openCodeConnecting": "Подключаемся…",
+  "openCodeScannerPermission": "Для сканирования QR-кода нужен доступ к камере.",
+  "openCodeScannerUnavailable": "Камера недоступна на этом устройстве.",
+  "openCodeScannerError": "Не удалось запустить камеру.",
+  "openCodeSessionsTitle": "Сессии",
+  "openCodeSessionsEmptyTitle": "Нет сессий",
+  "openCodeSessionsEmptyBody": "Создайте сессию на сервере OpenCode или запустите её там.",
+  "openCodeSessionsError": "Не удалось загрузить сессии",
+  "openCodeSessionUpdated": "Обновлено {date}",
+  "@openCodeSessionUpdated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeConnected": "Подключено",
+  "openCodeConnectionLost": "Соединение потеряно",
+  "openCodeSessionInputHint": "Сообщение",
+  "openCodeThinking": "OpenCode работает…",
+  "openCodeToolRunning": "Выполняется {tool}…",
+  "@openCodeToolRunning": {
+    "placeholders": {
+      "tool": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeAgent": "Агент",
+  "openCodeAgentMenu": "Выбрать агента",
+  "openCodeAgentsEmpty": "Нет доступных агентов.",
+  "openCodeModel": "Модель",
+  "openCodeModelMenu": "Выбрать модель",
+  "openCodeModelsEmpty": "Нет доступных моделей.",
+  "openCodeSessionEmptyTitle": "Пока нет сообщений",
+  "openCodeSessionEmptyBody": "Отправьте запрос, чтобы начать сессию.",
+  "openCodeSessionError": "Не удалось загрузить сессию",
+  "openCodeReconnect": "Переподключиться",
+  "openCodeFailureInvalidPayload": "Данные сопряжения некорректны.",
+  "openCodeFailureNetwork": "Ошибка сети. Проверьте адрес сервера и подключение.",
+  "openCodeFailureTimeout": "Сервер OpenCode не ответил вовремя.",
+  "openCodeFailureUnauthorized": "Ошибка авторизации. Сопрягите сервер заново или проверьте пароль.",
+  "openCodeFailureUnsupportedVersion": "Эта версия OpenCode не поддерживается. Обновите сервер до 2.2.5 или новее.",
+  "openCodeFailureServer": "Сервер OpenCode вернул ошибку.",
+  "openCodeFailureInvalidResponse": "Сервер OpenCode вернул неожиданный ответ.",
+  "openCodeFailureUnknown": "Что-то пошло не так.",
   "commonCancel": "Отмена",
   "commonDone": "Готово",
   "commonSave": "Сохранить",
