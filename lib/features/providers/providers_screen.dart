@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../l10n/generated/app_localizations.dart';
 import '../shared/empty_state.dart';
+import 'provider_presets.dart';
 import 'providers_controller.dart';
 
 class ProvidersScreen extends ConsumerWidget {
@@ -49,10 +50,13 @@ class ProvidersScreen extends ConsumerWidget {
 
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-            itemCount: items.length + 1,
+            itemCount: items.length + 2,
             separatorBuilder: (context, index) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               if (index == 0) {
+                return _QuickAddStrip(l10n: l10n);
+              }
+              if (index == 1) {
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
                   child: Text(
@@ -63,7 +67,7 @@ class ProvidersScreen extends ConsumerWidget {
                   ),
                 );
               }
-              final provider = items[index - 1];
+              final provider = items[index - 2];
               return Card(
                 child: ListTile(
                   leading: CircleAvatar(
@@ -97,5 +101,52 @@ class ProvidersScreen extends ConsumerWidget {
   String _hostLabel(String baseUrl) {
     final parsed = Uri.tryParse(baseUrl.trim());
     return parsed?.host.isNotEmpty == true ? parsed!.host : baseUrl;
+  }
+}
+
+class _QuickAddStrip extends StatelessWidget {
+  const _QuickAddStrip({required this.l10n});
+
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+          child: Text(
+            l10n.providerPresetsQuickAdd.toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.1,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 40,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: ProviderPreset.all.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final preset = ProviderPreset.all[index];
+              return ActionChip(
+                key: ValueKey('quickAddPreset-${preset.id}'),
+                avatar: Icon(preset.icon, size: 18),
+                label: Text(preset.label),
+                tooltip: preset.description,
+                onPressed: () =>
+                    context.push('/providers/new?preset=${preset.id}'),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
   }
 }

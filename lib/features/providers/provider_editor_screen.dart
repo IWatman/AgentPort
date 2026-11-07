@@ -8,12 +8,18 @@ import '../../domain/entities/chat_failure.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../shared/empty_state.dart';
 import '../shared/failure_text.dart';
+import 'provider_presets.dart';
 import 'providers_controller.dart';
 
 class ProviderEditorScreen extends ConsumerStatefulWidget {
-  const ProviderEditorScreen({this.providerId, super.key});
+  const ProviderEditorScreen({
+    this.providerId,
+    this.initialPresetId,
+    super.key,
+  });
 
   final String? providerId;
+  final String? initialPresetId;
 
   @override
   ConsumerState<ProviderEditorScreen> createState() =>
@@ -27,6 +33,7 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
   final _apiKeyController = TextEditingController();
 
   AiProviderType _type = AiProviderType.deepSeek;
+  String? _selectedPresetId;
   AiProvider? _existing;
   bool _initialized = false;
   bool _obscureApiKey = true;
@@ -100,6 +107,27 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
+          if (!_isEditing) ...[
+            _SectionLabel(text: l10n.providerPresetsTitle),
+            SizedBox(
+              height: 108,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: ProviderPreset.all.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  final preset = ProviderPreset.all[index];
+                  return _PresetCard(
+                    key: ValueKey('providerPreset-${preset.id}'),
+                    preset: preset,
+                    selected: _selectedPresetId == preset.id,
+                    onTap: _saving ? null : () => _selectPreset(preset),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           _SectionLabel(text: l10n.providerType),
           SegmentedButton<AiProviderType>(
             segments: [
@@ -117,15 +145,11 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
             selected: {_type},
             onSelectionChanged: _saving
                 ? null
-                : (selection) {
-                    setState(() {
-                      _type = selection.first;
-                      _applyPreset(_type);
-                    });
-                  },
+                : (selection) => _selectType(selection.first),
           ),
           const SizedBox(height: 20),
           TextField(
+            key: const Key('providerNameField'),
             controller: _nameController,
             textInputAction: TextInputAction.next,
             decoration: InputDecoration(
@@ -135,6 +159,7 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
           ),
           const SizedBox(height: 14),
           TextField(
+            key: const Key('providerBaseUrlField'),
             controller: _baseUrlController,
             keyboardType: TextInputType.url,
             textInputAction: TextInputAction.next,
@@ -147,6 +172,7 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
           ),
           const SizedBox(height: 14),
           TextField(
+            key: const Key('providerModelField'),
             controller: _modelController,
             textInputAction: TextInputAction.next,
             autocorrect: false,
@@ -158,6 +184,7 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
           ),
           const SizedBox(height: 14),
           TextField(
+            key: const Key('providerApiKeyField'),
             controller: _apiKeyController,
             obscureText: _obscureApiKey,
             autocorrect: false,
@@ -215,8 +242,10 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
 
   void _initialize(AiProvider? provider) {
     if (provider == null) {
-      _type = AiProviderType.deepSeek;
-      _applyPreset(_type);
+      final preset =
+          ProviderPreset.byId(widget.initialPresetId) ??
+          ProviderPreset.deepSeek;
+      _applyPreset(preset, force: true);
       return;
     }
     _type = provider.type;
@@ -225,33 +254,48 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
     _modelController.text = provider.model;
   }
 
-  void _applyPreset(AiProviderType type) {
-    final isDeepSeek = type == AiProviderType.deepSeek;
-    final name = isDeepSeek
-        ? ProviderPresets.deepSeekName
-        : ProviderPresets.customName;
-    final baseUrl = isDeepSeek
-        ? ProviderPresets.deepSeekBaseUrl
-        : ProviderPresets.customBaseUrl;
-    final model = isDeepSeek
-        ? ProviderPresets.deepSeekModel
-        : ProviderPresets.customModel;
+  void _selectPreset(ProviderPreset preset) {
+    setState(() {
+      _applyPreset(preset, force: true);
+      _error = null;
+    });
+  }
 
-    if (_nameController.text.trim().isEmpty ||
-        _nameController.text.trim() == ProviderPresets.deepSeekName ||
-        _nameController.text.trim() == ProviderPresets.customName) {
-      _nameController.text = name;
+  void _selectType(AiProviderType type) {
+    final preset = type == AiProviderType.deepSeek
+        ? ProviderPreset.deepSeek
+        : ProviderPreset.custom;
+    setState(() {
+      _applyPreset(preset);
+      _error = null;
+    });
+  }
+
+  /// Applies [preset]. Unless [force] is set, fields edited by the user keep
+  /// their value; only empty fields or values that still match a preset are
+  /// replaced.
+  void _applyPreset(ProviderPreset preset, {bool force = false}) {
+    if (force || _isPresetValue(_nameController.text, (item) => item.label)) {
+      _nameController.text = preset.label;
     }
-    if (_baseUrlController.text.trim().isEmpty ||
-        _baseUrlController.text.trim() == ProviderPresets.deepSeekBaseUrl ||
-        _baseUrlController.text.trim() == ProviderPresets.customBaseUrl) {
-      _baseUrlController.text = baseUrl;
+    if (force ||
+        _isPresetValue(_baseUrlController.text, (item) => item.baseUrl)) {
+      _baseUrlController.text = preset.baseUrl;
     }
-    if (_modelController.text.trim().isEmpty ||
-        _modelController.text.trim() == ProviderPresets.deepSeekModel ||
-        _modelController.text.trim() == ProviderPresets.customModel) {
-      _modelController.text = model;
+    if (force || _isPresetValue(_modelController.text, (item) => item.model)) {
+      _modelController.text = preset.model;
     }
+    _type = preset.type;
+    _selectedPresetId = preset.id;
+  }
+
+  bool _isPresetValue(
+    String value,
+    String Function(ProviderPreset preset) select,
+  ) {
+    final trimmed = value.trim();
+    return trimmed.isEmpty ||
+        ProviderPreset.all.any((preset) => select(preset) == trimmed);
   }
 
   Future<void> _testConnection(AppLocalizations l10n) async {
@@ -427,6 +471,96 @@ class _SectionLabel extends StatelessWidget {
           color: theme.colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.1,
+        ),
+      ),
+    );
+  }
+}
+
+class _PresetCard extends StatelessWidget {
+  const _PresetCard({
+    required this.preset,
+    required this.selected,
+    required this.onTap,
+    super.key,
+  });
+
+  final ProviderPreset preset;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final background = selected
+        ? Color.alphaBlend(
+            scheme.primary.withValues(alpha: 0.16),
+            scheme.surfaceContainerHigh,
+          )
+        : scheme.surfaceContainerHigh;
+
+    return SizedBox(
+      width: 172,
+      child: Material(
+        color: background,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: selected
+                    ? scheme.primary
+                    : scheme.outlineVariant.withValues(alpha: 0.4),
+                width: selected ? 1.5 : 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      preset.icon,
+                      size: 20,
+                      color: selected
+                          ? scheme.primary
+                          : scheme.onSurfaceVariant,
+                    ),
+                    const Spacer(),
+                    if (selected)
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 18,
+                        color: scheme.primary,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  preset.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  preset.model,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

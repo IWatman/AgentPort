@@ -39,14 +39,3 @@ class AiProvider {
 
   bool get isDeepSeek => type == AiProviderType.deepSeek;
 }
-
-/// Preset values used when creating a new provider.
-abstract final class ProviderPresets {
-  static const deepSeekName = 'DeepSeek';
-  static const deepSeekBaseUrl = 'https://api.deepseek.com';
-  static const deepSeekModel = 'deepseek-chat';
-
-  static const customName = 'Custom provider';
-  static const customBaseUrl = 'https://api.openai.com/v1';
-  static const customModel = 'gpt-4o-mini';
-}
