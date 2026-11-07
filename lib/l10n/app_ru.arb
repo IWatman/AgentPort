@@ -118,6 +118,8 @@
   "providerBaseUrlHint": "https://api.deepseek.com",
   "providerModel": "Модель",
   "providerModelHint": "deepseek-chat",
+  "providerPresetsTitle": "Пресеты",
+  "providerPresetsQuickAdd": "Быстрое добавление",
   "providerApiKey": "API-ключ",
   "providerApiKeyHelp": "Хранится в Android Keystore, а не в базе данных.",
   "providerApiKeyKeep": "Оставьте пустым, чтобы сохранить текущий ключ.",

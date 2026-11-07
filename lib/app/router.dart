@@ -129,7 +129,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/providers/new',
         name: 'providerNew',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ProviderEditorScreen(),
+        builder: (context, state) => ProviderEditorScreen(
+          initialPresetId: state.uri.queryParameters['preset'],
+        ),
       ),
       GoRoute(
         path: '/providers/:id',

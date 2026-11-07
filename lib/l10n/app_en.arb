@@ -125,6 +125,8 @@
   "providerBaseUrlHint": "https://api.deepseek.com",
   "providerModel": "Model",
   "providerModelHint": "deepseek-chat",
+  "providerPresetsTitle": "Presets",
+  "providerPresetsQuickAdd": "Quick add",
   "providerApiKey": "API key",
   "providerApiKeyHelp": "Stored in the Android Keystore, never in the database.",
   "providerApiKeyKeep": "Leave empty to keep the current key.",
