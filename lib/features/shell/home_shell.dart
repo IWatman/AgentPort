@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import '../updates/update_prompt_host.dart';
 
 class HomeShell extends StatelessWidget {
   const HomeShell({required this.navigationShell, super.key});
@@ -13,7 +14,7 @@ class HomeShell extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      body: navigationShell,
+      body: UpdatePromptHost(child: navigationShell),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) {

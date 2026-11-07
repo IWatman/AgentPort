@@ -41,6 +41,47 @@
   "settingsLanguageSubtitle": "Interface language",
   "settingsAutoUpdate": "Check for updates automatically",
   "settingsAutoUpdateSubtitle": "Stable channel only. A popup appears when a new version is available.",
+  "updatesTitle": "Check for updates",
+  "updatesCurrent": "Installed version {version}",
+  "@updatesCurrent": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesChecking": "Checking for updates…",
+  "updatesUpToDate": "You have the latest version.",
+  "updatesCheckFailed": "Could not check for updates.",
+  "updatesAvailableTitle": "Update available: v{version}",
+  "@updatesAvailableTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesNotesTitle": "What's new",
+  "updatesNoNotes": "No release notes were provided.",
+  "updatesLater": "Later",
+  "updatesDownload": "Download and install",
+  "updatesDownloading": "Downloading… {percent}%",
+  "@updatesDownloading": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "updatesInstalling": "Opening the installer…",
+  "updatesInstallerHint": "Confirm the update in the system installer.",
+  "updatesDoNotClose": "Keep AgentPort open until the download finishes.",
+  "updatesPermissionTitle": "Allow installs",
+  "updatesPermissionBody": "Android blocks installs from AgentPort. Allow “Install unknown apps” for AgentPort, then try again.",
+  "updatesOpenSettings": "Open settings",
+  "updatesRetry": "Retry",
+  "updatesClose": "Close",
+  "updatesFailedTitle": "Update failed",
   "settingsSectionAbout": "About",
   "settingsAbout": "About AgentPort",
   "settingsVersion": "Version {version}",

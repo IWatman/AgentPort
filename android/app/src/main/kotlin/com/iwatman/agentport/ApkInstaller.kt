@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.FileProvider
@@ -39,6 +40,26 @@ class ApkInstaller(context: Context) : MethodChannel.MethodCallHandler {
             }
 
             METHOD_CAN_INSTALL_PACKAGES -> result.success(canInstallPackages())
+
+            METHOD_OPEN_INSTALL_SETTINGS -> {
+                try {
+                    val intent =
+                        Intent(
+                            Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                            Uri.parse("package:${context.packageName}"),
+                        )
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    result.success(true)
+                } catch (error: Exception) {
+                    result.error(
+                        ERROR_INSTALL_FAILED,
+                        error.message ?: "Failed to open the install settings.",
+                        null,
+                    )
+                }
+            }
+
             else -> result.notImplemented()
         }
     }
@@ -196,6 +217,7 @@ class ApkInstaller(context: Context) : MethodChannel.MethodCallHandler {
 
         private const val METHOD_INSTALL_APK = "installApk"
         private const val METHOD_CAN_INSTALL_PACKAGES = "canInstallPackages"
+        private const val METHOD_OPEN_INSTALL_SETTINGS = "openInstallSettings"
 
         private const val ACTION_INSTALL_RESULT = "com.iwatman.agentport.INSTALL_RESULT"
 

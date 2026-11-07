@@ -8,6 +8,7 @@ class SettingsRepository {
   static const _localeKey = 'locale';
   static const _onboardingKey = 'onboarding_complete';
   static const _autoUpdateKey = 'auto_update_check';
+  static const _lastUpdateCheckKey = 'last_update_check';
 
   final AppDatabase _database;
 
@@ -29,6 +30,18 @@ class SettingsRepository {
 
   Future<void> saveAutoUpdateCheck(bool value) =>
       _write(_autoUpdateKey, value.toString());
+
+  Future<DateTime?> loadLastUpdateCheck() async {
+    final row =
+        await (_database.select(_database.settingEntries)
+              ..where((table) => table.key.equals(_lastUpdateCheckKey)))
+            .getSingleOrNull();
+    final value = row == null ? null : int.tryParse(row.value);
+    return value == null ? null : DateTime.fromMillisecondsSinceEpoch(value);
+  }
+
+  Future<void> saveLastUpdateCheck(DateTime value) =>
+      _write(_lastUpdateCheckKey, value.millisecondsSinceEpoch.toString());
 
   Future<void> _write(String key, String value) {
     return _database

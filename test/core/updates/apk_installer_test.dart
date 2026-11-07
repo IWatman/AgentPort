@@ -161,6 +161,34 @@ void main() {
     });
   });
 
+  group('openInstallSettings', () {
+    test('invokes the settings method', () async {
+      final calls = <MethodCall>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        return true;
+      });
+
+      await createInstaller().openInstallSettings();
+
+      expect(calls.single.method, 'openInstallSettings');
+    });
+
+    test('maps platform failures', () async {
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        throw PlatformException(
+          code: 'install_failed',
+          message: 'No settings activity.',
+        );
+      });
+
+      await expectLater(
+        createInstaller().openInstallSettings(),
+        throwsA(isFailure(ApkInstallFailureKind.installFailed)),
+      );
+    });
+  });
+
   group('non-Android platforms', () {
     test('rejects canInstallPackages as unsupported', () async {
       await expectLater(

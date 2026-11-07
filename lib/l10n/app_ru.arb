@@ -41,6 +41,47 @@
   "settingsLanguageSubtitle": "Язык интерфейса",
   "settingsAutoUpdate": "Проверять обновления автоматически",
   "settingsAutoUpdateSubtitle": "Только стабильный канал. При выходе новой версии появится окно.",
+  "updatesTitle": "Проверить обновления",
+  "updatesCurrent": "Установлена версия {version}",
+  "@updatesCurrent": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesChecking": "Проверяю обновления…",
+  "updatesUpToDate": "У вас последняя версия.",
+  "updatesCheckFailed": "Не удалось проверить обновления.",
+  "updatesAvailableTitle": "Доступно обновление: v{version}",
+  "@updatesAvailableTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesNotesTitle": "Что нового",
+  "updatesNoNotes": "Описание изменений не указано.",
+  "updatesLater": "Позже",
+  "updatesDownload": "Скачать и установить",
+  "updatesDownloading": "Загрузка… {percent}%",
+  "@updatesDownloading": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "updatesInstalling": "Открываю установщик…",
+  "updatesInstallerHint": "Подтвердите обновление в системном установщике.",
+  "updatesDoNotClose": "Не закрывайте AgentPort до окончания загрузки.",
+  "updatesPermissionTitle": "Разрешите установку",
+  "updatesPermissionBody": "Android блокирует установку из AgentPort. Разрешите «Установка неизвестных приложений» для AgentPort и повторите попытку.",
+  "updatesOpenSettings": "Открыть настройки",
+  "updatesRetry": "Повторить",
+  "updatesClose": "Закрыть",
+  "updatesFailedTitle": "Не удалось обновить",
   "settingsSectionAbout": "О приложении",
   "settingsAbout": "Об AgentPort",
   "settingsVersion": "Версия {version}",

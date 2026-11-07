@@ -50,6 +50,21 @@ class ApkInstaller {
     }
   }
 
+  /// Opens the system screen that allows this app to install unknown packages.
+  Future<void> openInstallSettings() async {
+    _ensureSupported();
+    try {
+      await _channel.invokeMethod<bool>('openInstallSettings');
+    } on PlatformException catch (error) {
+      throw _mapPlatformException(error);
+    } on MissingPluginException {
+      throw const ApkInstallFailure(
+        ApkInstallFailureKind.installFailed,
+        'The APK installer is not available on this device.',
+      );
+    }
+  }
+
   /// Starts the installation of [apk].
   ///
   /// The returned future completes once the platform reports a successful install or when the

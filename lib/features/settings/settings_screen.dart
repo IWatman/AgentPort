@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/settings/settings_controller.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../updates/update_prompt_host.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -41,6 +42,8 @@ class SettingsScreen extends ConsumerWidget {
                       .read(settingsControllerProvider.notifier)
                       .setAutoUpdateCheck(value),
                 ),
+                const Divider(indent: 16, endIndent: 16),
+                const UpdateCheckTile(),
               ],
             ),
           ),
