@@ -30,15 +30,32 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
   final _composer = TextEditingController();
   final _scroll = ScrollController();
   String? _lastScrollSignature;
+  var _stickToBottom = true;
+  var _didInitialScroll = false;
 
   OpenCodeSessionKey get _key =>
       (connectionId: widget.connectionId, sessionId: widget.sessionId);
 
   @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_handleScroll);
+  }
+
+  @override
   void dispose() {
+    _scroll.removeListener(_handleScroll);
     _composer.dispose();
     _scroll.dispose();
     super.dispose();
+  }
+
+  void _handleScroll() {
+    if (!_scroll.hasClients) {
+      return;
+    }
+    final position = _scroll.position;
+    _stickToBottom = position.maxScrollExtent - position.pixels < 240;
   }
 
   @override
@@ -342,10 +359,14 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
       return;
     }
     _lastScrollSignature = signature;
+    if (_didInitialScroll && !_stickToBottom) {
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scroll.hasClients) {
         return;
       }
+      _didInitialScroll = true;
       _scroll.animateTo(
         _scroll.position.maxScrollExtent,
         duration: const Duration(milliseconds: 160),
