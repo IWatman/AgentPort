@@ -732,7 +732,7 @@ Done: a full chat works with the user's key.
 - Approval UI.
 - Fake MCP server for tests.
 
-Current status: Streamable HTTP client, tool discovery/cache, Connections UI, the chat tool loop, and the approval dialog are implemented. Legacy SSE transport and verification against a live MCP server with cached tools remain.
+Current status: Streamable HTTP client, tool discovery/cache, Connections UI, the chat tool loop, and the approval dialog are implemented. Tool calling is verified end-to-end against a public DeepWiki MCP server. Legacy SSE transport remains.
 
 Done: the model invokes an external MCP tool.
 
