@@ -47,12 +47,24 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           _SectionHeader(text: l10n.settingsSectionAi),
           Card(
-            child: ListTile(
-              leading: const Icon(Icons.key_rounded),
-              title: Text(l10n.providersTitle),
-              subtitle: Text(l10n.settingsProvidersSubtitle),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => context.push('/providers'),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.key_rounded),
+                  title: Text(l10n.providersTitle),
+                  subtitle: Text(l10n.settingsProvidersSubtitle),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push('/providers'),
+                ),
+                const Divider(indent: 16, endIndent: 16),
+                ListTile(
+                  leading: const Icon(Icons.terminal_rounded),
+                  title: Text(l10n.openCodeTitle),
+                  subtitle: Text(l10n.settingsOpenCodeSubtitle),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push('/opencode'),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 24),

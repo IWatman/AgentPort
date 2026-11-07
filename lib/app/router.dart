@@ -10,6 +10,10 @@ import '../features/connections/mcp_server_screen.dart';
 import '../features/marketplace/marketplace_screen.dart';
 import '../features/marketplace/plugin_detail_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
+import '../features/opencode/opencode_connections_screen.dart';
+import '../features/opencode/opencode_pair_screen.dart';
+import '../features/opencode/opencode_session_screen.dart';
+import '../features/opencode/opencode_sessions_screen.dart';
 import '../features/providers/provider_editor_screen.dart';
 import '../features/providers/providers_screen.dart';
 import '../features/settings/about_screen.dart';
@@ -139,6 +143,34 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             ProviderEditorScreen(providerId: state.pathParameters['id']),
+      ),
+      GoRoute(
+        path: '/opencode',
+        name: 'openCode',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const OpenCodeConnectionsScreen(),
+      ),
+      GoRoute(
+        path: '/opencode/pair',
+        name: 'openCodePair',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const OpenCodePairScreen(),
+      ),
+      GoRoute(
+        path: '/opencode/:id/sessions',
+        name: 'openCodeSessions',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            OpenCodeSessionsScreen(connectionId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/opencode/:id/sessions/:sessionId',
+        name: 'openCodeSession',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => OpenCodeSessionScreen(
+          connectionId: state.pathParameters['id']!,
+          sessionId: state.pathParameters['sessionId']!,
+        ),
       ),
       GoRoute(
         path: '/about',
