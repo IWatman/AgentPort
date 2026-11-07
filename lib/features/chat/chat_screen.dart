@@ -335,13 +335,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       _snack(l10n.chatFileUnsupported);
       return;
     }
+    var text = utf8.decode(bytes, allowMalformed: true);
+    if (text.length > _maxTextAttachmentChars) {
+      text =
+          '${text.substring(0, _maxTextAttachmentChars)}\n'
+          '…[truncated]';
+    }
     setState(() {
       _attachments.add(
-        ChatMessageAttachment(
-          name: name,
-          mimeType: mime,
-          textContent: utf8.decode(bytes, allowMalformed: true),
-        ),
+        ChatMessageAttachment(name: name, mimeType: mime, textContent: text),
       );
     });
   }
@@ -756,6 +758,7 @@ const _addProviderValue = '__add_provider__';
 const _defaultModelValue = '__default_model__';
 const _customModelValue = '__custom_model__';
 const _maxAttachmentBytes = 8 * 1024 * 1024;
+const _maxTextAttachmentChars = 200000;
 
 enum _AttachSource { photo, file }
 
