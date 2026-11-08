@@ -898,6 +898,41 @@ void main() {
       expect(entries.map((entry) => entry.name), ['Sibling', 'sub']);
     });
 
+    test('connects and disconnects MCP servers with the location', () async {
+      final seen = <http.Request>[];
+      final client = OpenCodeClient(
+        baseUrl: 'https://example.com',
+        token: 'token-1',
+        clientFactory: () => MockClient((request) async {
+          seen.add(request);
+          return http.Response('', 204);
+        }),
+      );
+
+      await client.setMcpServerEnabled(
+        'playwright',
+        enabled: false,
+        directory: r'C:\work\demo',
+      );
+      await client.setMcpServerEnabled(
+        'playwright',
+        enabled: true,
+        directory: r'C:\work\demo',
+      );
+
+      expect(seen, hasLength(2));
+      expect(seen.first.method, 'POST');
+      expect(
+        seen.first.url.path,
+        '/api/experimental/mcp/playwright/disconnect',
+      );
+      expect(
+        seen.first.url.queryParameters['location[directory]'],
+        r'C:\work\demo',
+      );
+      expect(seen.last.url.path, '/api/experimental/mcp/playwright/connect');
+    });
+
     test('parses per-message context token usage', () async {
       final client = OpenCodeClient(
         baseUrl: 'https://example.com',

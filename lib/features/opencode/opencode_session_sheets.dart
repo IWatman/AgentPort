@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/repositories/opencode_repository.dart';
 import '../../domain/entities/opencode.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'opencode_failure_text.dart';
@@ -344,7 +345,11 @@ class _ExtensionsSheet extends ConsumerWidget {
             icon: Icons.dns_outlined,
             title: l10n.openCodeExtensionsMcp,
             loadable: mcp,
-            builder: (servers) => _McpList(servers: servers),
+            builder: (servers) => _McpList(
+              servers: servers,
+              connectionId: connectionId,
+              directory: directory,
+            ),
             onRetry: () => ref.invalidate(openCodeMcpServersProvider(key)),
           ),
           const SizedBox(height: 12),
@@ -471,16 +476,96 @@ class _SkillsSectionState extends ConsumerState<_SkillsSection> {
   }
 }
 
-class _McpList extends StatelessWidget {
-  const _McpList({required this.servers});
+class _McpList extends ConsumerStatefulWidget {
+  const _McpList({
+    required this.servers,
+    required this.connectionId,
+    required this.directory,
+  });
 
   final List<OpenCodeMcpServer> servers;
+  final String connectionId;
+  final String? directory;
+
+  @override
+  ConsumerState<_McpList> createState() => _McpListState();
+}
+
+class _McpListState extends ConsumerState<_McpList> {
+  final _busy = <String>{};
+
+  OpenCodeExtensionKey get _key =>
+      (connectionId: widget.connectionId, directory: widget.directory);
+
+  Future<void> _setEnabled(OpenCodeMcpServer server, bool enabled) async {
+    if (_busy.contains(server.name)) {
+      return;
+    }
+    setState(() => _busy.add(server.name));
+    try {
+      final repository = ref.read(openCodeRepositoryProvider);
+      final connection = await repository.connection(widget.connectionId);
+      if (connection == null) {
+        throw const OpenCodeFailure(
+          OpenCodeFailureKind.invalidPayload,
+          detail: 'The OpenCode connection no longer exists.',
+        );
+      }
+      final client = await repository.clientFor(connection);
+      await client.setMcpServerEnabled(
+        server.name,
+        enabled: enabled,
+        directory: widget.directory,
+      );
+      if (!mounted) {
+        return;
+      }
+      for (var attempt = 0; attempt < 8; attempt++) {
+        await Future<void>.delayed(const Duration(milliseconds: 450));
+        if (!mounted) {
+          return;
+        }
+        ref.invalidate(openCodeMcpServersProvider(_key));
+        try {
+          final updated = await ref.read(
+            openCodeMcpServersProvider(_key).future,
+          );
+          final current = updated
+              .where((item) => item.name == server.name)
+              .firstOrNull;
+          if (current != null &&
+              (enabled
+                  ? current.isConnected || current.needsAuth
+                  : current.status == 'disabled')) {
+            break;
+          }
+        } catch (_) {
+          break;
+        }
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              openCodeFailureText(AppLocalizations.of(context), error),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busy.remove(server.name));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    if (servers.isEmpty) {
+    if (widget.servers.isEmpty) {
       return Text(
         l10n.openCodeExtensionsNoMcp,
         style: theme.textTheme.bodySmall?.copyWith(
@@ -490,7 +575,7 @@ class _McpList extends StatelessWidget {
     }
     return Column(
       children: [
-        for (final server in servers)
+        for (final server in widget.servers)
           ListTile(
             contentPadding: EdgeInsets.zero,
             dense: true,
@@ -514,6 +599,19 @@ class _McpList extends StatelessWidget {
                     _cleanMcpError(server.error!),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
+                  ),
+            trailing: _busy.contains(server.name)
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Switch.adaptive(
+                    value:
+                        server.isConnected ||
+                        server.status == 'pending' ||
+                        server.status == 'needs-auth',
+                    onChanged: (value) => _setEnabled(server, value),
                   ),
           ),
       ],

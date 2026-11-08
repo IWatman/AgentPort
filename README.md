@@ -67,7 +67,8 @@ AgentPort is a local-first Android app for chatting with AI models using your ow
 - Slash commands, `@` project-file mentions, image and file attachments.
 - Agent, model, and model-variant switching; token, cost, and context details.
 - Session context sheet with current context usage, session totals, cost including subagents, timestamps, message counts, and the latest system prompt.
-- Extensions sheet with MCP server status, plugins, and searchable skills.
+- Extensions sheet with MCP server status and connect/disconnect switches, plugins, and searchable skills.
+- OpenCode permission prompts can be answered from the phone with allow-once, always-allow, or deny.
 - Live SSE updates, automatic reconnect, and refresh when another client changes the session.
 
 ### Data and updates

@@ -147,6 +147,25 @@ class _FakeOpenCodeClient extends OpenCodeClient {
   Future<OpenCodeTranscript> transcript(String id, {int pages = 1}) async =>
       OpenCodeTranscript(messages: List.of(history));
 
+  List<OpenCodePermissionRequest> permissionList = [];
+  final List<(String, String)> permissionReplies = [];
+
+  @override
+  Future<List<OpenCodePermissionRequest>> permissions(String sessionId) async =>
+      List.of(permissionList);
+
+  @override
+  Future<void> replyPermission({
+    required String sessionId,
+    required String requestId,
+    required String decision,
+  }) async {
+    permissionReplies.add((requestId, decision));
+    permissionList = permissionList
+        .where((request) => request.id != requestId)
+        .toList(growable: false);
+  }
+
   @override
   Future<void> sendPrompt(String id, String prompt) async {
     sentPrompts.add(prompt);
@@ -531,6 +550,48 @@ void main() {
       );
     },
   );
+
+  test('loads and replies to permission requests', () async {
+    client.permissionList = const [
+      OpenCodePermissionRequest(
+        id: 'per-1',
+        sessionId: 'session-1',
+        action: 'shell',
+        resources: ['git push'],
+        message: 'The agent wants to run a command.',
+      ),
+    ];
+
+    await open();
+
+    expect(state().permissions, hasLength(1));
+    expect(state().permissions.single.action, 'shell');
+
+    await notifier().replyPermission('per-1', 'once');
+    await pumpEventQueue();
+
+    expect(client.permissionReplies, [('per-1', 'once')]);
+    expect(state().permissions, isEmpty);
+  });
+
+  test('permission events refresh the pending request list', () async {
+    await open();
+    expect(state().permissions, isEmpty);
+
+    client.permissionList = const [
+      OpenCodePermissionRequest(
+        id: 'per-2',
+        sessionId: 'session-1',
+        action: 'edit',
+        resources: ['lib/main.dart'],
+      ),
+    ];
+    await emit(event('permission.asked'));
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    await pumpEventQueue();
+
+    expect(state().permissions.single.id, 'per-2');
+  });
 
   test('a dropped event stream marks the connection lost', () async {
     await open();

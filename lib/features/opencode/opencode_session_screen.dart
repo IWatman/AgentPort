@@ -281,6 +281,13 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
                     ],
                   ),
                 ),
+              if (current.permissions.isNotEmpty)
+                _PermissionBanner(
+                  request: current.permissions.first,
+                  onReply: (decision) => ref
+                      .read(provider.notifier)
+                      .replyPermission(current.permissions.first.id, decision),
+                ),
               _Composer(
                 controller: _composer,
                 focusNode: _composerFocus,
@@ -639,6 +646,126 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
 }
 
 enum _SessionMenuAction { rename, info, delete }
+
+class _PermissionBanner extends StatefulWidget {
+  const _PermissionBanner({required this.request, required this.onReply});
+
+  final OpenCodePermissionRequest request;
+  final Future<void> Function(String decision) onReply;
+
+  @override
+  State<_PermissionBanner> createState() => _PermissionBannerState();
+}
+
+class _PermissionBannerState extends State<_PermissionBanner> {
+  var _sending = false;
+
+  Future<void> _reply(String decision) async {
+    setState(() => _sending = true);
+    try {
+      await widget.onReply(decision);
+    } finally {
+      if (mounted) {
+        setState(() => _sending = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Card(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      color: theme.colorScheme.surfaceContainerHigh,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.lock_outline_rounded,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n.openCodePermissionTitle,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              widget.request.action,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (widget.request.resources.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              SelectableText(
+                widget.request.resources.take(3).join('\n'),
+                maxLines: 4,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            if (widget.request.message != null &&
+                widget.request.message!.trim().isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                widget.request.message!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            if (_sending)
+              const Align(
+                alignment: Alignment.centerRight,
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  TextButton(
+                    onPressed: () => _reply('reject'),
+                    child: Text(l10n.openCodePermissionDeny),
+                  ),
+                  TextButton(
+                    onPressed: () => _reply('always'),
+                    child: Text(l10n.openCodePermissionAlways),
+                  ),
+                  FilledButton(
+                    onPressed: () => _reply('once'),
+                    child: Text(l10n.openCodePermissionAllow),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _AssistantTurnView extends StatelessWidget {
   const _AssistantTurnView({required this.turn});

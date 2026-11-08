@@ -50,11 +50,22 @@ The **grid** button in a session opens the extensions sheet:
 
 - MCP servers configured on the host with status (`connected`, `failed`,
   `needs-auth`, `pending`, `disabled`) and server error text.
+- Connect/disconnect switches for MCP servers, using the OpenCode
+  `experimental/mcp` endpoints with the project location.
 - Plugins loaded by the host: external plugins are listed; built-in plugins are
   counted.
 - Skills exposed at the project directory with count, search, and descriptions.
 - LSP is configured on the host, but the OpenCode API does not expose language
   server status. AgentPort says so explicitly instead of inventing a list.
+
+### Permissions
+
+- Pending OpenCode permission requests are shown above the composer with the
+  action and resources.
+- Reply with **Allow once**, **Always allow**, or **Deny** without leaving the
+  phone.
+- Requests refresh from `permission.asked` and `permission.replied` SSE events
+  and after reconnecting.
 
 ## Available in the API, not implemented in the app yet
 
@@ -65,7 +76,8 @@ These are real OpenCode v2 capabilities and are candidates for the next phase:
 - Fork, move, compact, import, and export sessions.
 - Stage, clear, and commit a session revert.
 - Session diff (`GET /api/session/{id}/diff`).
-- Pending permissions and forms, replies, and saved permission rules.
+- Pending forms and saved permission rules. Session permission requests and
+  replies are implemented.
 - Session statistics for a date range (`/api/experimental/session/stats`).
 - Instruction entries and session log.
 
@@ -82,7 +94,8 @@ These are real OpenCode v2 capabilities and are candidates for the next phase:
 
 ### Extensions and configuration
 
-- Connect, disconnect, add, and remove OpenCode MCP servers.
+- Add and remove OpenCode MCP servers. Connect/disconnect switches are
+  implemented.
 - MCP resources and OAuth/integration sign-in.
 - Plugin update checks and updates.
 - Skill activation inside a session.

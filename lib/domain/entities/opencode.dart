@@ -324,6 +324,25 @@ class OpenCodeSessionContext {
   final int messageCount;
 }
 
+/// A permission request emitted by the OpenCode agent.
+class OpenCodePermissionRequest {
+  const OpenCodePermissionRequest({
+    required this.id,
+    required this.sessionId,
+    required this.action,
+    this.resources = const [],
+    this.message,
+  });
+
+  final String id;
+  final String sessionId;
+  final String action;
+  final List<String> resources;
+  final String? message;
+
+  String get resourceSummary => resources.join('\n');
+}
+
 /// A loaded transcript and the system prompts found among its messages.
 class OpenCodeTranscript {
   const OpenCodeTranscript({

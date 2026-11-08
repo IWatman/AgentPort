@@ -19,6 +19,7 @@ class OpenCodeSessionState {
     required this.session,
     required this.messages,
     this.systemPrompts = const [],
+    this.permissions = const [],
     this.streamingText = '',
     this.busy = false,
     this.linkState = OpenCodeLinkState.connected,
@@ -35,6 +36,9 @@ class OpenCodeSessionState {
 
   /// System prompts found in the loaded pages of the transcript.
   final List<String> systemPrompts;
+
+  /// Pending permission requests for this session.
+  final List<OpenCodePermissionRequest> permissions;
   final String streamingText;
   final bool busy;
   final OpenCodeLinkState linkState;
@@ -51,6 +55,7 @@ class OpenCodeSessionState {
     OpenCodeSession? session,
     List<OpenCodeMessage>? messages,
     List<String>? systemPrompts,
+    List<OpenCodePermissionRequest>? permissions,
     String? streamingText,
     bool? busy,
     OpenCodeLinkState? linkState,
@@ -66,6 +71,7 @@ class OpenCodeSessionState {
       session: session ?? this.session,
       messages: messages ?? this.messages,
       systemPrompts: systemPrompts ?? this.systemPrompts,
+      permissions: permissions ?? this.permissions,
       streamingText: streamingText ?? this.streamingText,
       busy: busy ?? this.busy,
       linkState: linkState ?? this.linkState,
@@ -101,6 +107,7 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
   OpenCodeClient? _client;
   StreamSubscription<OpenCodeEvent>? _subscription;
   Timer? _refreshTimer;
+  Timer? _permissionsTimer;
   Timer? _reconnectTimer;
   var _streamGeneration = 0;
   var _reconnectAttempts = 0;
@@ -115,6 +122,7 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
     _disposed = false;
     _streamGeneration++;
     _refreshTimer?.cancel();
+    _permissionsTimer?.cancel();
     _reconnectTimer?.cancel();
     _reconnectAttempts = 0;
     unawaited(_subscription?.cancel());
@@ -155,6 +163,7 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
       }
       _streamGeneration++;
       _refreshTimer?.cancel();
+      _permissionsTimer?.cancel();
       _reconnectTimer?.cancel();
       _reconnectAttempts = 0;
       await _subscription?.cancel();
@@ -406,6 +415,12 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
     final client = await repository.clientFor(connection);
     final session = await client.session(key.sessionId);
     final transcript = await client.transcript(key.sessionId, pages: 5);
+    List<OpenCodePermissionRequest> permissions = const [];
+    try {
+      permissions = await client.permissions(key.sessionId);
+    } catch (_) {
+      // Permissions are optional until the agent asks for one.
+    }
     return _LoadedSession(
       client: client,
       state: OpenCodeSessionState(
@@ -413,6 +428,7 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
         session: session,
         messages: transcript.messages,
         systemPrompts: transcript.systemPrompts,
+        permissions: permissions,
         agentId: session.agentId,
         model: session.modelId != null && session.modelProviderId != null
             ? OpenCodeModelRef(
@@ -483,6 +499,7 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
     if (_refreshAfterReconnect) {
       _refreshAfterReconnect = false;
       _scheduleMessageRefresh();
+      _schedulePermissionsRefresh();
     }
 
     if (event.sessionId != key.sessionId) {
@@ -533,7 +550,9 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
       case 'session.message.content.updated':
         _scheduleMessageRefresh();
       default:
-        if (event.type.startsWith('session.tool.')) {
+        if (event.type.startsWith('permission.')) {
+          _schedulePermissionsRefresh();
+        } else if (event.type.startsWith('session.tool.')) {
           _handleToolEvent(current, event.type, payload);
         }
     }
@@ -628,6 +647,50 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
     _refreshTimer = Timer(const Duration(milliseconds: 250), () {
       unawaited(_refreshMessages());
     });
+  }
+
+  void _schedulePermissionsRefresh() {
+    _permissionsTimer?.cancel();
+    _permissionsTimer = Timer(const Duration(milliseconds: 250), () {
+      unawaited(_refreshPermissions());
+    });
+  }
+
+  Future<void> _refreshPermissions() async {
+    final client = _client;
+    if (client == null || _disposed || !ref.mounted) {
+      return;
+    }
+    try {
+      final permissions = await client.permissions(key.sessionId);
+      if (!ref.mounted || _disposed) {
+        return;
+      }
+      final latest = state.value;
+      if (latest != null) {
+        state = AsyncData(latest.copyWith(permissions: permissions));
+      }
+    } catch (_) {
+      // Permission polling must not disturb the transcript.
+    }
+  }
+
+  /// Replies to a pending OpenCode permission request.
+  Future<void> replyPermission(String requestId, String decision) async {
+    final client = _client;
+    if (client == null) {
+      return;
+    }
+    try {
+      await client.replyPermission(
+        sessionId: key.sessionId,
+        requestId: requestId,
+        decision: decision,
+      );
+      await _refreshPermissions();
+    } catch (error) {
+      _setFailure(_asFailure(error), busy: state.value?.busy ?? false);
+    }
   }
 
   Future<void> _refreshMessages() async {
@@ -779,6 +842,8 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
     _streamGeneration++;
     _refreshTimer?.cancel();
     _refreshTimer = null;
+    _permissionsTimer?.cancel();
+    _permissionsTimer = null;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     unawaited(_subscription?.cancel());

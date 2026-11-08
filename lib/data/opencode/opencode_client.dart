@@ -222,6 +222,22 @@ class OpenCodeClient {
     return List.unmodifiable(servers);
   }
 
+  /// Connects or disconnects a configured MCP server at [directory].
+  Future<void> setMcpServerEnabled(
+    String name, {
+    required bool enabled,
+    String? directory,
+  }) async {
+    final action = enabled ? 'connect' : 'disconnect';
+    await _request(
+      'POST',
+      _withLocation(
+        'api/experimental/mcp/${_segment(name)}/$action',
+        directory,
+      ),
+    );
+  }
+
   /// Lists plugins loaded by the OpenCode host.
   Future<List<OpenCodePlugin>> plugins({String? directory}) async {
     final decoded = await _getJson(_withLocation('api/plugin', directory));
@@ -612,6 +628,50 @@ class OpenCodeClient {
       systemPrompts: latestSystemPrompt == null
           ? const []
           : [latestSystemPrompt],
+    );
+  }
+
+  /// Lists pending permission requests for a session.
+  Future<List<OpenCodePermissionRequest>> permissions(String sessionId) async {
+    final decoded = await _getJson(
+      'api/session/${_segment(sessionId)}/permission',
+    );
+    final list = _readDataList(decoded);
+    final requests = <OpenCodePermissionRequest>[];
+    for (final item in list) {
+      if (item is! Map) {
+        continue;
+      }
+      final map = Map<String, Object?>.from(item);
+      final id = _readString(map['id']);
+      final action = _readString(map['action']);
+      if (id == null || action == null) {
+        continue;
+      }
+      requests.add(
+        OpenCodePermissionRequest(
+          id: id,
+          sessionId: _readString(map['sessionID']) ?? sessionId,
+          action: action,
+          resources: _readStringList(map['resources']),
+          message: _readString(map['message']),
+        ),
+      );
+    }
+    return List.unmodifiable(requests);
+  }
+
+  /// Replies to a pending permission request with `once`, `always`, or `reject`.
+  Future<void> replyPermission({
+    required String sessionId,
+    required String requestId,
+    required String decision,
+  }) async {
+    await _request(
+      'POST',
+      'api/session/${_segment(sessionId)}/permission/'
+          '${_segment(requestId)}/reply',
+      body: {'decision': decision},
     );
   }
 
