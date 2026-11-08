@@ -783,7 +783,7 @@ Done: a user installs a plugin, taps "Connect", logs in through the browser, and
 - Manual URL entry.
 - Minimum supported OpenCode version: 2.2.5.
 
-Current status: complete. The OpenCode tab lives on the Chats screen. Pairing by QR or manual URL/password, connection storage, project list, sessions filtered by project, new-session creation, transcript with reasoning and tool chips, prompt streaming, stop, agent/model switching, and the 2.2.5 version check are implemented. Verified against OpenCode 2.2.6 over a local tunnel. Automatic reconnect after an idle SSE timeout is still manual.
+Current status: complete. The OpenCode tab lives on the Chats screen. Pairing by QR or manual URL/password, connection storage, project list, sessions filtered by project, new-session creation, grouped transcript turns with hidden reasoning and a one-line tool summary, prompt streaming, stop, agent/model switching, and the 2.2.5 version check are implemented. Verified against OpenCode 2.2.6 over a local tunnel. Automatic reconnect after an idle SSE timeout is manual.
 
 Done: the phone controls an OpenCode session.
 
