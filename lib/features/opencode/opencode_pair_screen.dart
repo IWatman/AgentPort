@@ -214,8 +214,18 @@ class _OpenCodePairScreenState extends ConsumerState<OpenCodePairScreen>
               prefixIcon: const Icon(Icons.link_rounded),
               border: const OutlineInputBorder(),
             ),
+            onChanged: (_) => setState(() {}),
             validator: _validateUrl,
           ),
+          if (_url.text.trim().startsWith('http://')) ...[
+            const SizedBox(height: 8),
+            Text(
+              l10n.openCodeHttpWarning,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
           const SizedBox(height: 18),
           Text(
             l10n.openCodePassword,

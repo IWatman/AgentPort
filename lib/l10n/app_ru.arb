@@ -492,6 +492,7 @@
   "openCodeUrlInvalid": "Используйте адрес http:// или https://.",
   "openCodePassword": "Пароль",
   "openCodePasswordRequired": "Введите пароль сервиса.",
+  "openCodeHttpWarning": "HTTP не шифруется. Используйте только в доверенной локальной сети.",
   "openCodeName": "Название подключения (необязательно)",
   "openCodeNameHint": "Например, домашний компьютер",
   "openCodeConnect": "Подключиться",

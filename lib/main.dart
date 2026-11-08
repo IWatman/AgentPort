@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'app/agent_port_app.dart';
+import 'app/error_handling.dart';
 import 'app/theme.dart';
 import 'core/db/app_database.dart';
 import 'core/security/secure_store.dart';
@@ -14,6 +15,7 @@ import 'core/settings/settings_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  installErrorHandling();
 
   try {
     final secureStore = SecureStore();

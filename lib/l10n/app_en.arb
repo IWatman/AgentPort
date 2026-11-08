@@ -507,6 +507,7 @@
   "openCodeUrlInvalid": "Use an http:// or https:// URL.",
   "openCodePassword": "Password",
   "openCodePasswordRequired": "Enter the service password.",
+  "openCodeHttpWarning": "HTTP is unencrypted. Use it only on a trusted local network.",
   "openCodeName": "Connection name (optional)",
   "openCodeNameHint": "For example, Home PC",
   "openCodeConnect": "Connect",
