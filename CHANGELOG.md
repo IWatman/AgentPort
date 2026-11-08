@@ -10,9 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - OpenCode project creation with a remote folder browser backed by `GET /api/fs/list`; no manual host paths.
-- OpenCode session context sheet with model limit, token breakdown, cache usage, cost, timestamps, message counts, and system prompts.
+- OpenCode session context sheet with current context usage, model limit, token breakdown, cache usage, cost (including subagents), timestamps, message counts, and the latest system prompt.
 - OpenCode extensions sheet with MCP server status, plugin counts, and searchable skills; LSP is documented as not exposed by the API.
 - `docs/OPENCODE.md` with the implemented/available OpenCode capability matrix.
+
+### Fixed
+
+- Session context now reports current context tokens from the latest assistant message instead of cumulative cache reads, and refreshes session cost when the sheet opens.
 
 ## [0.1.1] - 2026-11-08
 

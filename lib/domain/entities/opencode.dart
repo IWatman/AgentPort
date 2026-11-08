@@ -81,6 +81,7 @@ class OpenCodeSession {
   const OpenCodeSession({
     required this.id,
     required this.title,
+    this.parentId,
     this.project,
     this.directory,
     this.createdAt,
@@ -99,6 +100,7 @@ class OpenCodeSession {
 
   final String id;
   final String title;
+  final String? parentId;
   final String? project;
 
   /// Absolute project directory reported by the server.
@@ -128,6 +130,7 @@ class OpenCodeSession {
     return OpenCodeSession(
       id: id,
       title: title ?? this.title,
+      parentId: parentId,
       project: project,
       directory: directory,
       createdAt: createdAt,
@@ -402,6 +405,11 @@ class OpenCodeMessage {
     this.tools = const [],
     this.attachments = const [],
     this.createdAt,
+    this.tokensInput,
+    this.tokensOutput,
+    this.tokensReasoning,
+    this.tokensCacheRead,
+    this.tokensCacheWrite,
   });
 
   final String id;
@@ -414,6 +422,24 @@ class OpenCodeMessage {
   final List<String> tools;
   final List<OpenCodeAttachment> attachments;
   final DateTime? createdAt;
+
+  /// Token usage reported for this assistant message.
+  final int? tokensInput;
+  final int? tokensOutput;
+  final int? tokensReasoning;
+  final int? tokensCacheRead;
+  final int? tokensCacheWrite;
+
+  /// Tokens occupied by the model context for this turn: fresh input plus
+  /// cache reads. This is what OpenCode Web shows as the current context size.
+  int? get contextTokens {
+    final input = tokensInput;
+    final cacheRead = tokensCacheRead;
+    if (input == null && cacheRead == null) {
+      return null;
+    }
+    return (input ?? 0) + (cacheRead ?? 0);
+  }
 
   bool get isUser => role == 'user';
 }

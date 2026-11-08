@@ -941,6 +941,7 @@ class OpenCodeClient {
       title: title is String && title.trim().isNotEmpty
           ? title.trim()
           : 'Untitled session',
+      parentId: _readString(map['parentID']),
       project: _readProject(map),
       directory: _readString(locationMap['directory']),
       createdAt: _readTime(map['time'], 'created'),
@@ -1125,6 +1126,15 @@ class OpenCodeClient {
       return null;
     }
 
+    final tokens = map['tokens'];
+    final tokenMap = tokens is Map
+        ? Map<String, Object?>.from(tokens)
+        : const <String, Object?>{};
+    final cache = tokenMap['cache'];
+    final cacheMap = cache is Map
+        ? Map<String, Object?>.from(cache)
+        : const <String, Object?>{};
+
     return OpenCodeMessage(
       id: id,
       role: 'assistant',
@@ -1132,6 +1142,11 @@ class OpenCodeClient {
       reasoning: reasoningValue,
       tools: List.unmodifiable(tools),
       createdAt: _readTime(map['time'], 'created'),
+      tokensInput: _readInt(tokenMap['input']),
+      tokensOutput: _readInt(tokenMap['output']),
+      tokensReasoning: _readInt(tokenMap['reasoning']),
+      tokensCacheRead: _readInt(cacheMap['read']),
+      tokensCacheWrite: _readInt(cacheMap['write']),
     );
   }
 

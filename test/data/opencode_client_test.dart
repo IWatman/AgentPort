@@ -898,6 +898,40 @@ void main() {
       expect(entries.map((entry) => entry.name), ['Sibling', 'sub']);
     });
 
+    test('parses per-message context token usage', () async {
+      final client = OpenCodeClient(
+        baseUrl: 'https://example.com',
+        token: 'token-1',
+        clientFactory: () => MockClient((request) async {
+          return _json({
+            'data': [
+              {
+                'id': 'a-1',
+                'type': 'assistant',
+                'time': {'created': 1},
+                'content': [
+                  {'type': 'text', 'text': 'Done'},
+                ],
+                'tokens': {
+                  'input': 193,
+                  'output': 576,
+                  'reasoning': 873,
+                  'cache': {'read': 734464, 'write': 0},
+                },
+              },
+            ],
+            'cursor': {},
+          });
+        }),
+      );
+
+      final messages = await client.messages('s1');
+
+      expect(messages.single.contextTokens, 734657);
+      expect(messages.single.tokensCacheRead, 734464);
+      expect(messages.single.tokensReasoning, 873);
+    });
+
     test('collects system prompts from the transcript pages', () async {
       var calls = 0;
       final client = OpenCodeClient(
@@ -995,6 +1029,7 @@ void main() {
           return _json({
             'id': 's1',
             'title': 'Demo',
+            'parentID': 'parent-1',
             'location': {'directory': r'C:\work\demo'},
             'tokens': {
               'input': 10,
@@ -1012,6 +1047,7 @@ void main() {
 
       expect(models.single.contextLimit, 1048576);
       expect(models.single.outputLimit, 65536);
+      expect(session.parentId, 'parent-1');
       expect(session.tokensTotal, 120);
       expect(session.tokensReasoning, 3);
       expect(session.tokensCacheRead, 100);

@@ -586,6 +586,8 @@
   "openCodeContextAgent": "Агент",
   "openCodeContextUnknown": "Неизвестно",
   "openCodeContextUsage": "Использование контекста",
+  "openCodeContextNotReported": "Сервер не передал размер контекста.",
+  "openCodeContextSessionTotals": "Итоги сессии",
   "openCodeContextTokensUsed": "{used} / {limit} токенов",
   "@openCodeContextTokensUsed": {
     "placeholders": {
@@ -613,6 +615,7 @@
   "openCodeContextCacheWrite": "Запись кэша",
   "openCodeContextTotal": "Всего",
   "openCodeContextCost": "Стоимость",
+  "openCodeContextCostWithSubagents": "Стоимость с субагентами",
   "openCodeContextMessages": "Сообщения",
   "openCodeContextAllMessages": "Всего сообщений",
   "openCodeContextUserMessages": "Сообщения пользователя",

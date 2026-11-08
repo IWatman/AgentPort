@@ -36,11 +36,13 @@ OpenCode **2.2.5+**.
 The **info** button in a session opens the context sheet:
 
 - Session ID, project directory, provider, model, and agent.
-- Context limit (from `GET /api/model`) and total token usage.
-- Token breakdown: input, output, reasoning, cache read, cache write, total.
-- Cost, creation time, and last activity.
-- Message counts: all, user, assistant, and current context window.
-- The latest system prompt found in the loaded transcript pages.
+- Current context usage from the latest assistant turn (fresh input plus cache
+  read) against the model context limit.
+- Cumulative token breakdown: input, output, reasoning, cache read, cache write,
+  total.
+- Session cost and total cost including subagent sessions.
+- Creation time, last activity, and message counts.
+- The latest substantive system prompt found in the loaded transcript pages.
 
 ### Extensions
 

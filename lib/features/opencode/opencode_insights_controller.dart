@@ -14,14 +14,20 @@ typedef OpenCodeSessionInsightsKey = ({
 
 class OpenCodeSessionInsights {
   const OpenCodeSessionInsights({
+    this.session,
     this.contextMessageCount = 0,
     this.modelName,
     this.contextLimit,
+    this.totalCost,
+    this.subagentCount = 0,
   });
 
+  final OpenCodeSession? session;
   final int contextMessageCount;
   final String? modelName;
   final int? contextLimit;
+  final double? totalCost;
+  final int subagentCount;
 }
 
 /// Loads the session context and the model limit shown in the context sheet.
@@ -39,6 +45,44 @@ final openCodeSessionInsightsProvider = FutureProvider.autoDispose
         );
       }
       final client = await repository.clientFor(connection);
+
+      OpenCodeSession? session;
+      try {
+        session = await client.session(key.sessionId);
+      } catch (_) {
+        // The caller falls back to the transcript session snapshot.
+      }
+
+      double? totalCost;
+      var subagentCount = 0;
+      try {
+        final sessions = await client.sessions();
+        final children = <String, List<OpenCodeSession>>{};
+        for (final item in sessions) {
+          final parent = item.parentId;
+          if (parent == null || parent.isEmpty) {
+            continue;
+          }
+          children.putIfAbsent(parent, () => []).add(item);
+        }
+        final visited = <String>{key.sessionId};
+        double sum = session?.cost ?? 0;
+        void addChildren(String parentId) {
+          for (final child in children[parentId] ?? const <OpenCodeSession>[]) {
+            if (!visited.add(child.id)) {
+              continue;
+            }
+            sum += child.cost ?? 0;
+            subagentCount++;
+            addChildren(child.id);
+          }
+        }
+
+        addChildren(key.sessionId);
+        totalCost = sum;
+      } catch (_) {
+        // Subagent costs are optional.
+      }
 
       OpenCodeSessionContext? context;
       try {
@@ -62,9 +106,12 @@ final openCodeSessionInsightsProvider = FutureProvider.autoDispose
       }
 
       return OpenCodeSessionInsights(
+        session: session,
         contextMessageCount: context?.messageCount ?? 0,
         modelName: model?.name,
         contextLimit: model?.contextLimit,
+        totalCost: totalCost,
+        subagentCount: subagentCount,
       );
     });
 

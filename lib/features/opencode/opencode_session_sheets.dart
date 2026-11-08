@@ -71,15 +71,27 @@ class _ContextSheet extends ConsumerWidget {
       )),
     );
     final value = insights.value;
+    final current = value?.session ?? session;
     final userMessages = messages.where((message) => message.isUser).length;
     final assistantMessages = messages.length - userMessages;
-    final totalTokens = session.tokensTotal;
+    final totalTokens = current.tokensTotal;
+    OpenCodeMessage? latestAssistant;
+    for (final message in messages.reversed) {
+      if (!message.isUser && message.contextTokens != null) {
+        latestAssistant = message;
+        break;
+      }
+    }
+    final currentContextTokens = latestAssistant?.contextTokens;
     final contextLimit = value?.contextLimit;
-    final usage = contextLimit == null || contextLimit <= 0
+    final usage =
+        contextLimit == null ||
+            contextLimit <= 0 ||
+            currentContextTokens == null
         ? null
-        : (totalTokens / contextLimit).clamp(0.0, 1.0);
+        : (currentContextTokens / contextLimit).clamp(0.0, 1.0);
     final modelTitle =
-        value?.modelName ?? session.modelId ?? l10n.openCodeContextUnknown;
+        value?.modelName ?? current.modelId ?? l10n.openCodeContextUnknown;
 
     return SizedBox(
       height: MediaQuery.sizeOf(context).height * 0.9,
@@ -95,7 +107,7 @@ class _ContextSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            session.title,
+            current.title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -105,19 +117,19 @@ class _ContextSheet extends ConsumerWidget {
           const SizedBox(height: 18),
           _InfoCard(
             children: [
-              _InfoRow(label: l10n.openCodeContextSession, value: session.id),
+              _InfoRow(label: l10n.openCodeContextSession, value: current.id),
               _InfoRow(
                 label: l10n.openCodeContextProject,
-                value: session.directory ?? session.project ?? '-',
+                value: current.directory ?? current.project ?? '-',
               ),
               _InfoRow(
                 label: l10n.openCodeContextProvider,
-                value: session.modelProviderId ?? l10n.openCodeContextUnknown,
+                value: current.modelProviderId ?? l10n.openCodeContextUnknown,
               ),
               _InfoRow(label: l10n.openCodeContextModel, value: modelTitle),
               _InfoRow(
                 label: l10n.openCodeContextAgent,
-                value: session.agentId ?? l10n.openCodeContextUnknown,
+                value: current.agentId ?? l10n.openCodeContextUnknown,
               ),
             ],
           ),
@@ -142,42 +154,51 @@ class _ContextSheet extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${l10n.openCodeContextTokensUsed(_formatCount(totalTokens), _formatCount(contextLimit!))}'
+                  '${l10n.openCodeContextTokensUsed(_formatCount(currentContextTokens!), _formatCount(contextLimit!))}'
                   ' · ${(usage * 100).round()}%',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-              ] else
+              ] else if (currentContextTokens != null)
                 Text(
-                  l10n.openCodeContextTokensTotal(_formatCount(totalTokens)),
+                  l10n.openCodeContextTokensTotal(
+                    _formatCount(currentContextTokens),
+                  ),
                   style: theme.textTheme.bodyMedium,
+                )
+              else
+                Text(
+                  l10n.openCodeContextNotReported,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
             ],
           ),
           const SizedBox(height: 14),
           _InfoCard(
-            title: l10n.openCodeContextTokens,
+            title: l10n.openCodeContextSessionTotals,
             children: [
               _InfoRow(
                 label: l10n.openCodeContextInput,
-                value: _formatCount(session.tokensInput ?? 0),
+                value: _formatCount(current.tokensInput ?? 0),
               ),
               _InfoRow(
                 label: l10n.openCodeContextOutput,
-                value: _formatCount(session.tokensOutput ?? 0),
+                value: _formatCount(current.tokensOutput ?? 0),
               ),
               _InfoRow(
                 label: l10n.openCodeContextReasoning,
-                value: _formatCount(session.tokensReasoning ?? 0),
+                value: _formatCount(current.tokensReasoning ?? 0),
               ),
               _InfoRow(
                 label: l10n.openCodeContextCacheRead,
-                value: _formatCount(session.tokensCacheRead ?? 0),
+                value: _formatCount(current.tokensCacheRead ?? 0),
               ),
               _InfoRow(
                 label: l10n.openCodeContextCacheWrite,
-                value: _formatCount(session.tokensCacheWrite ?? 0),
+                value: _formatCount(current.tokensCacheWrite ?? 0),
               ),
               const Divider(height: 18),
               _InfoRow(
@@ -185,10 +206,18 @@ class _ContextSheet extends ConsumerWidget {
                 value: _formatCount(totalTokens),
                 emphasize: true,
               ),
-              if (session.cost != null)
+              if (current.cost != null)
                 _InfoRow(
                   label: l10n.openCodeContextCost,
-                  value: '\$${session.cost!.toStringAsFixed(2)}',
+                  value: '\$${current.cost!.toStringAsFixed(2)}',
+                ),
+              if (value != null &&
+                  value.totalCost != null &&
+                  value.totalCost! > (current.cost ?? 0) + 0.0001)
+                _InfoRow(
+                  label: l10n.openCodeContextCostWithSubagents,
+                  value: '\$${value.totalCost!.toStringAsFixed(2)}',
+                  emphasize: true,
                 ),
             ],
           ),
@@ -219,15 +248,15 @@ class _ContextSheet extends ConsumerWidget {
           _InfoCard(
             title: l10n.openCodeContextDates,
             children: [
-              if (session.createdAt != null)
+              if (current.createdAt != null)
                 _InfoRow(
                   label: l10n.openCodeContextCreated,
-                  value: openCodeDateText(context, session.createdAt!),
+                  value: openCodeDateText(context, current.createdAt!),
                 ),
-              if (session.updatedAt != null)
+              if (current.updatedAt != null)
                 _InfoRow(
                   label: l10n.openCodeContextUpdated,
-                  value: openCodeDateText(context, session.updatedAt!),
+                  value: openCodeDateText(context, current.updatedAt!),
                 ),
             ],
           ),
