@@ -99,7 +99,7 @@ class McpSession {
           ? McpClient.legacyProtocolVersion
           : McpClient.protocolVersion,
       'capabilities': <String, Object?>{},
-      'clientInfo': {'name': 'AgentPort', 'version': '0.1.1'},
+      'clientInfo': {'name': 'AgentPort', 'version': '0.2.0'},
     };
 
     try {
