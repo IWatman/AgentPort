@@ -38,13 +38,59 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   String? _approvalId;
   bool _listening = false;
   String _voiceBaseText = '';
+  var _stickToBottom = true;
+  var _didInitialScroll = false;
+  var _showScrollDown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_handleScroll);
+  }
 
   @override
   void dispose() {
+    _scroll.removeListener(_handleScroll);
     _composer.dispose();
     _scroll.dispose();
     unawaited(_speech.stop());
     super.dispose();
+  }
+
+  void _handleScroll() {
+    if (!_scroll.hasClients) {
+      return;
+    }
+    final position = _scroll.position;
+    final distance = position.maxScrollExtent - position.pixels;
+    _stickToBottom = distance < 240;
+    final show = distance > 400;
+    if (show != _showScrollDown) {
+      setState(() => _showScrollDown = show);
+    }
+  }
+
+  void _scrollToBottom() {
+    if (!_scroll.hasClients) {
+      return;
+    }
+    _stickToBottom = true;
+    if (_showScrollDown) {
+      setState(() => _showScrollDown = false);
+    }
+    _scroll.animateTo(
+      _scroll.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+    );
+  }
+
+  void _scrollToBottomSoon() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _scrollToBottom();
+      }
+    });
   }
 
   @override
@@ -98,34 +144,57 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   onAction: () => context.push('/providers/new'),
                 ),
               Expanded(
-                child: state.messages.isEmpty
-                    ? EmptyState(
-                        icon: Icons.chat_bubble_outline_rounded,
-                        title: l10n.chatEmptyTitle,
-                        body: provider == null
-                            ? l10n.providersEmptyBody
-                            : l10n.chatEmptyBody,
-                        action: provider == null
-                            ? FilledButton.icon(
-                                onPressed: () => context.push('/providers/new'),
-                                icon: const Icon(Icons.add_rounded),
-                                label: Text(l10n.providerAdd),
-                              )
-                            : null,
-                      )
-                    : ListView.builder(
-                        controller: _scroll,
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                        itemCount: state.messages.length,
-                        itemBuilder: (context, index) {
-                          final message = state.messages[index];
-                          final isLast = index == state.messages.length - 1;
-                          return _MessageRow(
-                            message: message,
-                            streaming: state.streaming && isLast,
-                          );
-                        },
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: state.messages.isEmpty
+                          ? EmptyState(
+                              icon: Icons.chat_bubble_outline_rounded,
+                              title: l10n.chatEmptyTitle,
+                              body: provider == null
+                                  ? l10n.providersEmptyBody
+                                  : l10n.chatEmptyBody,
+                              action: provider == null
+                                  ? FilledButton.icon(
+                                      onPressed: () =>
+                                          context.push('/providers/new'),
+                                      icon: const Icon(Icons.add_rounded),
+                                      label: Text(l10n.providerAdd),
+                                    )
+                                  : null,
+                            )
+                          : ListView.builder(
+                              controller: _scroll,
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                16,
+                                16,
+                                24,
+                              ),
+                              itemCount: state.messages.length,
+                              itemBuilder: (context, index) {
+                                final message = state.messages[index];
+                                final isLast =
+                                    index == state.messages.length - 1;
+                                return _MessageRow(
+                                  message: message,
+                                  streaming: state.streaming && isLast,
+                                );
+                              },
+                            ),
+                    ),
+                    if (_showScrollDown)
+                      Positioned(
+                        right: 16,
+                        bottom: 16,
+                        child: FloatingActionButton.small(
+                          tooltip: l10n.chatScrollToBottom,
+                          onPressed: _scrollToBottom,
+                          child: const Icon(Icons.arrow_downward_rounded),
+                        ),
                       ),
+                  ],
+                ),
               ),
               if (state.failure != null)
                 _FailureBanner(
@@ -276,6 +345,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             },
           ),
     );
+    _scrollToBottomSoon();
   }
 
   String _modelFor(ChatSessionState state, AiProvider provider) {
@@ -828,10 +898,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       return;
     }
     _lastSignature = signature;
+    if (_didInitialScroll && !_stickToBottom) {
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scroll.hasClients) {
         return;
       }
+      _didInitialScroll = true;
       _scroll.animateTo(
         _scroll.position.maxScrollExtent,
         duration: const Duration(milliseconds: 160),

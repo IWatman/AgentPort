@@ -33,6 +33,7 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
   String? _lastScrollSignature;
   var _stickToBottom = true;
   var _didInitialScroll = false;
+  var _showScrollDown = false;
 
   OpenCodeSessionKey get _key =>
       (connectionId: widget.connectionId, sessionId: widget.sessionId);
@@ -57,7 +58,35 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
       return;
     }
     final position = _scroll.position;
-    _stickToBottom = position.maxScrollExtent - position.pixels < 240;
+    final distance = position.maxScrollExtent - position.pixels;
+    _stickToBottom = distance < 240;
+    final show = distance > 400;
+    if (show != _showScrollDown) {
+      setState(() => _showScrollDown = show);
+    }
+  }
+
+  void _scrollToBottom() {
+    if (!_scroll.hasClients) {
+      return;
+    }
+    _stickToBottom = true;
+    if (_showScrollDown) {
+      setState(() => _showScrollDown = false);
+    }
+    _scroll.animateTo(
+      _scroll.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+    );
+  }
+
+  void _scrollToBottomSoon() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _scrollToBottom();
+      }
+    });
   }
 
   @override
@@ -149,35 +178,57 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
           return Column(
             children: [
               Expanded(
-                child:
-                    current.messages.isEmpty &&
-                        current.streamingText.isEmpty &&
-                        !current.busy
-                    ? EmptyState(
-                        icon: Icons.forum_outlined,
-                        title: l10n.openCodeSessionEmptyTitle,
-                        body: l10n.openCodeSessionEmptyBody,
-                      )
-                    : ListView.builder(
-                        controller: _scroll,
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                        itemCount:
-                            current.messages.length +
-                            (current.streamingText.isNotEmpty || current.busy
-                                ? 1
-                                : 0),
-                        itemBuilder: (context, index) {
-                          if (index < current.messages.length) {
-                            return _MessageBubble(
-                              message: current.messages[index],
-                            );
-                          }
-                          return _StreamingBubble(
-                            text: current.streamingText,
-                            busy: current.busy,
-                          );
-                        },
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child:
+                          current.messages.isEmpty &&
+                              current.streamingText.isEmpty &&
+                              !current.busy
+                          ? EmptyState(
+                              icon: Icons.forum_outlined,
+                              title: l10n.openCodeSessionEmptyTitle,
+                              body: l10n.openCodeSessionEmptyBody,
+                            )
+                          : ListView.builder(
+                              controller: _scroll,
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                16,
+                                16,
+                                24,
+                              ),
+                              itemCount:
+                                  current.messages.length +
+                                  (current.streamingText.isNotEmpty ||
+                                          current.busy
+                                      ? 1
+                                      : 0),
+                              itemBuilder: (context, index) {
+                                if (index < current.messages.length) {
+                                  return _MessageBubble(
+                                    message: current.messages[index],
+                                  );
+                                }
+                                return _StreamingBubble(
+                                  text: current.streamingText,
+                                  busy: current.busy,
+                                );
+                              },
+                            ),
+                    ),
+                    if (_showScrollDown)
+                      Positioned(
+                        right: 16,
+                        bottom: 16,
+                        child: FloatingActionButton.small(
+                          tooltip: l10n.chatScrollToBottom,
+                          onPressed: _scrollToBottom,
+                          child: const Icon(Icons.arrow_downward_rounded),
+                        ),
                       ),
+                  ],
+                ),
               ),
               if (current.error != null)
                 _ErrorBanner(
@@ -248,9 +299,11 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
       unawaited(
         notifier.sendCommand(command.group(1)!, command.group(2) ?? ''),
       );
+      _scrollToBottomSoon();
       return;
     }
     unawaited(notifier.send(text));
+    _scrollToBottomSoon();
   }
 
   String? _modelLabel(OpenCodeSessionState state) {

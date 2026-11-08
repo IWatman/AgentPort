@@ -113,6 +113,7 @@
   "chatInputHint": "Сообщение",
   "chatSend": "Отправить",
   "chatStop": "Остановить",
+  "chatScrollToBottom": "Прокрутить вниз",
   "chatStopped": "Остановлено",
   "chatError": "Ошибка",
   "chatReasoning": "Рассуждения",

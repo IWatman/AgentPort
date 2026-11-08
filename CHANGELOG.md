@@ -20,5 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenCode remote control UI: a dedicated OpenCode tab on Chats, connection list, QR scanner and manual URL/password pairing, project list, sessions filtered by project, new-session creation, transcript with reasoning and tool chips, live event indicator, prompt composer with stop, and agent/model pickers.
 - OpenCode transcripts load up to 800 messages in chronological order, render image and file attachments on user messages, refresh when another client sends a prompt, and reconnect the event stream with backoff.
 - Mobile OpenCode chat parity: slash-command picker and execution, `@` project file mentions with search, model variant selection, session rename/delete/info, token and cost details, and location-scoped command/model/agent lists.
+- Scroll-to-bottom button in AI and OpenCode chats; auto-scroll pauses while reading history.
 - Update infrastructure: stable-only GitHub Releases client, semantic version checks, streaming APK downloader with SHA-256 verification, Android PackageInstaller/FileProvider bridge, and a tag-driven signed release workflow with checksums.
 - In-app updates: daily automatic check, manual check in Settings, release-notes popup, download progress, checksum verification, install-permission guidance, and the system installer handoff.

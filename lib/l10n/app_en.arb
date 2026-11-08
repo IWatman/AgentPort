@@ -113,6 +113,7 @@
   "chatInputHint": "Message",
   "chatSend": "Send",
   "chatStop": "Stop",
+  "chatScrollToBottom": "Scroll to bottom",
   "chatStopped": "Stopped",
   "chatError": "Error",
   "chatReasoning": "Reasoning",
