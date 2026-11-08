@@ -82,6 +82,31 @@
   "updatesRetry": "Retry",
   "updatesClose": "Close",
   "updatesFailedTitle": "Update failed",
+  "settingsSectionData": "Data",
+  "settingsExport": "Export data",
+  "settingsExportSubtitle": "Chats and providers without API keys or tokens.",
+  "settingsImport": "Import data",
+  "settingsImportSubtitle": "Restore chats from an AgentPort backup file.",
+  "backupExported": "Backup saved.",
+  "backupImported": "Imported {conversations} chats, {messages} messages, and {providers} providers.",
+  "@backupImported": {
+    "placeholders": {
+      "conversations": {
+        "type": "int"
+      },
+      "messages": {
+        "type": "int"
+      },
+      "providers": {
+        "type": "int"
+      }
+    }
+  },
+  "backupExportFailed": "Could not export data.",
+  "backupImportFailed": "Could not import this backup.",
+  "backupImportTitle": "Import backup?",
+  "backupImportBody": "Chats and providers will be added. API keys and tokens are not included in the backup and must be entered again.",
+  "backupImportAction": "Import",
   "settingsSectionAbout": "About",
   "settingsAbout": "About AgentPort",
   "settingsVersion": "Version {version}",

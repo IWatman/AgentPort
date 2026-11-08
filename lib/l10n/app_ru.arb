@@ -82,6 +82,31 @@
   "updatesRetry": "Повторить",
   "updatesClose": "Закрыть",
   "updatesFailedTitle": "Не удалось обновить",
+  "settingsSectionData": "Данные",
+  "settingsExport": "Экспорт данных",
+  "settingsExportSubtitle": "Чаты и провайдеры без API-ключей и токенов.",
+  "settingsImport": "Импорт данных",
+  "settingsImportSubtitle": "Восстановить чаты из файла резервной копии AgentPort.",
+  "backupExported": "Резервная копия сохранена.",
+  "backupImported": "Импортировано чатов: {conversations}, сообщений: {messages}, провайдеров: {providers}.",
+  "@backupImported": {
+    "placeholders": {
+      "conversations": {
+        "type": "int"
+      },
+      "messages": {
+        "type": "int"
+      },
+      "providers": {
+        "type": "int"
+      }
+    }
+  },
+  "backupExportFailed": "Не удалось экспортировать данные.",
+  "backupImportFailed": "Не удалось импортировать резервную копию.",
+  "backupImportTitle": "Импортировать копию?",
+  "backupImportBody": "Чаты и провайдеры будут добавлены. API-ключи и токены не входят в копию — их нужно ввести заново.",
+  "backupImportAction": "Импортировать",
   "settingsSectionAbout": "О приложении",
   "settingsAbout": "Об AgentPort",
   "settingsVersion": "Версия {version}",

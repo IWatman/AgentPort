@@ -1,10 +1,16 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/settings/settings_controller.dart';
+import '../../data/backup/backup_service.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../chat/conversations_controller.dart';
 import '../updates/update_prompt_host.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -63,6 +69,29 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
+          _SectionHeader(text: l10n.settingsSectionData),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.upload_file_rounded),
+                  title: Text(l10n.settingsExport),
+                  subtitle: Text(l10n.settingsExportSubtitle),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => _exportData(context, ref, l10n),
+                ),
+                const Divider(indent: 16, endIndent: 16),
+                ListTile(
+                  leading: const Icon(Icons.download_rounded),
+                  title: Text(l10n.settingsImport),
+                  subtitle: Text(l10n.settingsImportSubtitle),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => _importData(context, ref, l10n),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
           _SectionHeader(text: l10n.settingsSectionAbout),
           Card(
             child: FutureBuilder<PackageInfo>(
@@ -92,6 +121,99 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _exportData(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    try {
+      final json = await ref.read(backupServiceProvider).exportJson();
+      final date = DateTime.now()
+          .toIso8601String()
+          .substring(0, 10)
+          .replaceAll('-', '');
+      final path = await FilePicker.saveFile(
+        dialogTitle: l10n.settingsExport,
+        fileName: 'agentport-backup-$date.json',
+        bytes: Uint8List.fromList(utf8.encode(json)),
+        mimeType: 'application/json',
+      );
+      if (!context.mounted) {
+        return;
+      }
+      if (path != null) {
+        _snack(context, l10n.backupExported);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        _snack(context, l10n.backupExportFailed);
+      }
+    }
+  }
+
+  Future<void> _importData(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    try {
+      final picked = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+      );
+      if (picked.isEmpty) {
+        return;
+      }
+      final bytes = await picked.single.xFile.readAsBytes();
+      if (!context.mounted) {
+        return;
+      }
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.backupImportTitle),
+          content: Text(l10n.backupImportBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.commonCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.backupImportAction),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !context.mounted) {
+        return;
+      }
+      final result = await ref
+          .read(backupServiceProvider)
+          .importJson(utf8.decode(bytes));
+      ref.invalidate(conversationsControllerProvider);
+      if (context.mounted) {
+        _snack(
+          context,
+          l10n.backupImported(
+            result.conversations,
+            result.messages,
+            result.providers,
+          ),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        _snack(context, l10n.backupImportFailed);
+      }
+    }
+  }
+
+  void _snack(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _languageLabel(AppLocalizations l10n, String? code) {

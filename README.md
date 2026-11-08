@@ -14,6 +14,7 @@ Android AI chat client with a built-in MCP marketplace and remote control for [O
 - Let the model call MCP tools from chat, with automatic read-only calls and approval for write tools.
 - Control OpenCode sessions from your phone: pair by QR or URL, read transcripts, send prompts, stream replies, stop, and switch agent/model.
 - Local encrypted storage for chats, keys, and tokens.
+- Export chats and providers to a JSON backup without secrets, and import them back from Settings.
 - Automatic stable-channel update checks with a popup, release notes, progress, checksum verification, and the Android installer.
 - English and Russian UI.
 
