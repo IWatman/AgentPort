@@ -25,6 +25,7 @@ class OpenCodeSessionState {
     this.activeTool,
     this.agentId,
     this.model,
+    this.modelName,
   });
 
   final OpenCodeConnection connection;
@@ -37,6 +38,7 @@ class OpenCodeSessionState {
   final String? activeTool;
   final String? agentId;
   final OpenCodeModelRef? model;
+  final String? modelName;
 
   bool get isConnected => linkState == OpenCodeLinkState.connected;
 
@@ -52,6 +54,7 @@ class OpenCodeSessionState {
     bool clearTool = false,
     Object? agentId = _unset,
     Object? model = _unset,
+    Object? modelName = _unset,
   }) {
     return OpenCodeSessionState(
       connection: connection ?? this.connection,
@@ -68,6 +71,9 @@ class OpenCodeSessionState {
           : activeTool as String?,
       agentId: identical(agentId, _unset) ? this.agentId : agentId as String?,
       model: identical(model, _unset) ? this.model : model as OpenCodeModelRef?,
+      modelName: identical(modelName, _unset)
+          ? this.modelName
+          : modelName as String?,
     );
   }
 }
@@ -190,6 +196,116 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
     }
   }
 
+  /// Runs a slash command and shows it in the transcript immediately.
+  Future<void> sendCommand(String name, String arguments) async {
+    final current = state.value;
+    final client = _client;
+    final command = name.trim();
+    if (current == null || current.busy || client == null || command.isEmpty) {
+      return;
+    }
+    final display = arguments.trim().isEmpty
+        ? '/$command'
+        : '/$command ${arguments.trim()}';
+    final message = OpenCodeMessage(
+      id: _localId('user'),
+      role: 'user',
+      text: display,
+      createdAt: DateTime.now(),
+    );
+    _emit(
+      current.copyWith(
+        messages: [...current.messages, message],
+        busy: true,
+        streamingText: '',
+        error: null,
+        clearTool: true,
+      ),
+    );
+    try {
+      await client.sendCommand(
+        key.sessionId,
+        command,
+        arguments: arguments.trim(),
+      );
+    } catch (error) {
+      _setFailure(_asFailure(error), busy: false);
+    }
+  }
+
+  /// Loads the slash commands available for this session.
+  Future<List<OpenCodeCommand>> loadCommands() async {
+    final client = _client;
+    if (client == null) {
+      return const [];
+    }
+    try {
+      return await client.commands(directory: state.value?.session.directory);
+    } catch (error) {
+      final failure = _asFailure(error);
+      _setFailure(failure);
+      throw failure;
+    }
+  }
+
+  /// Searches project files for an `@` mention.
+  Future<List<OpenCodeFileEntry>> searchFiles(String query) async {
+    final client = _client;
+    final current = state.value;
+    final directory = current?.session.directory;
+    if (client == null || directory == null || directory.isEmpty) {
+      return const [];
+    }
+    try {
+      return await client.findFiles(query, directory: directory);
+    } catch (error) {
+      final failure = _asFailure(error);
+      _setFailure(failure);
+      throw failure;
+    }
+  }
+
+  /// Renames the current session.
+  Future<void> rename(String title) async {
+    final client = _client;
+    final current = state.value;
+    final value = title.trim();
+    if (client == null || current == null || value.isEmpty) {
+      return;
+    }
+    try {
+      await client.renameSession(key.sessionId, value);
+      final latest = state.value;
+      if (ref.mounted && latest != null) {
+        _emit(
+          latest.copyWith(
+            session: latest.session.copyWith(title: value),
+            error: null,
+          ),
+        );
+      }
+    } catch (error) {
+      final failure = _asFailure(error);
+      _setFailure(failure);
+      throw failure;
+    }
+  }
+
+  /// Deletes the current session on the server.
+  Future<void> deleteSession() async {
+    final client = _client;
+    if (client == null) {
+      return;
+    }
+    try {
+      await client.deleteSession(key.sessionId);
+    } catch (error) {
+      final failure = _asFailure(error);
+      _setFailure(failure);
+      throw failure;
+    }
+  }
+
   /// Asks the server to stop the current generation.
   Future<void> stop() async {
     final client = _client;
@@ -209,7 +325,7 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
       return const [];
     }
     try {
-      return await client.agents();
+      return await client.agents(directory: state.value?.session.directory);
     } catch (error) {
       final failure = _asFailure(error);
       _setFailure(failure);
@@ -223,7 +339,7 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
       return const [];
     }
     try {
-      return await client.models();
+      return await client.models(directory: state.value?.session.directory);
     } catch (error) {
       final failure = _asFailure(error);
       _setFailure(failure);
@@ -253,7 +369,7 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
   }
 
   /// Switches the model used by the session.
-  Future<void> setModel(OpenCodeModelRef model) async {
+  Future<void> setModel(OpenCodeModelRef model, {String? name}) async {
     final client = _client;
     final current = state.value;
     if (client == null || current == null) {
@@ -263,7 +379,7 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
       await client.setModel(key.sessionId, model);
       final latest = state.value;
       if (ref.mounted && latest != null) {
-        _emit(latest.copyWith(model: model, error: null));
+        _emit(latest.copyWith(model: model, modelName: name, error: null));
       }
     } catch (error) {
       final failure = _asFailure(error);
@@ -290,6 +406,14 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
         connection: connection,
         session: session,
         messages: messages,
+        agentId: session.agentId,
+        model: session.modelId != null && session.modelProviderId != null
+            ? OpenCodeModelRef(
+                id: session.modelId!,
+                providerId: session.modelProviderId!,
+                variant: session.modelVariant,
+              )
+            : null,
       ),
     );
   }

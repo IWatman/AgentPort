@@ -510,6 +510,31 @@
   "openCodeModel": "Model",
   "openCodeModelMenu": "Choose model",
   "openCodeModelsEmpty": "No models available.",
+  "openCodeModelSearchHint": "Search models…",
+  "openCodeVariantTitle": "Model variant",
+  "openCodeVariantDefault": "Default",
+  "openCodeCommandsTitle": "Commands",
+  "openCodeCommandsEmpty": "No commands available.",
+  "openCodeMentionsTitle": "Mention a file",
+  "openCodeMentionHint": "Search project files…",
+  "openCodeMentionsEmpty": "No matching files.",
+  "openCodeRenameTitle": "Rename session",
+  "openCodeRenameHint": "Session title",
+  "openCodeSessionInfoTitle": "Session info",
+  "openCodeSessionInfoId": "Session ID",
+  "openCodeSessionInfoProject": "Project",
+  "openCodeSessionInfoUpdated": "Updated",
+  "openCodeSessionInfoTokens": "Tokens in / out",
+  "openCodeSessionInfoCost": "Cost",
+  "openCodeDeleteSession": "Delete session",
+  "openCodeDeleteSessionBody": "Delete “{name}”? This removes the session and its messages.",
+  "@openCodeDeleteSessionBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "openCodeSessionEmptyTitle": "No messages yet",
   "openCodeSessionEmptyBody": "Send a prompt to start the session.",
   "openCodeSessionError": "Could not load the session",

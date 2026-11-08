@@ -37,6 +37,10 @@ class _FakeOpenCodeClient extends OpenCodeClient {
   final List<String> interruptedSessions = [];
   final List<OpenCodeModelRef> selectedModels = [];
   final List<String> selectedAgents = [];
+  final List<(String, String)> sentCommands = [];
+  final List<(String, String)> searchedFiles = [];
+  final List<String> renamedSessions = [];
+  final List<String> deletedSessions = [];
   final List<OpenCodeAgent> agentList = const [
     OpenCodeAgent(id: 'build', name: 'Build'),
     OpenCodeAgent(id: 'plan', name: 'Plan'),
@@ -95,8 +99,44 @@ class _FakeOpenCodeClient extends OpenCodeClient {
       id: id,
       title: 'Session',
       project: 'agentport',
+      directory: r'C:\repo',
       updatedAt: DateTime(2026, 1, 2, 3, 4),
     );
+  }
+
+  @override
+  Future<List<OpenCodeCommand>> commands({String? directory}) async => const [
+    OpenCodeCommand(name: 'review', description: 'Review changes'),
+    OpenCodeCommand(name: 'goal'),
+  ];
+
+  @override
+  Future<List<OpenCodeFileEntry>> findFiles(
+    String query, {
+    required String directory,
+    int limit = 20,
+  }) async {
+    searchedFiles.add((query, directory));
+    return const [OpenCodeFileEntry(path: 'lib/main.dart')];
+  }
+
+  @override
+  Future<void> sendCommand(
+    String id,
+    String name, {
+    String arguments = '',
+  }) async {
+    sentCommands.add((name, arguments));
+  }
+
+  @override
+  Future<void> renameSession(String id, String title) async {
+    renamedSessions.add(title);
+  }
+
+  @override
+  Future<void> deleteSession(String id) async {
+    deletedSessions.add(id);
   }
 
   @override
@@ -114,10 +154,10 @@ class _FakeOpenCodeClient extends OpenCodeClient {
   }
 
   @override
-  Future<List<OpenCodeAgent>> agents() async => agentList;
+  Future<List<OpenCodeAgent>> agents({String? directory}) async => agentList;
 
   @override
-  Future<List<OpenCodeModel>> models() async => modelList;
+  Future<List<OpenCodeModel>> models({String? directory}) async => modelList;
 
   @override
   Future<void> setAgent(String id, String agent) async {
@@ -284,6 +324,32 @@ void main() {
     await pumpEventQueue();
 
     expect(state().messages.last.text, 'Sent from the web UI');
+  });
+
+  test('runs slash commands and searches files', () async {
+    await open();
+
+    final commands = await notifier().loadCommands();
+    expect(commands.map((command) => command.name), ['review', 'goal']);
+
+    await notifier().sendCommand('review', 'main');
+    expect(client.sentCommands.single, ('review', 'main'));
+    expect(state().messages.last.text, '/review main');
+
+    final files = await notifier().searchFiles('main');
+    expect(files.single.path, 'lib/main.dart');
+    expect(client.searchedFiles.single, ('main', r'C:\repo'));
+  });
+
+  test('renames and deletes the current session', () async {
+    await open();
+
+    await notifier().rename('New title');
+    expect(state().session.title, 'New title');
+    expect(client.renamedSessions, ['New title']);
+
+    await notifier().deleteSession();
+    expect(client.deletedSessions, ['session-1']);
   });
 
   test('loads session details and history', () async {

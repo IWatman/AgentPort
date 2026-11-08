@@ -88,6 +88,108 @@ class OpenCodeClient {
     return List.unmodifiable(projects);
   }
 
+  /// Lists slash commands available at [directory], or the server default.
+  Future<List<OpenCodeCommand>> commands({String? directory}) async {
+    final decoded = await _getJson(_withLocation('api/command', directory));
+    final list = _readDataList(decoded);
+    final commands = <OpenCodeCommand>[];
+    for (final item in list) {
+      if (item is! Map) {
+        continue;
+      }
+      final map = Map<String, Object?>.from(item);
+      final name = _readString(map['name']);
+      if (name == null) {
+        continue;
+      }
+      commands.add(
+        OpenCodeCommand(
+          name: name,
+          description: _readString(map['description']) ?? '',
+        ),
+      );
+    }
+    return List.unmodifiable(commands);
+  }
+
+  /// Searches project files for `@` mentions.
+  Future<List<OpenCodeFileEntry>> findFiles(
+    String query, {
+    required String directory,
+    int limit = 20,
+  }) async {
+    final path = Uri(
+      path: 'api/fs/find',
+      queryParameters: {
+        'query': query,
+        'type': 'file',
+        'limit': '$limit',
+        'location[directory]': directory,
+      },
+    ).toString();
+    final decoded = await _getJson(path);
+    final list = _readDataList(decoded);
+    final files = <OpenCodeFileEntry>[];
+    for (final item in list) {
+      if (item is! Map) {
+        continue;
+      }
+      final map = Map<String, Object?>.from(item);
+      final filePath = _readString(map['path']);
+      if (filePath == null) {
+        continue;
+      }
+      files.add(
+        OpenCodeFileEntry(
+          path: filePath,
+          isDirectory: _readString(map['type']) == 'directory',
+        ),
+      );
+    }
+    return List.unmodifiable(files);
+  }
+
+  /// Runs a slash command in a session.
+  Future<void> sendCommand(
+    String id,
+    String name, {
+    String arguments = '',
+  }) async {
+    final value = name.trim();
+    if (value.isEmpty) {
+      throw const OpenCodeFailure(
+        OpenCodeFailureKind.invalidPayload,
+        detail: 'Choose a command first.',
+      );
+    }
+    await _request(
+      'POST',
+      'api/session/${_segment(id)}/command',
+      body: {'name': value, 'text': arguments},
+    );
+  }
+
+  /// Renames a session.
+  Future<void> renameSession(String id, String title) async {
+    final value = title.trim();
+    if (value.isEmpty) {
+      throw const OpenCodeFailure(
+        OpenCodeFailureKind.invalidPayload,
+        detail: 'The session title cannot be empty.',
+      );
+    }
+    await _request(
+      'PATCH',
+      'api/session/${_segment(id)}',
+      body: {'title': value},
+    );
+  }
+
+  /// Deletes a session and its child sessions.
+  Future<void> deleteSession(String id) async {
+    await _request('DELETE', 'api/session/${_segment(id)}');
+  }
+
   /// Creates a session at [directory].
   Future<OpenCodeSession> createSession({
     required String directory,
@@ -159,8 +261,8 @@ class OpenCodeClient {
   }
 
   /// Lists agents available on the server.
-  Future<List<OpenCodeAgent>> agents() async {
-    final decoded = await _getJson('api/agent');
+  Future<List<OpenCodeAgent>> agents({String? directory}) async {
+    final decoded = await _getJson(_withLocation('api/agent', directory));
     final list = _readDataList(decoded);
     final agents = <OpenCodeAgent>[];
     for (final item in list) {
@@ -178,8 +280,8 @@ class OpenCodeClient {
   }
 
   /// Lists chat models available on the server.
-  Future<List<OpenCodeModel>> models() async {
-    final decoded = await _getJson('api/model');
+  Future<List<OpenCodeModel>> models({String? directory}) async {
+    final decoded = await _getJson(_withLocation('api/model', directory));
     final list = _readDataList(decoded);
     final models = <OpenCodeModel>[];
     for (final item in list) {
@@ -192,11 +294,28 @@ class OpenCodeClient {
       if (id == null || providerId == null) {
         continue;
       }
+      final variants = <String>[];
+      final rawVariants = map['variants'];
+      if (rawVariants is List) {
+        for (final variant in rawVariants) {
+          if (variant is Map) {
+            final variantId = _readString(
+              Map<String, Object?>.from(variant)['id'],
+            );
+            if (variantId != null) {
+              variants.add(variantId);
+            }
+          } else if (variant is String && variant.trim().isNotEmpty) {
+            variants.add(variant.trim());
+          }
+        }
+      }
       models.add(
         OpenCodeModel(
           id: id,
           providerId: providerId,
           name: _readString(map['name']) ?? id,
+          variants: List.unmodifiable(variants),
         ),
       );
     }
@@ -547,14 +666,48 @@ class OpenCodeClient {
       );
     }
     final title = map['title'];
+    final location = map['location'];
+    final locationMap = location is Map
+        ? Map<String, Object?>.from(location)
+        : const <String, Object?>{};
+    final tokens = map['tokens'];
+    final tokenMap = tokens is Map
+        ? Map<String, Object?>.from(tokens)
+        : const <String, Object?>{};
+    final model = map['model'];
+    final modelMap = model is Map
+        ? Map<String, Object?>.from(model)
+        : const <String, Object?>{};
     return OpenCodeSession(
       id: id.trim(),
       title: title is String && title.trim().isNotEmpty
           ? title.trim()
           : 'Untitled session',
       project: _readProject(map),
+      directory: _readString(locationMap['directory']),
       updatedAt: _readUpdatedAt(map),
+      cost: _readDouble(map['cost']),
+      tokensInput: _readInt(tokenMap['input']),
+      tokensOutput: _readInt(tokenMap['output']),
+      agentId: _readString(map['agent']),
+      modelId: _readString(modelMap['id']) ?? _readString(modelMap['modelID']),
+      modelProviderId: _readString(modelMap['providerID']),
+      modelVariant: _readString(modelMap['variant']),
     );
+  }
+
+  double? _readDouble(Object? value) {
+    if (value is num) {
+      return value.toDouble();
+    }
+    return null;
+  }
+
+  int? _readInt(Object? value) {
+    if (value is num) {
+      return value.toInt();
+    }
+    return null;
   }
 
   String? _readProject(Map<String, Object?> map) {
@@ -595,6 +748,17 @@ class OpenCodeClient {
       return DateTime.fromMillisecondsSinceEpoch(milliseconds);
     }
     return null;
+  }
+
+  String _withLocation(String path, String? directory) {
+    final value = directory?.trim();
+    if (value == null || value.isEmpty) {
+      return path;
+    }
+    return Uri(
+      path: path,
+      queryParameters: {'location[directory]': value},
+    ).toString();
   }
 
   String? _readString(Object? value) {

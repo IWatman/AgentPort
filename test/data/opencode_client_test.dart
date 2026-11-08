@@ -206,6 +206,15 @@ void main() {
               'id': 'ses_1',
               'title': 'One',
               'time': {'updated': 1762584000000},
+              'location': {'directory': r'C:\repo'},
+              'cost': 1.25,
+              'tokens': {'input': 10, 'output': 20},
+              'agent': 'build',
+              'model': {
+                'id': 'deepseek-flash',
+                'providerID': 'deepseek',
+                'variant': 'max',
+              },
             },
           });
         }),
@@ -217,6 +226,13 @@ void main() {
       expect(sessions.single.id, 'ses_1');
       expect(session.id, 'ses_1');
       expect(session.updatedAt, isNotNull);
+      expect(session.directory, r'C:\repo');
+      expect(session.cost, 1.25);
+      expect(session.tokensInput, 10);
+      expect(session.tokensOutput, 20);
+      expect(session.agentId, 'build');
+      expect(session.modelId, 'deepseek-flash');
+      expect(session.modelVariant, 'max');
       expect(paths, ['/api/session', '/api/session/ses_1']);
     });
 
@@ -262,6 +278,10 @@ void main() {
                 'modelID': 'deepseek-v4-flash',
                 'providerID': 'deepseek',
                 'name': 'DeepSeek V4.1 Flash',
+                'variants': [
+                  {'id': 'max'},
+                  {'id': 'fast'},
+                ],
               },
             ],
           });
@@ -274,6 +294,7 @@ void main() {
       expect(agents.map((agent) => agent.name), ['Build', 'Plan']);
       expect(models.single.providerId, 'deepseek');
       expect(models.single.name, 'DeepSeek V4.1 Flash');
+      expect(models.single.variants, ['max', 'fast']);
       expect(paths, ['/api/agent', '/api/model']);
     });
 
@@ -476,6 +497,52 @@ void main() {
       expect(messages[2].text, isEmpty);
       expect(messages[2].reasoning, 'Only thinking');
       expect(messages[2].tools, ['read']);
+    });
+
+    test('loads commands, searches files, and sends session actions', () async {
+      final requests = <http.Request>[];
+      final client = OpenCodeClient(
+        baseUrl: 'https://example.com',
+        token: 't',
+        clientFactory: () => MockClient((request) async {
+          requests.add(request);
+          if (request.url.path == '/api/command') {
+            return _json({
+              'data': [
+                {'name': 'review', 'description': 'Review changes'},
+              ],
+            });
+          }
+          if (request.url.path == '/api/fs/find') {
+            return _json({
+              'data': [
+                {'path': 'lib/main.dart', 'type': 'file'},
+              ],
+            });
+          }
+          return http.Response('', 204);
+        }),
+      );
+
+      final commands = await client.commands();
+      final files = await client.findFiles('main', directory: r'C:\repo');
+      await client.sendCommand('ses_1', 'review', arguments: 'main');
+      await client.renameSession('ses_1', 'New title');
+      await client.deleteSession('ses_1');
+
+      expect(commands.single.displayName, '/review');
+      expect(commands.single.description, 'Review changes');
+      expect(files.single.path, 'lib/main.dart');
+      expect(files.single.isDirectory, isFalse);
+      expect(
+        requests[1].url.queryParameters['location[directory]'],
+        r'C:\repo',
+      );
+      expect(requests[1].url.queryParameters['query'], 'main');
+      expect(jsonDecode(requests[2].body), {'name': 'review', 'text': 'main'});
+      expect(requests[3].method, 'PATCH');
+      expect(jsonDecode(requests[3].body), {'title': 'New title'});
+      expect(requests[4].method, 'DELETE');
     });
 
     test('sends interrupt, agent, and model requests', () async {

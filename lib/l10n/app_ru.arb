@@ -495,6 +495,31 @@
   "openCodeModel": "Модель",
   "openCodeModelMenu": "Выбрать модель",
   "openCodeModelsEmpty": "Нет доступных моделей.",
+  "openCodeModelSearchHint": "Поиск моделей…",
+  "openCodeVariantTitle": "Вариант модели",
+  "openCodeVariantDefault": "Обычный",
+  "openCodeCommandsTitle": "Команды",
+  "openCodeCommandsEmpty": "Нет доступных команд.",
+  "openCodeMentionsTitle": "Упомянуть файл",
+  "openCodeMentionHint": "Поиск файлов проекта…",
+  "openCodeMentionsEmpty": "Файлы не найдены.",
+  "openCodeRenameTitle": "Переименовать сессию",
+  "openCodeRenameHint": "Название сессии",
+  "openCodeSessionInfoTitle": "Информация о сессии",
+  "openCodeSessionInfoId": "ID сессии",
+  "openCodeSessionInfoProject": "Проект",
+  "openCodeSessionInfoUpdated": "Обновлена",
+  "openCodeSessionInfoTokens": "Токены вход / выход",
+  "openCodeSessionInfoCost": "Стоимость",
+  "openCodeDeleteSession": "Удалить сессию",
+  "openCodeDeleteSessionBody": "Удалить «{name}»? Сессия и её сообщения будут удалены.",
+  "@openCodeDeleteSessionBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "openCodeSessionEmptyTitle": "Пока нет сообщений",
   "openCodeSessionEmptyBody": "Отправьте запрос, чтобы начать сессию.",
   "openCodeSessionError": "Не удалось загрузить сессию",

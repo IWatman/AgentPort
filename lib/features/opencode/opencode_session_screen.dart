@@ -28,6 +28,7 @@ class OpenCodeSessionScreen extends ConsumerStatefulWidget {
 
 class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
   final _composer = TextEditingController();
+  final _composerFocus = FocusNode();
   final _scroll = ScrollController();
   String? _lastScrollSignature;
   var _stickToBottom = true;
@@ -46,6 +47,7 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
   void dispose() {
     _scroll.removeListener(_handleScroll);
     _composer.dispose();
+    _composerFocus.dispose();
     _scroll.dispose();
     super.dispose();
   }
@@ -116,12 +118,16 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
             onSelected: (action) => _onMenu(action, value),
             itemBuilder: (context) => [
               PopupMenuItem(
-                value: _SessionMenuAction.agent,
-                child: Text(l10n.openCodeAgentMenu),
+                value: _SessionMenuAction.rename,
+                child: Text(l10n.openCodeRenameTitle),
               ),
               PopupMenuItem(
-                value: _SessionMenuAction.model,
-                child: Text(l10n.openCodeModelMenu),
+                value: _SessionMenuAction.info,
+                child: Text(l10n.openCodeSessionInfoTitle),
+              ),
+              PopupMenuItem(
+                value: _SessionMenuAction.delete,
+                child: Text(l10n.openCodeDeleteSession),
               ),
             ],
           ),
@@ -211,9 +217,16 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
                 ),
               _Composer(
                 controller: _composer,
+                focusNode: _composerFocus,
                 busy: current.busy,
+                modelLabel: _modelLabel(current),
+                agentLabel: current.agentId,
                 onSend: _send,
                 onStop: () => unawaited(ref.read(provider.notifier).stop()),
+                onCommand: () => unawaited(_pickCommand()),
+                onMention: () => unawaited(_pickMention()),
+                onModel: () => unawaited(_pickModel()),
+                onAgent: () => unawaited(_pickAgent()),
               ),
             ],
           );
@@ -228,9 +241,25 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
       return;
     }
     _composer.clear();
-    unawaited(
-      ref.read(openCodeSessionControllerProvider(_key).notifier).send(text),
-    );
+    final notifier = ref.read(openCodeSessionControllerProvider(_key).notifier);
+    final command = RegExp(r'^/([A-Za-z0-9_-]+)(?:\s+([\s\S]*))?$')
+        .firstMatch(text);
+    if (command != null) {
+      unawaited(
+        notifier.sendCommand(command.group(1)!, command.group(2) ?? ''),
+      );
+      return;
+    }
+    unawaited(notifier.send(text));
+  }
+
+  String? _modelLabel(OpenCodeSessionState state) {
+    final model = state.model;
+    if (model == null) {
+      return state.modelName;
+    }
+    final base = state.modelName ?? model.id;
+    return model.variant == null ? base : '$base · ${model.variant}';
   }
 
   void _onMenu(_SessionMenuAction action, OpenCodeSessionState? current) {
@@ -238,11 +267,208 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
       return;
     }
     switch (action) {
-      case _SessionMenuAction.agent:
-        unawaited(_pickAgent());
-      case _SessionMenuAction.model:
-        unawaited(_pickModel());
+      case _SessionMenuAction.rename:
+        unawaited(_renameSession(current));
+      case _SessionMenuAction.info:
+        unawaited(_showSessionInfo(current));
+      case _SessionMenuAction.delete:
+        unawaited(_deleteSession(current));
     }
+  }
+
+  Future<void> _pickCommand() async {
+    final l10n = AppLocalizations.of(context);
+    final notifier = ref.read(openCodeSessionControllerProvider(_key).notifier);
+    try {
+      final commands = await notifier.loadCommands();
+      if (!mounted) {
+        return;
+      }
+      if (commands.isEmpty) {
+        _snack(l10n.openCodeCommandsEmpty);
+        return;
+      }
+      final selected = await showModalBottomSheet<String>(
+        context: context,
+        showDragHandle: true,
+        isScrollControlled: true,
+        builder: (sheetContext) => SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.7,
+            ),
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                _SheetHeader(title: l10n.openCodeCommandsTitle),
+                for (final command in commands)
+                  ListTile(
+                    leading: const Icon(Icons.terminal_rounded),
+                    title: Text(command.displayName),
+                    subtitle: command.description.isEmpty
+                        ? null
+                        : Text(
+                            command.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                    onTap: () => Navigator.of(sheetContext).pop(command.name),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+      if (selected != null && mounted) {
+        _insertText('/$selected ');
+      }
+    } catch (error) {
+      if (mounted) {
+        _snack(openCodeFailureText(l10n, error));
+      }
+    }
+  }
+
+  Future<void> _pickMention() async {
+    final l10n = AppLocalizations.of(context);
+    final notifier = ref.read(openCodeSessionControllerProvider(_key).notifier);
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => _MentionSheet(
+        title: l10n.openCodeMentionsTitle,
+        hint: l10n.openCodeMentionHint,
+        empty: l10n.openCodeMentionsEmpty,
+        search: notifier.searchFiles,
+        failureText: (error) => openCodeFailureText(l10n, error),
+      ),
+    );
+    if (selected != null && mounted) {
+      _insertText('@$selected ');
+    }
+  }
+
+  Future<void> _renameSession(OpenCodeSessionState current) async {
+    final l10n = AppLocalizations.of(context);
+    final title = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => _RenameSessionDialog(
+        initialTitle: current.session.title,
+        title: l10n.openCodeRenameTitle,
+        hint: l10n.openCodeRenameHint,
+        cancel: l10n.commonCancel,
+        save: l10n.commonSave,
+      ),
+    );
+    if (title == null || !mounted) {
+      return;
+    }
+    try {
+      await ref
+          .read(openCodeSessionControllerProvider(_key).notifier)
+          .rename(title);
+    } catch (error) {
+      if (mounted) {
+        _snack(openCodeFailureText(l10n, error));
+      }
+    }
+  }
+
+  Future<void> _deleteSession(OpenCodeSessionState current) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.openCodeDeleteSession),
+        content: Text(l10n.openCodeDeleteSessionBody(current.session.title)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.commonDelete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    try {
+      await ref
+          .read(openCodeSessionControllerProvider(_key).notifier)
+          .deleteSession();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (error) {
+      if (mounted) {
+        _snack(openCodeFailureText(l10n, error));
+      }
+    }
+  }
+
+  Future<void> _showSessionInfo(OpenCodeSessionState current) async {
+    final l10n = AppLocalizations.of(context);
+    final session = current.session;
+    final cost = session.cost;
+    final tokensInput = session.tokensInput ?? 0;
+    final tokensOutput = session.tokensOutput ?? 0;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            _SheetHeader(title: l10n.openCodeSessionInfoTitle),
+            ListTile(
+              title: Text(l10n.openCodeSessionInfoId),
+              subtitle: SelectableText(session.id),
+            ),
+            ListTile(
+              title: Text(l10n.openCodeSessionInfoProject),
+              subtitle: SelectableText(
+                session.directory ?? session.project ?? '—',
+              ),
+            ),
+            if (session.updatedAt != null)
+              ListTile(
+                title: Text(l10n.openCodeSessionInfoUpdated),
+                subtitle: Text(
+                  MaterialLocalizations.of(context)
+                      .formatMediumDate(session.updatedAt!),
+                ),
+              ),
+            ListTile(
+              title: Text(l10n.openCodeSessionInfoTokens),
+              subtitle: Text('$tokensInput / $tokensOutput'),
+            ),
+            if (cost != null)
+              ListTile(
+                title: Text(l10n.openCodeSessionInfoCost),
+                subtitle: Text('\$${cost.toStringAsFixed(4)}'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _insertText(String text) {
+    final value = _composer.value;
+    final selection = value.selection;
+    final start = selection.isValid ? selection.start : value.text.length;
+    final end = selection.isValid ? selection.end : value.text.length;
+    final updated = value.text.replaceRange(start, end, text);
+    _composer.value = TextEditingValue(
+      text: updated,
+      selection: TextSelection.collapsed(offset: start + text.length),
+    );
+    _composerFocus.requestFocus();
   }
 
   Future<void> _pickAgent() async {
@@ -306,34 +532,31 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
         return;
       }
       final currentModel = ref.read(provider).value?.model;
-      final selected = await showModalBottomSheet<OpenCodeModel>(
+      final selected = await showModalBottomSheet<_ModelSelection>(
         context: context,
         showDragHandle: true,
-        builder: (sheetContext) => SafeArea(
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              _SheetHeader(title: l10n.openCodeModelMenu),
-              for (final model in models)
-                ListTile(
-                  leading: const Icon(Icons.memory_rounded),
-                  title: Text(model.name),
-                  subtitle: Text('${model.providerId} · ${model.id}'),
-                  trailing:
-                      currentModel?.id == model.id &&
-                          currentModel?.providerId == model.providerId
-                      ? const Icon(Icons.check_rounded)
-                      : null,
-                  onTap: () => Navigator.of(sheetContext).pop(model),
-                ),
-            ],
-          ),
+        isScrollControlled: true,
+        builder: (sheetContext) => _ModelSheet(
+          title: l10n.openCodeModelMenu,
+          hint: l10n.openCodeModelSearchHint,
+          empty: l10n.openCodeModelsEmpty,
+          variantTitle: l10n.openCodeVariantTitle,
+          defaultVariant: l10n.openCodeVariantDefault,
+          models: models,
+          current: currentModel,
         ),
       );
       if (selected == null || !mounted) {
         return;
       }
-      await notifier.setModel(selected.ref);
+      await notifier.setModel(
+        OpenCodeModelRef(
+          id: selected.model.id,
+          providerId: selected.model.providerId,
+          variant: selected.variant,
+        ),
+        name: selected.model.name,
+      );
     } catch (error) {
       if (mounted) {
         _snack(openCodeFailureText(l10n, error));
@@ -376,7 +599,7 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
   }
 }
 
-enum _SessionMenuAction { agent, model }
+enum _SessionMenuAction { rename, info, delete }
 
 class _MessageBubble extends StatelessWidget {
   const _MessageBubble({required this.message});
@@ -609,18 +832,252 @@ class _StreamingBubble extends StatelessWidget {
   }
 }
 
+class _RenameSessionDialog extends StatefulWidget {
+  const _RenameSessionDialog({
+    required this.initialTitle,
+    required this.title,
+    required this.hint,
+    required this.cancel,
+    required this.save,
+  });
+
+  final String initialTitle;
+  final String title;
+  final String hint;
+  final String cancel;
+  final String save;
+
+  @override
+  State<_RenameSessionDialog> createState() => _RenameSessionDialogState();
+}
+
+class _RenameSessionDialogState extends State<_RenameSessionDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialTitle,
+  );
+  final _focus = FocusNode();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: TextField(
+        controller: _controller,
+        focusNode: _focus,
+        autofocus: true,
+        decoration: InputDecoration(
+          hintText: widget.hint,
+          border: const OutlineInputBorder(),
+        ),
+        onSubmitted: (value) => Navigator.of(context).pop(value),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(widget.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: Text(widget.save),
+        ),
+      ],
+    );
+  }
+}
+
+class _ModelSelection {
+  const _ModelSelection({required this.model, this.variant});
+
+  final OpenCodeModel model;
+  final String? variant;
+}
+
+class _ModelSheet extends StatefulWidget {
+  const _ModelSheet({
+    required this.title,
+    required this.hint,
+    required this.empty,
+    required this.variantTitle,
+    required this.defaultVariant,
+    required this.models,
+    required this.current,
+  });
+
+  final String title;
+  final String hint;
+  final String empty;
+  final String variantTitle;
+  final String defaultVariant;
+  final List<OpenCodeModel> models;
+  final OpenCodeModelRef? current;
+
+  @override
+  State<_ModelSheet> createState() => _ModelSheetState();
+}
+
+class _ModelSheetState extends State<_ModelSheet> {
+  final _query = TextEditingController();
+  var _filter = '';
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  List<OpenCodeModel> get _filtered {
+    final filter = _filter.trim().toLowerCase();
+    if (filter.isEmpty) {
+      return widget.models;
+    }
+    return [
+      for (final model in widget.models)
+        if (model.name.toLowerCase().contains(filter) ||
+            model.id.toLowerCase().contains(filter) ||
+            model.providerId.toLowerCase().contains(filter))
+          model,
+    ];
+  }
+
+  Future<void> _select(OpenCodeModel model) async {
+    if (model.variants.isEmpty) {
+      Navigator.of(context).pop(_ModelSelection(model: model));
+      return;
+    }
+    const defaultValue = '__default__';
+    final variant = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            _SheetHeader(title: widget.variantTitle),
+            ListTile(
+              leading: const Icon(Icons.tune_rounded),
+              title: Text(widget.defaultVariant),
+              onTap: () => Navigator.of(sheetContext).pop(defaultValue),
+            ),
+            for (final id in model.variants)
+              ListTile(
+                leading: const Icon(Icons.tune_rounded),
+                title: Text(id),
+                onTap: () => Navigator.of(sheetContext).pop(id),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (variant == null || !mounted) {
+      return;
+    }
+    Navigator.of(context).pop(
+      _ModelSelection(
+        model: model,
+        variant: variant == defaultValue ? null : variant,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final models = _filtered;
+
+    return SafeArea(
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.7,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Text(widget.title, style: theme.textTheme.titleSmall),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _query,
+                autofocus: true,
+                onChanged: (value) => setState(() => _filter = value),
+                decoration: InputDecoration(
+                  hintText: widget.hint,
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: models.isEmpty
+                  ? Center(child: Text(widget.empty))
+                  : ListView.builder(
+                      itemCount: models.length,
+                      itemBuilder: (context, index) {
+                        final model = models[index];
+                        final selected =
+                            widget.current?.id == model.id &&
+                            widget.current?.providerId == model.providerId;
+                        return ListTile(
+                          leading: const Icon(Icons.memory_rounded),
+                          title: Text(model.name),
+                          subtitle: Text(
+                            [
+                              '${model.providerId} · ${model.id}',
+                              if (model.variants.isNotEmpty)
+                                model.variants.join(', '),
+                            ].join(' · '),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: selected
+                              ? const Icon(Icons.check_rounded)
+                              : null,
+                          onTap: () => _select(model),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
+    required this.focusNode,
     required this.busy,
+    required this.modelLabel,
+    required this.agentLabel,
     required this.onSend,
     required this.onStop,
+    required this.onCommand,
+    required this.onMention,
+    required this.onModel,
+    required this.onAgent,
   });
 
   final TextEditingController controller;
+  final FocusNode focusNode;
   final bool busy;
+  final String? modelLabel;
+  final String? agentLabel;
   final VoidCallback onSend;
   final VoidCallback onStop;
+  final VoidCallback onCommand;
+  final VoidCallback onMention;
+  final VoidCallback onModel;
+  final VoidCallback onAgent;
 
   @override
   Widget build(BuildContext context) {
@@ -636,54 +1093,284 @@ class _Composer extends StatelessWidget {
           color: scheme.surfaceContainerLow,
           border: Border(top: BorderSide(color: scheme.outlineVariant)),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: TextField(
-                controller: controller,
-                minLines: 1,
-                maxLines: 5,
-                textCapitalization: TextCapitalization.sentences,
-                keyboardType: TextInputType.multiline,
-                decoration: InputDecoration(
-                  hintText: l10n.openCodeSessionInputHint,
-                  filled: true,
-                  fillColor: scheme.surfaceContainer,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide.none,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    minLines: 1,
+                    maxLines: 5,
+                    textCapitalization: TextCapitalization.sentences,
+                    keyboardType: TextInputType.multiline,
+                    decoration: InputDecoration(
+                      hintText: l10n.openCodeSessionInputHint,
+                      filled: true,
+                      fillColor: scheme.surfaceContainer,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 4),
+                if (busy)
+                  IconButton.filled(
+                    tooltip: l10n.chatStop,
+                    onPressed: onStop,
+                    icon: const Icon(Icons.stop_rounded),
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      backgroundColor: scheme.errorContainer,
+                      foregroundColor: scheme.onErrorContainer,
+                    ),
+                  )
+                else
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: controller,
+                    builder: (context, value, child) => IconButton.filled(
+                      tooltip: l10n.chatSend,
+                      onPressed: value.text.trim().isEmpty ? null : onSend,
+                      icon: const Icon(Icons.arrow_upward_rounded),
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(48, 48),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            const SizedBox(width: 4),
-            if (busy)
-              IconButton.filled(
-                tooltip: l10n.chatStop,
-                onPressed: onStop,
-                icon: const Icon(Icons.stop_rounded),
-                style: IconButton.styleFrom(
-                  minimumSize: const Size(48, 48),
-                  backgroundColor: scheme.errorContainer,
-                  foregroundColor: scheme.onErrorContainer,
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                IconButton(
+                  tooltip: l10n.openCodeCommandsTitle,
+                  onPressed: onCommand,
+                  icon: const Icon(Icons.terminal_rounded, size: 20),
+                  visualDensity: VisualDensity.compact,
                 ),
-              )
-            else
-              ValueListenableBuilder<TextEditingValue>(
-                valueListenable: controller,
-                builder: (context, value, child) => IconButton.filled(
-                  tooltip: l10n.chatSend,
-                  onPressed: value.text.trim().isEmpty ? null : onSend,
-                  icon: const Icon(Icons.arrow_upward_rounded),
-                  style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
+                IconButton(
+                  tooltip: l10n.openCodeMentionsTitle,
+                  onPressed: onMention,
+                  icon: const Icon(Icons.alternate_email_rounded, size: 20),
+                  visualDensity: VisualDensity.compact,
+                ),
+                const Spacer(),
+                Flexible(
+                  child: _MetaButton(
+                    icon: Icons.memory_rounded,
+                    label: modelLabel ?? l10n.openCodeModel,
+                    onTap: onModel,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: _MetaButton(
+                    icon: Icons.smart_toy_outlined,
+                    label: agentLabel ?? l10n.openCodeAgent,
+                    onTap: onAgent,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MetaButton extends StatelessWidget {
+  const _MetaButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return TextButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 16),
+      label: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.labelSmall,
+      ),
+      style: TextButton.styleFrom(
+        visualDensity: VisualDensity.compact,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        textStyle: theme.textTheme.labelSmall,
+      ),
+    );
+  }
+}
+
+class _MentionSheet extends StatefulWidget {
+  const _MentionSheet({
+    required this.title,
+    required this.hint,
+    required this.empty,
+    required this.search,
+    required this.failureText,
+  });
+
+  final String title;
+  final String hint;
+  final String empty;
+  final Future<List<OpenCodeFileEntry>> Function(String query) search;
+  final String Function(Object error) failureText;
+
+  @override
+  State<_MentionSheet> createState() => _MentionSheetState();
+}
+
+class _MentionSheetState extends State<_MentionSheet> {
+  final _query = TextEditingController();
+  Timer? _debounce;
+  List<OpenCodeFileEntry> _results = const [];
+  var _loading = false;
+  String? _error;
+  var _generation = 0;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _query.dispose();
+    super.dispose();
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    final query = value.trim();
+    if (query.isEmpty) {
+      setState(() {
+        _results = const [];
+        _error = null;
+        _loading = false;
+      });
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 250), () {
+      _search(query);
+    });
+  }
+
+  Future<void> _search(String query) async {
+    final generation = ++_generation;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final results = await widget.search(query);
+      if (!mounted || generation != _generation) {
+        return;
+      }
+      setState(() {
+        _results = results;
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted || generation != _generation) {
+        return;
+      }
+      setState(() {
+        _error = widget.failureText(error);
+        _results = const [];
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.55,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: Text(widget.title, style: theme.textTheme.titleSmall),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextField(
+                  controller: _query,
+                  autofocus: true,
+                  onChanged: _onChanged,
+                  decoration: InputDecoration(
+                    hintText: widget.hint,
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    border: const OutlineInputBorder(),
+                  ),
                 ),
               ),
-          ],
+              if (_loading) const LinearProgressIndicator(),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(color: theme.colorScheme.error),
+                  ),
+                ),
+              Expanded(
+                child: _results.isEmpty
+                    ? Center(
+                        child: Text(
+                          _query.text.trim().isEmpty
+                              ? widget.hint
+                              : widget.empty,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: _results.length,
+                        itemBuilder: (context, index) {
+                          final entry = _results[index];
+                          return ListTile(
+                            leading: Icon(
+                              entry.isDirectory
+                                  ? Icons.folder_outlined
+                                  : Icons.insert_drive_file_outlined,
+                            ),
+                            title: Text(
+                              entry.path,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onTap: () => Navigator.of(context).pop(entry.path),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );

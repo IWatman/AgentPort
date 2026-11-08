@@ -58,19 +58,73 @@ class OpenCodeProject {
   }
 }
 
+/// A slash command exposed by `GET /api/command`.
+class OpenCodeCommand {
+  const OpenCodeCommand({required this.name, this.description = ''});
+
+  final String name;
+  final String description;
+
+  String get displayName => '/$name';
+}
+
+/// A project file returned by the filesystem search endpoint.
+class OpenCodeFileEntry {
+  const OpenCodeFileEntry({required this.path, this.isDirectory = false});
+
+  final String path;
+  final bool isDirectory;
+}
+
 /// A session exposed by an OpenCode server.
 class OpenCodeSession {
   const OpenCodeSession({
     required this.id,
     required this.title,
     this.project,
+    this.directory,
     this.updatedAt,
+    this.cost,
+    this.tokensInput,
+    this.tokensOutput,
+    this.agentId,
+    this.modelId,
+    this.modelProviderId,
+    this.modelVariant,
   });
 
   final String id;
   final String title;
   final String? project;
+
+  /// Absolute project directory reported by the server.
+  final String? directory;
+
   final DateTime? updatedAt;
+  final double? cost;
+  final int? tokensInput;
+  final int? tokensOutput;
+  final String? agentId;
+  final String? modelId;
+  final String? modelProviderId;
+  final String? modelVariant;
+
+  OpenCodeSession copyWith({String? title}) {
+    return OpenCodeSession(
+      id: id,
+      title: title ?? this.title,
+      project: project,
+      directory: directory,
+      updatedAt: updatedAt,
+      cost: cost,
+      tokensInput: tokensInput,
+      tokensOutput: tokensOutput,
+      agentId: agentId,
+      modelId: modelId,
+      modelProviderId: modelProviderId,
+      modelVariant: modelVariant,
+    );
+  }
 }
 
 /// Server information returned by `GET /api/info`.
@@ -149,11 +203,15 @@ class OpenCodeModel {
     required this.id,
     required this.providerId,
     required this.name,
+    this.variants = const [],
   });
 
   final String id;
   final String providerId;
   final String name;
+
+  /// Optional variant IDs such as `max`, `high`, or `fast`.
+  final List<String> variants;
 
   OpenCodeModelRef get ref => OpenCodeModelRef(id: id, providerId: providerId);
 }
