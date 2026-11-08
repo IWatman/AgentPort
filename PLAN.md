@@ -811,7 +811,7 @@ Done: an older version sees the popup and updates.
 - Crash handling.
 - Final testing on real devices.
 
-Current status: tests, onboarding, crash handling, README screenshots, and the Phase 1 security review (`docs/SECURITY.md`) are complete. Remaining M7 work: the real-device matrix (Android 8/12/14/16), a live Context7 OAuth sign-in on a physical device, and installing an update over `v0.1.0`.
+Current status: tests, onboarding, crash handling, README screenshots, and the Phase 1 security review (`docs/SECURITY.md`) are complete. The in-app update check, release-notes dialog, download, and SHA-256 verification were verified on the emulator from `0.1.0` to `0.1.1`; the final install was blocked by the expected debug/release signature mismatch, so installing over `0.1.0` still needs a release-signed build. Remaining M7 work: the real-device matrix (Android 8/12/14/16), a live Context7 OAuth sign-in on a physical device, and the update install check on release-signed installs.
 
 Total: ~29 working days.
 
