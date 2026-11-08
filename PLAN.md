@@ -731,7 +731,7 @@ Done: a full chat works with the user's key.
 - Approval UI.
 - Fake MCP server for tests.
 
-Current status: Streamable HTTP client, tool discovery/cache, Connections UI, the chat tool loop, and the approval dialog are implemented. Tool calling is verified end-to-end against a public DeepWiki MCP server. Legacy SSE transport remains.
+Current status: complete. Streamable HTTP and the legacy HTTP+SSE transport are implemented, including incremental SSE parsing, endpoint origin checks, per-request response routing, timeouts, and cleanup. Tool discovery/cache, the Connections UI, the chat tool loop, and the approval dialog are implemented. Tool calling is verified end-to-end against a public DeepWiki MCP server.
 
 Done: the model invokes an external MCP tool.
 
@@ -783,7 +783,7 @@ Done: a user installs a plugin, taps "Connect", logs in through the browser, and
 - Manual URL entry.
 - Minimum supported OpenCode version: 2.2.5.
 
-Current status: complete. The OpenCode tab lives on the Chats screen. Pairing by QR or manual URL/password, connection storage, project list, sessions filtered by project, new-session creation, grouped transcript turns with hidden reasoning and a one-line tool summary, prompt streaming, stop, agent/model switching, and the 2.2.5 version check are implemented. Verified against OpenCode 2.2.6 over a local tunnel. Automatic reconnect after an idle SSE timeout is manual.
+Current status: complete. The OpenCode tab lives on the Chats screen. Pairing by QR or manual URL/password, connection storage, project list, sessions filtered by project, new-session creation, grouped transcript turns with hidden reasoning and a one-line tool summary, prompt streaming, stop, agent/model switching, and the 2.2.5 version check are implemented. Verified against OpenCode 2.2.6 over a local tunnel. SSE reconnects automatically with backoff after network and idle timeouts.
 
 Done: the phone controls an OpenCode session.
 
@@ -810,6 +810,8 @@ Done: an older version sees the popup and updates.
 - README, screenshots.
 - Crash handling.
 - Final testing on real devices.
+
+Current status: tests, onboarding, crash handling, README screenshots, and the Phase 1 security review (`docs/SECURITY.md`) are complete. Remaining M7 work: the real-device matrix (Android 8/12/14/16), a live Context7 OAuth sign-in on a physical device, and installing an update over `v0.1.0`.
 
 Total: ~29 working days.
 

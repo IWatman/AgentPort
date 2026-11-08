@@ -2,7 +2,20 @@
 
 Android AI chat client with a built-in MCP marketplace and remote control for [OpenCode](https://opencode.ai).
 
-> Status: MVP **0.1.0** is available from [GitHub Releases](https://github.com/IWatman/AgentPort/releases).
+> Status: MVP **0.1.1** is available from [GitHub Releases](https://github.com/IWatman/AgentPort/releases).
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/chats.png" width="24%" alt="Chats and OpenCode">
+  <img src="docs/screenshots/chat.png" width="46%" alt="Collapsed reasoning and streamed answer">
+  <img src="docs/screenshots/plugins.png" width="24%" alt="Plugin marketplace">
+</p>
+<p align="center">
+  <img src="docs/screenshots/connections.png" width="24%" alt="MCP connections">
+  <img src="docs/screenshots/settings.png" width="24%" alt="Settings">
+</p>
+
 
 ## Features
 
@@ -23,7 +36,7 @@ Android AI chat client with a built-in MCP marketplace and remote control for [O
 - MVP: Android 8.0+ (API 26).
 - Windows: planned after MVP.
 
-Remote MCP servers only, over HTTPS (`http`, `streamable-http`, `sse`). Streamable HTTP is implemented; legacy SSE transport is listed but not connected yet. Plugins that require local `stdio` commands are shown but cannot be installed on Android.
+Remote MCP servers only, over HTTPS (`http`, `streamable-http`, `sse`). Both Streamable HTTP and the legacy HTTP+SSE transport are supported. Plugins that require local `stdio` commands are shown but cannot be installed on Android.
 
 ## Chat
 
@@ -73,7 +86,11 @@ Marketplace tables store no secret values (OAuth tokens, API keys, or resolved h
 - Servers can be enabled or disabled without uninstalling the plugin.
 - Tool details are shown with a read-only / requires-approval hint.
 
-Current transport support: **Streamable HTTP over HTTPS**. Legacy SSE transport is listed but not connected yet. Servers that advertise protected-resource metadata can be authorized with **Connect with browser**: AgentPort discovers the authorization server, registers a client, completes Authorization Code + PKCE through a loopback callback, and stores/refreshes tokens in the Android Keystore. Manual API key or header authorization remains available as a fallback. Cached tools are available to the model in chat; tool calls stream through the same OpenAI-compatible request loop.
+Current transport support: **Streamable HTTP** and the legacy **HTTP+SSE** transport, both over HTTPS. Servers that advertise protected-resource metadata can be authorized with **Connect with browser**: AgentPort discovers the authorization server, registers a client, completes Authorization Code + PKCE through a loopback callback, and stores/refreshes tokens in the Android Keystore. Manual API key or header authorization remains available as a fallback. Cached tools are available to the model in chat; tool calls stream through the same OpenAI-compatible request loop.
+
+## Security
+
+API keys, MCP header values, and OAuth tokens live in the Android Keystore; chats are stored in a SQLCipher database; backups exclude secrets. MCP OAuth uses PKCE with `state` and a loopback callback, and updates are verified by SHA-256 before installation. See [docs/SECURITY.md](docs/SECURITY.md) for the Phase 1 security review and checklist.
 
 ## Build
 
