@@ -1078,8 +1078,7 @@ class _AssistantMessage extends StatefulWidget {
 }
 
 class _AssistantMessageState extends State<_AssistantMessage> {
-  late bool _reasoningExpanded =
-      widget.streaming && widget.message.content.isEmpty;
+  late bool _reasoningExpanded = false;
 
   @override
   Widget build(BuildContext context) {
