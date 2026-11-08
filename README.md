@@ -72,7 +72,7 @@ Marketplace tables store no secret values (OAuth tokens, API keys, or resolved h
 - Servers can be enabled or disabled without uninstalling the plugin.
 - Tool details are shown with a read-only / requires-approval hint.
 
-Current transport support: **Streamable HTTP over HTTPS**. Legacy SSE transport is listed but not connected yet. Browser OAuth discovery and automatic token refresh are not implemented yet; use a manual API key or header for now. Cached tools are available to the model in chat; tool calls stream through the same OpenAI-compatible request loop.
+Current transport support: **Streamable HTTP over HTTPS**. Legacy SSE transport is listed but not connected yet. Servers that advertise protected-resource metadata can be authorized with **Connect with browser**: AgentPort discovers the authorization server, registers a client, completes Authorization Code + PKCE through a loopback callback, and stores/refreshes tokens in the Android Keystore. Manual API key or header authorization remains available as a fallback. Cached tools are available to the model in chat; tool calls stream through the same OpenAI-compatible request loop.
 
 ## Build
 

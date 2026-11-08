@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Chat composer: photo and text-file attachments, per-conversation model selection, and voice input.
 - Provider presets for DeepSeek, OpenAI, OpenRouter, Groq, Mistral, Together AI, xAI, and Google Gemini.
 - MCP tools in chat: read-only tools run automatically, write tools ask for approval, tool errors are returned to the model, and the loop is capped at four rounds.
+- MCP browser OAuth: protected-resource and authorization-server discovery, dynamic client registration, Authorization Code + PKCE with a loopback callback, Keystore-backed tokens, automatic refresh, and bearer authorization for MCP requests.
 - OpenCode pairing and API client: payload/link parsing, code redemption, Basic auth, sessions, prompts, stop, agent/model switching, SSE events, and the 2.2.5 version check.
 - OpenCode remote control UI: a dedicated OpenCode tab on Chats, connection list, QR scanner and manual URL/password pairing, project list, sessions filtered by project, new-session creation, transcript with reasoning and tool chips, live event indicator, prompt composer with stop, and agent/model pickers.
 - OpenCode transcripts load up to 800 messages in chronological order, render image and file attachments on user messages, refresh when another client sends a prompt, and reconnect the event stream with backoff.

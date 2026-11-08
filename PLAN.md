@@ -765,7 +765,7 @@ Done: a user browses the marketplace, installs a remote MCP plugin, and manages 
 - Re-consent when a plugin changes its MCP URL.
 - Error states.
 
-Current status: manual API key/header fallback, secure header storage, connection testing, and re-consent are implemented. Browser OAuth discovery and token refresh remain.
+Current status: complete. Protected-resource discovery, authorization-server metadata, dynamic client registration, Authorization Code + PKCE with a loopback callback, Keystore-backed token storage, automatic refresh, bearer injection, and the manual API key/header fallback are implemented. The browser handoff opens the system browser; end-to-end sign-in still depends on the browser completing the provider login.
 
 Done: a user installs a plugin, taps "Connect", logs in through the browser, and the tools work.
 

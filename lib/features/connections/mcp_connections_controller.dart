@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/mcp/mcp_oauth.dart';
 import '../../data/repositories/mcp_server_repository.dart';
 import '../../domain/entities/mcp.dart';
 
@@ -9,12 +10,14 @@ class McpServerView {
     this.tools = const [],
     this.status = McpConnectionStatus.disconnected,
     this.error,
+    this.oauthConnected = false,
   });
 
   final McpServer server;
   final List<McpTool> tools;
   final McpConnectionStatus status;
   final McpFailure? error;
+  final bool oauthConnected;
 
   McpServerView copyWith({
     McpServer? server,
@@ -22,12 +25,14 @@ class McpServerView {
     McpConnectionStatus? status,
     McpFailure? error,
     bool clearError = false,
+    bool? oauthConnected,
   }) {
     return McpServerView(
       server: server ?? this.server,
       tools: tools ?? this.tools,
       status: status ?? this.status,
       error: clearError ? null : (error ?? this.error),
+      oauthConnected: oauthConnected ?? this.oauthConnected,
     );
   }
 }
@@ -61,11 +66,16 @@ class McpConnectionsController extends AsyncNotifier<McpConnectionsState> {
   Future<McpConnectionsState> build() async {
     final servers = await ref.read(mcpServerRepositoryProvider).listServers();
     final views = <McpServerView>[];
+    final repository = ref.read(mcpServerRepositoryProvider);
     for (final server in servers) {
-      final tools = await ref
-          .read(mcpServerRepositoryProvider)
-          .toolsFor(server.id);
-      views.add(McpServerView(server: server, tools: tools));
+      final tools = await repository.toolsFor(server.id);
+      views.add(
+        McpServerView(
+          server: server,
+          tools: tools,
+          oauthConnected: await repository.hasOAuthToken(server.id),
+        ),
+      );
     }
     return McpConnectionsState(servers: views);
   }
@@ -73,13 +83,82 @@ class McpConnectionsController extends AsyncNotifier<McpConnectionsState> {
   Future<void> reload() async {
     final servers = await ref.read(mcpServerRepositoryProvider).listServers();
     final views = <McpServerView>[];
+    final repository = ref.read(mcpServerRepositoryProvider);
     for (final server in servers) {
-      final tools = await ref
-          .read(mcpServerRepositoryProvider)
-          .toolsFor(server.id);
-      views.add(McpServerView(server: server, tools: tools));
+      final tools = await repository.toolsFor(server.id);
+      views.add(
+        McpServerView(
+          server: server,
+          tools: tools,
+          oauthConnected: await repository.hasOAuthToken(server.id),
+        ),
+      );
     }
     state = AsyncData(McpConnectionsState(servers: views));
+  }
+
+  /// Opens the browser OAuth flow and caches discovered tools.
+  Future<void> connectOAuth(String serverId) async {
+    _update(
+      serverId,
+      (view) =>
+          view.copyWith(status: McpConnectionStatus.checking, clearError: true),
+    );
+    try {
+      final tools = await ref
+          .read(mcpServerRepositoryProvider)
+          .authorizeOAuth(serverId);
+      _update(
+        serverId,
+        (view) => view.copyWith(
+          tools: tools,
+          status: McpConnectionStatus.connected,
+          oauthConnected: true,
+          clearError: true,
+        ),
+      );
+    } on McpOAuthException catch (error) {
+      _update(
+        serverId,
+        (view) => view.copyWith(
+          status: McpConnectionStatus.needsAuth,
+          error: McpFailure(McpFailureKind.unauthorized, error.message),
+        ),
+      );
+      rethrow;
+    } on McpFailure catch (error) {
+      _update(
+        serverId,
+        (view) => view.copyWith(
+          status: error.kind == McpFailureKind.unauthorized
+              ? McpConnectionStatus.needsAuth
+              : McpConnectionStatus.error,
+          error: error,
+        ),
+      );
+      rethrow;
+    } catch (error) {
+      final failure = McpFailure(McpFailureKind.protocol, error.toString());
+      _update(
+        serverId,
+        (view) =>
+            view.copyWith(status: McpConnectionStatus.error, error: failure),
+      );
+      throw failure;
+    }
+  }
+
+  /// Removes the browser OAuth token for a server.
+  Future<void> disconnectOAuth(String serverId) async {
+    await ref.read(mcpServerRepositoryProvider).clearOAuth(serverId);
+    _update(
+      serverId,
+      (view) => view.copyWith(
+        oauthConnected: false,
+        status: McpConnectionStatus.disconnected,
+        clearError: true,
+      ),
+    );
   }
 
   Future<void> test(String serverId) async {
@@ -143,6 +222,7 @@ class McpConnectionsController extends AsyncNotifier<McpConnectionsState> {
       serverId,
       (view) => view.copyWith(
         status: McpConnectionStatus.disconnected,
+        oauthConnected: false,
         clearError: true,
       ),
     );

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../domain/entities/marketplace.dart';
 import '../../domain/entities/mcp.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../marketplace/marketplace_failure_text.dart';
@@ -288,6 +287,7 @@ class _AuthCardState extends ConsumerState<_AuthCard> {
   final _controllers = <String, TextEditingController>{};
   bool _loading = true;
   bool _saving = false;
+  bool _oauthBusy = false;
 
   @override
   void initState() {
@@ -356,20 +356,6 @@ class _AuthCardState extends ConsumerState<_AuthCard> {
       );
     }
 
-    if (server.authType == McpAuthType.oauth && _controllers.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            l10n.mcpAuthOAuthUnsupported,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-      );
-    }
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -377,37 +363,66 @@ class _AuthCardState extends ConsumerState<_AuthCard> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              l10n.mcpAuthHelp,
+              l10n.mcpOAuthDescription,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            if (_controllers.isEmpty) ...[
-              const SizedBox(height: 8),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _oauthBusy || _saving ? null : _connectOAuth,
+              icon: _oauthBusy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.login_rounded),
+              label: Text(
+                widget.view.oauthConnected
+                    ? l10n.mcpOAuthReconnect
+                    : l10n.mcpOAuthConnect,
+              ),
+            ),
+            if (widget.view.oauthConnected)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _oauthBusy || _saving ? null : _disconnectOAuth,
+                  icon: const Icon(Icons.logout_rounded, size: 18),
+                  label: Text(l10n.mcpOAuthDisconnect),
+                ),
+              ),
+            if (_controllers.isNotEmpty) ...[
+              const Divider(height: 24),
               Text(
-                l10n.mcpAuthOAuthUnsupported,
+                l10n.mcpOAuthManual,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-            ],
-            for (final entry in _controllers.entries) ...[
-              const SizedBox(height: 12),
-              TextField(
-                controller: entry.value,
-                enabled: !_saving,
-                obscureText: _isSensitiveHeader(entry.key),
-                decoration: InputDecoration(
-                  labelText: entry.key,
-                  hintText: server.headerTemplates[entry.key],
-                  helperText: server.headerTemplates[entry.key],
+              Text(
+                l10n.mcpAuthHelp,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-            ],
-            if (_controllers.isNotEmpty) ...[
+              for (final entry in _controllers.entries) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: entry.value,
+                  enabled: !_saving && !_oauthBusy,
+                  obscureText: _isSensitiveHeader(entry.key),
+                  decoration: InputDecoration(
+                    labelText: entry.key,
+                    hintText: server.headerTemplates[entry.key],
+                    helperText: server.headerTemplates[entry.key],
+                  ),
+                ),
+              ],
               const SizedBox(height: 14),
               FilledButton.icon(
-                onPressed: _saving ? null : _save,
+                onPressed: _saving || _oauthBusy ? null : _save,
                 icon: _saving
                     ? const SizedBox(
                         width: 18,
@@ -422,6 +437,45 @@ class _AuthCardState extends ConsumerState<_AuthCard> {
         ),
       ),
     );
+  }
+
+  Future<void> _connectOAuth() async {
+    final l10n = AppLocalizations.of(context);
+    setState(() => _oauthBusy = true);
+    try {
+      await ref
+          .read(mcpConnectionsControllerProvider.notifier)
+          .connectOAuth(widget.view.server.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.mcpOAuthConnected)));
+      }
+    } catch (error) {
+      if (mounted) {
+        final message = error is McpFailure
+            ? mcpFailureText(l10n, error)
+            : error.toString();
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.mcpOAuthError(message))));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _oauthBusy = false);
+      }
+    }
+  }
+
+  Future<void> _disconnectOAuth() async {
+    setState(() => _oauthBusy = true);
+    try {
+      await ref
+          .read(mcpConnectionsControllerProvider.notifier)
+          .disconnectOAuth(widget.view.server.id);
+    } finally {
+      if (mounted) {
+        setState(() => _oauthBusy = false);
+      }
+    }
   }
 
   bool _isSensitiveHeader(String name) {

@@ -415,6 +415,20 @@
   "mcpNoTools": "No tools discovered yet. Test the connection to load them.",
   "mcpAuthTitle": "Authorization",
   "mcpAuthHelp": "Header values are stored in Android Keystore and never written to the database.",
+  "mcpOAuthDescription": "Sign in to this server through your browser. AgentPort opens the page and returns automatically.",
+  "mcpOAuthConnect": "Connect with browser",
+  "mcpOAuthReconnect": "Reconnect with browser",
+  "mcpOAuthDisconnect": "Disconnect browser authorization",
+  "mcpOAuthConnected": "Browser authorization connected.",
+  "mcpOAuthManual": "Or configure headers manually.",
+  "mcpOAuthError": "Authorization failed: {error}",
+  "@mcpOAuthError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "mcpAuthOAuthUnsupported": "Browser OAuth is not implemented yet. This server may still work without credentials.",
   "mcpAuthMissing": "This server reports required headers. Add them below.",
   "mcpSaveAndConnect": "Save and connect",

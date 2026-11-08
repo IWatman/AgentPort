@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/security/secure_store.dart';
+import '../../domain/entities/mcp_oauth.dart';
 
 /// Stores MCP header values in the Android Keystore.
 ///
@@ -13,6 +14,8 @@ class McpCredentialStore {
   final SecureStore _secureStore;
 
   String _key(String serverId) => 'agentport.mcp.$serverId.headers.v1';
+
+  String _oauthKey(String serverId) => 'agentport.mcp.$serverId.oauth.v1';
 
   Future<Map<String, String>> headers(String serverId) async {
     final raw = await _secureStore.read(_key(serverId));
@@ -42,6 +45,26 @@ class McpCredentialStore {
 
   Future<void> deleteHeaders(String serverId) async {
     await _secureStore.delete(_key(serverId));
+  }
+
+  Future<McpOAuthToken?> oauthToken(String serverId) async {
+    final raw = await _secureStore.read(_oauthKey(serverId));
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+    try {
+      return McpOAuthToken.fromJson(jsonDecode(raw));
+    } on FormatException {
+      return null;
+    }
+  }
+
+  Future<void> saveOAuthToken(String serverId, McpOAuthToken token) async {
+    await _secureStore.write(_oauthKey(serverId), jsonEncode(token.toJson()));
+  }
+
+  Future<void> deleteOAuthToken(String serverId) async {
+    await _secureStore.delete(_oauthKey(serverId));
   }
 }
 

@@ -6,16 +6,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/db/app_database.dart';
 import '../../domain/entities/marketplace.dart';
 import '../../domain/entities/mcp.dart';
+import '../../domain/entities/mcp_oauth.dart';
 import '../mcp/mcp_client.dart';
 import '../mcp/mcp_credentials.dart';
+import '../mcp/mcp_oauth.dart';
 
 class McpServerRepository {
-  McpServerRepository(this._database, this._credentials, {McpClient? client})
-    : _client = client ?? McpClient();
+  McpServerRepository(
+    this._database,
+    this._credentials, {
+    McpClient? client,
+    McpOAuthFlow? oauth,
+  }) : _client = client ?? McpClient(),
+       _oauth = oauth ?? McpOAuthFlow();
 
   final AppDatabase _database;
   final McpCredentialStore _credentials;
   final McpClient _client;
+  final McpOAuthFlow _oauth;
 
   Future<List<McpServer>> listServers() async {
     final serverRows = await _database.select(_database.mcpServerEntries).get();
@@ -89,6 +97,78 @@ class McpServerRepository {
     return _credentials.headers(serverId);
   }
 
+  Future<bool> hasOAuthToken(String serverId) async {
+    return await _credentials.oauthToken(serverId) != null;
+  }
+
+  Future<void> clearOAuth(String serverId) async {
+    await _credentials.deleteOAuthToken(serverId);
+  }
+
+  /// Opens the browser OAuth flow and caches the discovered tools.
+  Future<List<McpTool>> authorizeOAuth(String serverId) async {
+    final server = await serverById(serverId);
+    if (server == null) {
+      throw const McpFailure(
+        McpFailureKind.protocol,
+        'The MCP server is not installed.',
+      );
+    }
+    final token = await _oauth.authorize(resourceUrl: server.url);
+    await _credentials.saveOAuthToken(serverId, token);
+    return refreshTools(serverId);
+  }
+
+  /// Header set used for HTTP requests, including a bearer token when present.
+  Future<Map<String, String>> requestHeaders(String serverId) async {
+    final headers = await _credentials.headers(serverId);
+    final token = await _credentials.oauthToken(serverId);
+    if (token == null) {
+      return headers;
+    }
+    final valid = await _validToken(serverId, token);
+    return {...headers, 'Authorization': 'Bearer ${valid.accessToken}'};
+  }
+
+  Future<McpOAuthToken> _validToken(
+    String serverId,
+    McpOAuthToken token, {
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && !token.isExpired) {
+      return token;
+    }
+    try {
+      final refreshed = await _oauth.refresh(token);
+      await _credentials.saveOAuthToken(serverId, refreshed);
+      return refreshed;
+    } on McpOAuthException catch (error) {
+      await _credentials.deleteOAuthToken(serverId);
+      throw McpFailure(McpFailureKind.unauthorized, error.message);
+    }
+  }
+
+  Future<McpSession> _connectWithAuth(McpServer server, String serverId) async {
+    var headers = await requestHeaders(serverId);
+    try {
+      return await _client.connect(server: server, headers: headers);
+    } on McpFailure catch (error) {
+      if (error.kind != McpFailureKind.unauthorized) {
+        rethrow;
+      }
+      final token = await _credentials.oauthToken(serverId);
+      if (token == null) {
+        rethrow;
+      }
+      final refreshed = await _validToken(serverId, token, forceRefresh: true);
+      headers = {
+        ...await _credentials.headers(serverId),
+        'Authorization': 'Bearer ${refreshed.accessToken}',
+      };
+      return _client.connect(server: server, headers: headers);
+    }
+  }
+
   Future<void> saveHeaders(String serverId, Map<String, String> headers) async {
     final cleaned = <String, String>{
       for (final entry in headers.entries)
@@ -96,6 +176,7 @@ class McpServerRepository {
           entry.key.trim(): entry.value.trim(),
     };
     await _credentials.saveHeaders(serverId, cleaned);
+    await _credentials.deleteOAuthToken(serverId);
   }
 
   Future<void> clearHeaders(String serverId) {
@@ -111,8 +192,7 @@ class McpServerRepository {
         'The MCP server is not installed.',
       );
     }
-    final headers = await _credentials.headers(serverId);
-    final session = await _client.connect(server: server, headers: headers);
+    final session = await _connectWithAuth(server, serverId);
     try {
       final discovered = await session.listTools();
       final tools = [
@@ -150,8 +230,7 @@ class McpServerRepository {
         'The MCP server is disabled.',
       );
     }
-    final headers = await _credentials.headers(serverId);
-    final session = await _client.connect(server: server, headers: headers);
+    final session = await _connectWithAuth(server, serverId);
     try {
       return await session.callTool(toolName, arguments);
     } finally {

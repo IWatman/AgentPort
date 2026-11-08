@@ -400,6 +400,20 @@
   "mcpNoTools": "Инструменты ещё не загружены. Проверьте подключение.",
   "mcpAuthTitle": "Авторизация",
   "mcpAuthHelp": "Значения заголовков хранятся в Android Keystore и не попадают в базу данных.",
+  "mcpOAuthDescription": "Войдите на сервер через браузер. AgentPort откроет страницу и вернётся автоматически.",
+  "mcpOAuthConnect": "Подключиться через браузер",
+  "mcpOAuthReconnect": "Переподключиться через браузер",
+  "mcpOAuthDisconnect": "Отключить авторизацию",
+  "mcpOAuthConnected": "Авторизация через браузер подключена.",
+  "mcpOAuthManual": "Или настройте заголовки вручную.",
+  "mcpOAuthError": "Ошибка авторизации: {error}",
+  "@mcpOAuthError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "mcpAuthOAuthUnsupported": "OAuth через браузер пока не реализован. Сервер может работать и без учётных данных.",
   "mcpAuthMissing": "Сервер требует заголовки. Добавьте их ниже.",
   "mcpSaveAndConnect": "Сохранить и подключиться",

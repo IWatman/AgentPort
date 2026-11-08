@@ -4,8 +4,10 @@ import 'package:agentport/core/db/app_database.dart';
 import 'package:agentport/core/security/secure_store.dart';
 import 'package:agentport/data/mcp/mcp_client.dart';
 import 'package:agentport/data/mcp/mcp_credentials.dart';
+import 'package:agentport/data/mcp/mcp_oauth.dart';
 import 'package:agentport/data/repositories/mcp_server_repository.dart';
 import 'package:agentport/domain/entities/mcp.dart';
+import 'package:agentport/domain/entities/mcp_oauth.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -71,6 +73,19 @@ class _FakeServer {
         },
       );
     });
+  }
+}
+
+class _FakeOAuthFlow extends McpOAuthFlow {
+  var refreshes = 0;
+
+  @override
+  Future<McpOAuthToken> refresh(McpOAuthToken token) async {
+    refreshes++;
+    return token.copyWith(
+      accessToken: 'refreshed',
+      expiresAt: DateTime.now().add(const Duration(hours: 1)),
+    );
   }
 }
 
@@ -151,6 +166,49 @@ void main() {
       client: McpClient(clientFactory: fake.client),
     );
   }
+
+  test('adds bearer tokens and refreshes expired OAuth credentials', () async {
+    final credentials = McpCredentialStore(secureStore);
+    final oauth = _FakeOAuthFlow();
+    final repository = McpServerRepository(
+      database,
+      credentials,
+      client: McpClient(clientFactory: _FakeServer().client),
+      oauth: oauth,
+    );
+    const serverId = 'p1/context7';
+
+    await credentials.saveOAuthToken(
+      serverId,
+      McpOAuthToken(
+        accessToken: 'access-1',
+        tokenEndpoint: 'https://auth.example/token',
+        clientId: 'client-1',
+        expiresAt: DateTime.now().add(const Duration(hours: 1)),
+      ),
+    );
+    var headers = await repository.requestHeaders(serverId);
+    expect(headers['Authorization'], 'Bearer access-1');
+    expect(oauth.refreshes, 0);
+
+    await credentials.saveOAuthToken(
+      serverId,
+      McpOAuthToken(
+        accessToken: 'expired',
+        refreshToken: 'refresh-1',
+        tokenEndpoint: 'https://auth.example/token',
+        clientId: 'client-1',
+        expiresAt: DateTime.now().subtract(const Duration(minutes: 1)),
+      ),
+    );
+    headers = await repository.requestHeaders(serverId);
+    expect(headers['Authorization'], 'Bearer refreshed');
+    expect(oauth.refreshes, 1);
+    expect(await repository.hasOAuthToken(serverId), isTrue);
+
+    await repository.saveHeaders(serverId, const {'X-Test': '1'});
+    expect(await repository.hasOAuthToken(serverId), isFalse);
+  });
 
   test('lists installed servers with plugin and template metadata', () async {
     final repository = repositoryFor(_FakeServer());
