@@ -204,18 +204,35 @@ class OpenCodeClient {
   }
 
   /// Fetches the transcript of a session.
-  Future<List<OpenCodeMessage>> messages(String id) async {
-    final decoded = await _getJson(
-      'api/session/${_segment(id)}/message?limit=200',
-    );
-    final list = _readDataList(decoded);
+  ///
+  /// Each page holds at most 200 messages. [pages] caps how many pages are
+  /// loaded, newest first; older pages are fetched through the cursor.
+  Future<List<OpenCodeMessage>> messages(String id, {int pages = 1}) async {
     final messages = <OpenCodeMessage>[];
-    for (final item in list) {
-      final message = _parseMessage(item);
-      if (message != null) {
-        messages.add(message);
+    String? cursor;
+    for (var page = 0; page < pages.clamp(1, 20); page++) {
+      final query = StringBuffer(
+        'api/session/${_segment(id)}/message?limit=200',
+      );
+      if (cursor != null) {
+        query.write('&cursor=${Uri.encodeQueryComponent(cursor)}');
       }
+      final decoded = await _getJson(query.toString());
+      final list = _readDataList(decoded);
+      for (final item in list) {
+        final message = _parseMessage(item);
+        if (message != null) {
+          messages.add(message);
+        }
+      }
+      final cursorMap = decoded is Map ? decoded['cursor'] : null;
+      final next = cursorMap is Map ? _readString(cursorMap['next']) : null;
+      if (next == null) {
+        break;
+      }
+      cursor = next;
     }
+
     // The server returns the newest message first; the UI renders oldest first.
     messages.sort((a, b) {
       final left = a.createdAt?.millisecondsSinceEpoch ?? 0;

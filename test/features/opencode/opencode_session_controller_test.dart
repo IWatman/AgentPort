@@ -100,7 +100,8 @@ class _FakeOpenCodeClient extends OpenCodeClient {
   }
 
   @override
-  Future<List<OpenCodeMessage>> messages(String id) async => List.of(history);
+  Future<List<OpenCodeMessage>> messages(String id, {int pages = 1}) async =>
+      List.of(history);
 
   @override
   Future<void> sendPrompt(String id, String prompt) async {

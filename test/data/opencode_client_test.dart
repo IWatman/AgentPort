@@ -375,6 +375,49 @@ void main() {
       },
     );
 
+    test('loads older message pages through the cursor', () async {
+      final requests = <http.Request>[];
+      final client = OpenCodeClient(
+        baseUrl: 'https://example.com',
+        token: 't',
+        clientFactory: () => MockClient((request) async {
+          requests.add(request);
+          if (request.url.queryParameters.containsKey('cursor')) {
+            return _json({
+              'data': [
+                {
+                  'id': 'msg_old',
+                  'type': 'user',
+                  'text': 'Oldest',
+                  'time': {'created': 1000},
+                },
+              ],
+              'cursor': {'next': null, 'previous': null},
+            });
+          }
+          return _json({
+            'data': [
+              {
+                'id': 'msg_new',
+                'type': 'assistant',
+                'time': {'created': 2000},
+                'content': [
+                  {'type': 'text', 'text': 'Newest'},
+                ],
+              },
+            ],
+            'cursor': {'next': 'page-2', 'previous': null},
+          });
+        }),
+      );
+
+      final messages = await client.messages('ses_1', pages: 2);
+
+      expect(messages.map((message) => message.text), ['Oldest', 'Newest']);
+      expect(requests, hasLength(2));
+      expect(requests[1].url.queryParameters['cursor'], 'page-2');
+    });
+
     test('parses user and assistant transcripts', () async {
       final client = OpenCodeClient(
         baseUrl: 'https://example.com',

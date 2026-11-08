@@ -148,10 +148,7 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
       await _subscription?.cancel();
       _subscription = null;
       _client = loaded.client;
-      final messages = _mergeLocalMessages(
-        previousMessages,
-        loaded.state.messages,
-      );
+      final messages = _mergeIncoming(previousMessages, loaded.state.messages);
       state = AsyncData(loaded.state.copyWith(messages: messages));
       _startEvents();
     } catch (error, stackTrace) {
@@ -286,7 +283,7 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
 
     final client = await repository.clientFor(connection);
     final session = await client.session(key.sessionId);
-    final messages = await client.messages(key.sessionId);
+    final messages = await client.messages(key.sessionId, pages: 4);
     return _LoadedSession(
       client: client,
       state: OpenCodeSessionState(
@@ -524,7 +521,7 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
         return;
       }
       state = AsyncData(
-        latest.copyWith(messages: _mergeLocalMessages(latest.messages, loaded)),
+        latest.copyWith(messages: _mergeIncoming(latest.messages, loaded)),
       );
     } catch (_) {
       // A quiet refresh must not replace the visible transcript with an error.
@@ -585,26 +582,31 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
     }
   }
 
-  /// Keeps locally displayed messages that the server transcript does not
-  /// contain yet, without duplicating messages the server has accepted.
-  List<OpenCodeMessage> _mergeLocalMessages(
-    List<OpenCodeMessage> previous,
-    List<OpenCodeMessage> loaded,
+  /// Adds new server messages without dropping older history that the latest
+  /// page no longer contains.
+  List<OpenCodeMessage> _mergeIncoming(
+    List<OpenCodeMessage> current,
+    List<OpenCodeMessage> incoming,
   ) {
-    if (previous.isEmpty) {
-      return loaded;
-    }
-    final known = {for (final message in loaded) _messageKey(message)};
-    final pending = [
-      for (final message in previous)
-        if (message.id.startsWith('local-') &&
-            !known.contains(_messageKey(message)))
+    final incomingKeys = {for (final message in incoming) _messageKey(message)};
+    final result = <OpenCodeMessage>[
+      for (final message in current)
+        if (!message.id.startsWith('local-') ||
+            !incomingKeys.contains(_messageKey(message)))
           message,
     ];
-    if (pending.isEmpty) {
-      return loaded;
+    final knownIds = {for (final message in result) message.id};
+    for (final message in incoming) {
+      if (knownIds.add(message.id)) {
+        result.add(message);
+      }
     }
-    return [...loaded, ...pending];
+    result.sort((a, b) {
+      final left = a.createdAt?.millisecondsSinceEpoch ?? 0;
+      final right = b.createdAt?.millisecondsSinceEpoch ?? 0;
+      return left.compareTo(right);
+    });
+    return List.unmodifiable(result);
   }
 
   String _messageKey(OpenCodeMessage message) {
