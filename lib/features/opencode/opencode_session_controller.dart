@@ -88,14 +88,23 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
 
   OpenCodeClient? _client;
   StreamSubscription<OpenCodeEvent>? _subscription;
+  Timer? _refreshTimer;
+  Timer? _reconnectTimer;
   var _streamGeneration = 0;
+  var _reconnectAttempts = 0;
   var _localSequence = 0;
+  var _refreshingMessages = false;
+  var _refreshPending = false;
+  var _refreshAfterReconnect = false;
   var _disposed = false;
 
   @override
   Future<OpenCodeSessionState> build() async {
     _disposed = false;
     _streamGeneration++;
+    _refreshTimer?.cancel();
+    _reconnectTimer?.cancel();
+    _reconnectAttempts = 0;
     unawaited(_subscription?.cancel());
     _subscription = null;
 
@@ -133,6 +142,9 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
         return;
       }
       _streamGeneration++;
+      _refreshTimer?.cancel();
+      _reconnectTimer?.cancel();
+      _reconnectAttempts = 0;
       await _subscription?.cancel();
       _subscription = null;
       _client = loaded.client;
@@ -291,6 +303,8 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
       return;
     }
     final generation = ++_streamGeneration;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     unawaited(_subscription?.cancel());
     _subscription = client.events().listen(
       (event) {
@@ -321,10 +335,28 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
     if (!ref.mounted) {
       return;
     }
-    final current = state.value;
+    var current = state.value;
     if (current == null) {
       return;
     }
+
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _reconnectAttempts = 0;
+    if (current.linkState != OpenCodeLinkState.connected ||
+        current.error != null) {
+      current = current.copyWith(
+        linkState: OpenCodeLinkState.connected,
+        error: null,
+      );
+      _emit(current);
+    }
+
+    if (_refreshAfterReconnect) {
+      _refreshAfterReconnect = false;
+      _scheduleMessageRefresh();
+    }
+
     if (event.sessionId != key.sessionId) {
       return;
     }
@@ -367,6 +399,11 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
         _complete(current);
       case 'session.idle':
         _complete(current);
+      case 'session.inbox.delivered':
+      case 'session.inbox.enqueued':
+      case 'session.inbox.cancelled':
+      case 'session.message.content.updated':
+        _scheduleMessageRefresh();
       default:
         if (event.type.startsWith('session.tool.')) {
           _handleToolEvent(current, event.type, payload);
@@ -453,6 +490,82 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
         clearTool: true,
       ),
     );
+    if (_shouldReconnect(failure)) {
+      _scheduleReconnect();
+    }
+  }
+
+  void _scheduleMessageRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer(const Duration(milliseconds: 250), () {
+      unawaited(_refreshMessages());
+    });
+  }
+
+  Future<void> _refreshMessages() async {
+    final client = _client;
+    final current = state.value;
+    if (client == null || current == null || _disposed || !ref.mounted) {
+      return;
+    }
+    if (_refreshingMessages) {
+      _refreshPending = true;
+      return;
+    }
+
+    _refreshingMessages = true;
+    try {
+      final loaded = await client.messages(key.sessionId);
+      if (!ref.mounted || _disposed) {
+        return;
+      }
+      final latest = state.value;
+      if (latest == null) {
+        return;
+      }
+      state = AsyncData(
+        latest.copyWith(messages: _mergeLocalMessages(latest.messages, loaded)),
+      );
+    } catch (_) {
+      // A quiet refresh must not replace the visible transcript with an error.
+    } finally {
+      _refreshingMessages = false;
+      if (_refreshPending) {
+        _refreshPending = false;
+        _scheduleMessageRefresh();
+      }
+    }
+  }
+
+  bool _shouldReconnect(OpenCodeFailure failure) {
+    return switch (failure.kind) {
+      OpenCodeFailureKind.network ||
+      OpenCodeFailureKind.timeout ||
+      OpenCodeFailureKind.server => true,
+      _ => false,
+    };
+  }
+
+  void _scheduleReconnect() {
+    if (_disposed || !ref.mounted) {
+      return;
+    }
+    _reconnectTimer?.cancel();
+    final attempt = _reconnectAttempts++;
+    final seconds = switch (attempt) {
+      0 => 2,
+      1 => 5,
+      2 => 10,
+      3 => 20,
+      _ => 30,
+    };
+    _refreshAfterReconnect = true;
+    _reconnectTimer = Timer(Duration(seconds: seconds), () {
+      if (_disposed || !ref.mounted) {
+        return;
+      }
+      _startEvents();
+    });
   }
 
   void _setFailure(OpenCodeFailure failure, {bool? busy}) {
@@ -531,6 +644,10 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
   void _handleDispose() {
     _disposed = true;
     _streamGeneration++;
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     unawaited(_subscription?.cancel());
     _subscription = null;
     _client = null;

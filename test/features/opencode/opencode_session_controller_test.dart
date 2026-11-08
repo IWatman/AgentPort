@@ -266,6 +266,25 @@ void main() {
     },
   );
 
+  test('refreshes the transcript when another client sends a prompt', () async {
+    await open();
+    client.history = [
+      ...client.history,
+      OpenCodeMessage(
+        id: 'history-2',
+        role: 'user',
+        text: 'Sent from the web UI',
+        createdAt: DateTime(2026, 1, 2, 3, 5),
+      ),
+    ];
+
+    await emit(event('session.inbox.delivered'));
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    await pumpEventQueue();
+
+    expect(state().messages.last.text, 'Sent from the web UI');
+  });
+
   test('loads session details and history', () async {
     client.history = [
       OpenCodeMessage(
