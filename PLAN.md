@@ -798,7 +798,7 @@ Done: the phone controls an OpenCode session.
 - Release workflow.
 - First `v0.1.0`.
 
-Current status: complete except the first published release. The stable release client, semantic version checks, streaming downloader with SHA-256 verification, PackageInstaller bridge, signed GitHub release workflow, daily automatic check, Settings check, release-notes popup, download progress, and installer handoff are implemented. GitHub secrets must be configured before tagging `v0.1.0`.
+Current status: complete. `v0.1.0` was published from `main` with a CI-signed APK, SHA-256 checksums, and a stable GitHub Release. The stable release client, semantic version checks, streaming downloader with SHA-256 verification, PackageInstaller bridge, signed GitHub release workflow, daily automatic check, Settings check, release-notes popup, download progress, and installer handoff are implemented.
 
 Done: an older version sees the popup and updates.
 

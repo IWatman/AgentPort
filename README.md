@@ -2,7 +2,7 @@
 
 Android AI chat client with a built-in MCP marketplace and remote control for [OpenCode](https://opencode.ai).
 
-> Status: early development. MVP is not released yet.
+> Status: MVP **0.1.0** is available from [GitHub Releases](https://github.com/IWatman/AgentPort/releases).
 
 ## Features
 
