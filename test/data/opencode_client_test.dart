@@ -759,4 +759,264 @@ void main() {
       );
     });
   });
+
+  group('OpenCodeClient workspace data', () {
+    test('registers a project by directory', () async {
+      final seen = <http.Request>[];
+      final client = OpenCodeClient(
+        baseUrl: 'https://example.com',
+        token: 'token-1',
+        clientFactory: () => MockClient((request) async {
+          seen.add(request);
+          return _json({
+            'directory': r'C:\work\demo',
+            'project': {
+              'id': 'project-1',
+              'canonical': r'C:\work\demo',
+              'vcs': 'git',
+            },
+          });
+        }),
+      );
+
+      final registration = await client.registerProject(r'C:\work\demo');
+
+      expect(registration.project.id, 'project-1');
+      expect(registration.project.directory, r'C:\work\demo');
+      expect(registration.project.vcs, 'git');
+      expect(seen.single.url.path, '/api/location');
+      expect(
+        seen.single.url.queryParameters['location[directory]'],
+        r'C:\work\demo',
+      );
+    });
+
+    test('parses MCP servers, plugins, and skills', () async {
+      final client = OpenCodeClient(
+        baseUrl: 'https://example.com',
+        token: 'token-1',
+        clientFactory: () => MockClient((request) async {
+          if (request.url.path == '/api/mcp') {
+            return _json({
+              'data': [
+                {
+                  'name': 'context7',
+                  'title': 'Context7',
+                  'status': {'status': 'connected'},
+                },
+                {
+                  'name': 'broken',
+                  'status': {'status': 'failed', 'error': 'process exited'},
+                },
+              ],
+            });
+          }
+          if (request.url.path == '/api/plugin') {
+            return _json({
+              'data': [
+                {
+                  'id': 'acme',
+                  'source': {
+                    'type': 'package',
+                    'target': '@acme/plugin',
+                    'version': '1.2.3',
+                  },
+                  'state': {'status': 'active'},
+                },
+                {
+                  'id': 'opencode.tool.read',
+                  'source': {'type': 'builtin'},
+                  'state': {'status': 'active'},
+                },
+              ],
+            });
+          }
+          return _json({
+            'data': [
+              {
+                'id': 'docs',
+                'name': 'Docs',
+                'description': 'Read documentation',
+                'content': 'very large body',
+              },
+            ],
+          });
+        }),
+      );
+
+      final servers = await client.mcpServers(directory: r'C:\work\demo');
+      final plugins = await client.plugins(directory: r'C:\work\demo');
+      final skills = await client.skills(directory: r'C:\work\demo');
+
+      expect(servers, hasLength(2));
+      expect(servers.first.title, 'Context7');
+      expect(servers.first.isConnected, isTrue);
+      expect(servers.last.hasFailed, isTrue);
+      expect(servers.last.error, 'process exited');
+      expect(plugins, hasLength(2));
+      expect(plugins.first.displayName, '@acme/plugin');
+      expect(plugins.first.version, '1.2.3');
+      expect(plugins.last.isBuiltin, isTrue);
+      expect(skills.single.name, 'Docs');
+      expect(skills.single.description, 'Read documentation');
+    });
+
+    test('resolves directory entries from the filesystem browser', () async {
+      final seen = <http.Request>[];
+      final client = OpenCodeClient(
+        baseUrl: 'https://example.com',
+        token: 'token-1',
+        clientFactory: () => MockClient((request) async {
+          seen.add(request);
+          return _json({
+            'location': {'directory': r'C:\work\demo'},
+            'data': [
+              {'path': r'..\Sibling\', 'type': 'directory'},
+              {'path': r'sub\', 'type': 'directory'},
+              {'path': r'..\..\..\..\', 'type': 'directory'},
+              {'path': 'README.md', 'type': 'file'},
+            ],
+          });
+        }),
+      );
+
+      final entries = await client.listDirectories(
+        locationDirectory: r'C:\work\demo',
+        path: r'C:\work',
+      );
+
+      expect(seen.single.url.path, '/api/fs/list');
+      expect(
+        seen.single.url.queryParameters['location[directory]'],
+        r'C:\work\demo',
+      );
+      expect(seen.single.url.queryParameters['path'], r'C:\work');
+      expect(entries.map((entry) => entry.path), [
+        r'C:\work\Sibling',
+        r'C:\work\demo\sub',
+      ]);
+      expect(entries.map((entry) => entry.name), ['Sibling', 'sub']);
+    });
+
+    test('collects system prompts from the transcript pages', () async {
+      var calls = 0;
+      final client = OpenCodeClient(
+        baseUrl: 'https://example.com',
+        token: 'token-1',
+        clientFactory: () => MockClient((request) async {
+          calls++;
+          if (calls == 1) {
+            return _json({
+              'data': [
+                {
+                  'id': 'sys-1',
+                  'type': 'system',
+                  'time': {'created': 1},
+                  'text': 'System instructions',
+                },
+                {
+                  'id': 'u-1',
+                  'type': 'user',
+                  'time': {'created': 2},
+                  'text': 'Hello',
+                },
+              ],
+              'cursor': {'next': 'next-page'},
+            });
+          }
+          return _json({
+            'data': [
+              {
+                'id': 'sys-date',
+                'type': 'system',
+                'time': {'created': 10},
+                'text': "Today's date is now: Mon Nov 09 2026",
+              },
+              {
+                'id': 'a-1',
+                'type': 'assistant',
+                'time': {'created': 3},
+                'content': [
+                  {'type': 'text', 'text': 'Hi'},
+                ],
+              },
+            ],
+            'cursor': {},
+          });
+        }),
+      );
+
+      final transcript = await client.transcript('s1', pages: 2);
+
+      expect(calls, 2);
+      expect(transcript.messages, hasLength(2));
+      expect(transcript.systemPrompts, ['System instructions']);
+    });
+
+    test('extracts system prompts from the session context', () async {
+      final client = OpenCodeClient(
+        baseUrl: 'https://example.com',
+        token: 'token-1',
+        clientFactory: () => MockClient((request) async {
+          expect(request.url.path, '/api/session/s1/context');
+          return _json({
+            'data': [
+              {'type': 'system', 'text': 'You are helpful.'},
+              {'type': 'user', 'text': 'Hello'},
+              {'type': 'assistant', 'content': <Object>[]},
+            ],
+          });
+        }),
+      );
+
+      final context = await client.sessionContext('s1');
+
+      expect(context.systemPrompts, ['You are helpful.']);
+      expect(context.messageCount, 3);
+    });
+
+    test('parses model limits and session token breakdown', () async {
+      final client = OpenCodeClient(
+        baseUrl: 'https://example.com',
+        token: 'token-1',
+        clientFactory: () => MockClient((request) async {
+          if (request.url.path == '/api/model') {
+            return _json({
+              'data': [
+                {
+                  'id': 'deepseek-flash',
+                  'providerID': 'deepseek',
+                  'name': 'DeepSeek V4.1 Flash',
+                  'limit': {'context': 1048576, 'output': 65536},
+                },
+              ],
+            });
+          }
+          return _json({
+            'id': 's1',
+            'title': 'Demo',
+            'location': {'directory': r'C:\work\demo'},
+            'tokens': {
+              'input': 10,
+              'output': 2,
+              'reasoning': 3,
+              'cache': {'read': 100, 'write': 5},
+            },
+            'time': {'created': 1000, 'updated': 2000},
+          });
+        }),
+      );
+
+      final models = await client.models(directory: r'C:\work\demo');
+      final session = await client.session('s1');
+
+      expect(models.single.contextLimit, 1048576);
+      expect(models.single.outputLimit, 65536);
+      expect(session.tokensTotal, 120);
+      expect(session.tokensReasoning, 3);
+      expect(session.tokensCacheRead, 100);
+      expect(session.createdAt, isNotNull);
+      expect(session.updatedAt, isNotNull);
+    });
+  });
 }

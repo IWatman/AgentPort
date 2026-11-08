@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path/path.dart' as p;
 
+import '../../data/repositories/opencode_repository.dart';
 import '../../domain/entities/opencode.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../shared/empty_state.dart';
@@ -44,6 +46,11 @@ class OpenCodeProjectsScreen extends ConsumerWidget {
           ],
         ),
         actions: [
+          IconButton(
+            onPressed: () => _addProject(context, ref, connectionId),
+            tooltip: l10n.openCodeNewProject,
+            icon: const Icon(Icons.create_new_folder_rounded),
+          ),
           IconButton(
             onPressed: () => ref.invalidate(provider),
             tooltip: l10n.commonRetry,
@@ -145,6 +152,293 @@ class _ProjectCard extends StatelessWidget {
         ),
         trailing: const Icon(Icons.chevron_right_rounded),
       ),
+    );
+  }
+}
+
+Future<void> _addProject(
+  BuildContext context,
+  WidgetRef ref,
+  String connectionId,
+) async {
+  final l10n = AppLocalizations.of(context);
+  final current = ref
+      .read(openCodeProjectsControllerProvider(connectionId))
+      .value;
+  if (current == null || current.projects.isEmpty) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l10n.openCodeProjectNoBaseProject)));
+    return;
+  }
+  final base = current.projects.firstWhere(
+    (project) =>
+        !project.directory.toLowerCase().contains(r'\appdata\local\temp\'),
+    orElse: () => current.projects.first,
+  );
+  final location = base.directory;
+  final parent = p.windows.dirname(location);
+  final roots = <String>{
+    for (final project in current.projects)
+      if (p.windows.rootPrefix(project.directory).isNotEmpty)
+        p.windows.rootPrefix(project.directory),
+  }.toList()..sort();
+  final directory = await showDialog<String>(
+    context: context,
+    builder: (dialogContext) => _ProjectDirectoryDialog(
+      connectionId: connectionId,
+      locationDirectory: location,
+      startPath: parent.isEmpty ? location : parent,
+      roots: roots,
+    ),
+  );
+  if (directory == null || !context.mounted) {
+    return;
+  }
+  try {
+    final project = await ref
+        .read(openCodeProjectsControllerProvider(connectionId).notifier)
+        .addProject(directory);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.openCodeProjectAdded(project.name))),
+      );
+    }
+  } catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(openCodeFailureText(l10n, error)),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+}
+
+class _ProjectDirectoryDialog extends ConsumerStatefulWidget {
+  const _ProjectDirectoryDialog({
+    required this.connectionId,
+    required this.locationDirectory,
+    required this.startPath,
+    required this.roots,
+  });
+
+  final String connectionId;
+  final String locationDirectory;
+  final String startPath;
+  final List<String> roots;
+
+  @override
+  ConsumerState<_ProjectDirectoryDialog> createState() =>
+      _ProjectDirectoryDialogState();
+}
+
+class _ProjectDirectoryDialogState
+    extends ConsumerState<_ProjectDirectoryDialog> {
+  late String _path = widget.startPath;
+  List<OpenCodeDirectoryEntry> _entries = const [];
+  var _loading = true;
+  String? _error;
+  var _request = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _load(widget.startPath);
+  }
+
+  Future<void> _load(String path) async {
+    final request = ++_request;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final repository = ref.read(openCodeRepositoryProvider);
+      final connection = await repository.connection(widget.connectionId);
+      if (connection == null) {
+        throw const OpenCodeFailure(
+          OpenCodeFailureKind.invalidPayload,
+          detail: 'The OpenCode connection no longer exists.',
+        );
+      }
+      final client = await repository.clientFor(connection);
+      final entries = await client.listDirectories(
+        locationDirectory: widget.locationDirectory,
+        path: path,
+      );
+      if (!mounted || request != _request) {
+        return;
+      }
+      final normalized = p.windows.normalize(path);
+      setState(() {
+        _path = normalized;
+        _entries = entries
+            .where((entry) => entry.path != normalized)
+            .toList(growable: false);
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted || request != _request) {
+        return;
+      }
+      setState(() {
+        _loading = false;
+        _error = openCodeFailureText(AppLocalizations.of(context), error);
+      });
+    }
+  }
+
+  void _goUp() {
+    final parent = p.windows.dirname(_path);
+    if (parent == _path || parent.isEmpty) {
+      return;
+    }
+    _load(parent);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final root = p.windows.rootPrefix(_path);
+    final canUp = p.windows.dirname(_path) != _path;
+
+    return AlertDialog(
+      title: Text(l10n.openCodeNewProjectTitle),
+      contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: MediaQuery.sizeOf(context).height * 0.55,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.openCodeChooseFolderHelp,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: canUp && !_loading ? _goUp : null,
+                  tooltip: l10n.openCodeFolderUp,
+                  icon: const Icon(Icons.arrow_upward_rounded),
+                ),
+                Expanded(
+                  child: SelectableText(
+                    _path,
+                    maxLines: 2,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+                IconButton(
+                  onPressed: _loading ? null : () => _load(_path),
+                  tooltip: l10n.commonRetry,
+                  icon: const Icon(Icons.refresh_rounded),
+                ),
+              ],
+            ),
+            if (widget.roots.isNotEmpty)
+              Row(
+                children: [
+                  Icon(
+                    Icons.storage_rounded,
+                    size: 18,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  DropdownButton<String>(
+                    value: widget.roots.contains(root) ? root : null,
+                    hint: Text(l10n.openCodeDrive),
+                    items: [
+                      for (final drive in widget.roots)
+                        DropdownMenuItem(value: drive, child: Text(drive)),
+                    ],
+                    onChanged: _loading
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              _load(value);
+                            }
+                          },
+                  ),
+                ],
+              ),
+            const Divider(height: 12),
+            Expanded(child: _buildBody(l10n, theme)),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.commonCancel),
+        ),
+        FilledButton(
+          onPressed: _loading || _error != null
+              ? null
+              : () => Navigator.of(context).pop(_path),
+          child: Text(l10n.openCodeSelectFolder),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBody(AppLocalizations l10n, ThemeData theme) {
+    if (_loading && _entries.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _error!,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => _load(_path),
+              child: Text(l10n.commonRetry),
+            ),
+          ],
+        ),
+      );
+    }
+    if (_entries.isEmpty) {
+      return Center(
+        child: Text(
+          l10n.openCodeFolderEmpty,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
+    return ListView.builder(
+      primary: false,
+      itemCount: _entries.length,
+      itemBuilder: (context, index) {
+        final entry = _entries[index];
+        return ListTile(
+          dense: true,
+          leading: Icon(
+            Icons.folder_outlined,
+            color: theme.colorScheme.primary,
+          ),
+          title: Text(entry.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          onTap: _loading ? null : () => _load(entry.path),
+        );
+      },
     );
   }
 }

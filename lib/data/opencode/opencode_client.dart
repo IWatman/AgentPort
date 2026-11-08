@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as p;
 
 import '../../domain/entities/opencode.dart';
 import 'opencode_endpoints.dart';
@@ -86,6 +87,228 @@ class OpenCodeClient {
       );
     }
     return List.unmodifiable(projects);
+  }
+
+  /// Registers a directory as a project and returns its project entry.
+  Future<OpenCodeProjectRegistration> registerProject(String directory) async {
+    final value = directory.trim();
+    if (value.isEmpty) {
+      throw const OpenCodeFailure(
+        OpenCodeFailureKind.invalidPayload,
+        detail: 'Enter a project directory.',
+      );
+    }
+    final decoded = await _getJson(_withLocation('api/location', value));
+    if (decoded is! Map) {
+      throw const OpenCodeFailure(
+        OpenCodeFailureKind.invalidResponse,
+        detail: 'The OpenCode server returned an invalid location response.',
+      );
+    }
+    final map = Map<String, Object?>.from(decoded);
+    final locationDirectory = _readString(map['directory']) ?? value;
+    final project = map['project'];
+    if (project is! Map) {
+      throw const OpenCodeFailure(
+        OpenCodeFailureKind.invalidResponse,
+        detail: 'The OpenCode server did not return a project.',
+      );
+    }
+    final projectMap = Map<String, Object?>.from(project);
+    final id = _readString(projectMap['id']);
+    final canonical =
+        _readString(projectMap['canonical']) ??
+        _readString(projectMap['directory']) ??
+        locationDirectory;
+    if (id == null) {
+      throw const OpenCodeFailure(
+        OpenCodeFailureKind.invalidResponse,
+        detail: 'The OpenCode server returned a project without an id.',
+      );
+    }
+    return OpenCodeProjectRegistration(
+      project: OpenCodeProject(
+        id: id,
+        directory: canonical,
+        vcs: _readString(projectMap['vcs']),
+      ),
+      directory: locationDirectory,
+    );
+  }
+
+  /// Lists subdirectories visible from [path] on the OpenCode host.
+  ///
+  /// [locationDirectory] must be a registered project directory. The API
+  /// returns paths relative to that location, so they are resolved to absolute
+  /// paths here before the picker navigates.
+  Future<List<OpenCodeDirectoryEntry>> listDirectories({
+    required String locationDirectory,
+    required String path,
+  }) async {
+    final query = Uri(
+      path: 'api/fs/list',
+      queryParameters: {'location[directory]': locationDirectory, 'path': path},
+    ).toString();
+    final decoded = await _getJson(query);
+    final list = _readDataList(decoded);
+    final seen = <String>{};
+    final directories = <OpenCodeDirectoryEntry>[];
+    for (final item in list) {
+      if (item is! Map) {
+        continue;
+      }
+      final map = Map<String, Object?>.from(item);
+      if (_readString(map['type']) != 'directory') {
+        continue;
+      }
+      final relative = _readString(map['path']);
+      if (relative == null) {
+        continue;
+      }
+      final absolute = p.windows.normalize(
+        p.windows.join(locationDirectory, relative),
+      );
+      if (!seen.add(absolute) || p.windows.dirname(absolute) == absolute) {
+        continue;
+      }
+      final name = p.windows.basename(absolute);
+      if (name.isEmpty || name.startsWith('.')) {
+        continue;
+      }
+      directories.add(OpenCodeDirectoryEntry(path: absolute, name: name));
+    }
+    directories.sort(
+      (left, right) =>
+          left.name.toLowerCase().compareTo(right.name.toLowerCase()),
+    );
+    return List.unmodifiable(directories);
+  }
+
+  /// Lists MCP servers configured in the OpenCode host.
+  Future<List<OpenCodeMcpServer>> mcpServers({String? directory}) async {
+    final decoded = await _getJson(_withLocation('api/mcp', directory));
+    final list = _readDataList(decoded);
+    final servers = <OpenCodeMcpServer>[];
+    for (final item in list) {
+      if (item is! Map) {
+        continue;
+      }
+      final map = Map<String, Object?>.from(item);
+      final name = _readString(map['name']);
+      if (name == null) {
+        continue;
+      }
+      final statusValue = map['status'];
+      String? status;
+      String? error;
+      if (statusValue is Map) {
+        final statusMap = Map<String, Object?>.from(statusValue);
+        status = _readString(statusMap['status']);
+        error =
+            _readString(statusMap['error']) ??
+            _readString(statusMap['message']);
+      } else {
+        status = _readString(statusValue);
+      }
+      servers.add(
+        OpenCodeMcpServer(
+          name: name,
+          status: status ?? 'unknown',
+          title: _readString(map['title']),
+          error: error,
+        ),
+      );
+    }
+    return List.unmodifiable(servers);
+  }
+
+  /// Lists plugins loaded by the OpenCode host.
+  Future<List<OpenCodePlugin>> plugins({String? directory}) async {
+    final decoded = await _getJson(_withLocation('api/plugin', directory));
+    final list = _readDataList(decoded);
+    final plugins = <OpenCodePlugin>[];
+    for (final item in list) {
+      if (item is! Map) {
+        continue;
+      }
+      final map = Map<String, Object?>.from(item);
+      final id = _readString(map['id']);
+      if (id == null) {
+        continue;
+      }
+      final source = map['source'];
+      final sourceMap = source is Map
+          ? Map<String, Object?>.from(source)
+          : const <String, Object?>{};
+      final state = map['state'];
+      final stateMap = state is Map
+          ? Map<String, Object?>.from(state)
+          : const <String, Object?>{};
+      plugins.add(
+        OpenCodePlugin(
+          id: id,
+          sourceType: _readString(sourceMap['type']) ?? 'unknown',
+          sourceLabel:
+              _readString(sourceMap['target']) ??
+              _readString(sourceMap['path']),
+          version: _readString(sourceMap['version']),
+          status: _readString(stateMap['status']) ?? 'unknown',
+          error: _readString(stateMap['error']),
+        ),
+      );
+    }
+    return List.unmodifiable(plugins);
+  }
+
+  /// Lists skills exposed at [directory]. Skill bodies are intentionally
+  /// discarded: the list screen only needs metadata.
+  Future<List<OpenCodeSkill>> skills({String? directory}) async {
+    final decoded = await _getJson(_withLocation('api/skill', directory));
+    final list = _readDataList(decoded);
+    final skills = <OpenCodeSkill>[];
+    for (final item in list) {
+      if (item is! Map) {
+        continue;
+      }
+      final map = Map<String, Object?>.from(item);
+      final id = _readString(map['id']);
+      if (id == null) {
+        continue;
+      }
+      skills.add(
+        OpenCodeSkill(
+          id: id,
+          name: _readString(map['name']) ?? id,
+          description: _readString(map['description']) ?? '',
+          path: _readString(map['path']),
+        ),
+      );
+    }
+    return List.unmodifiable(skills);
+  }
+
+  /// Returns the system prompts and size of the current session context.
+  Future<OpenCodeSessionContext> sessionContext(String id) async {
+    final decoded = await _getJson('api/session/${_segment(id)}/context');
+    final list = _readDataList(decoded);
+    final systemPrompts = <String>[];
+    for (final item in list) {
+      if (item is! Map) {
+        continue;
+      }
+      final map = Map<String, Object?>.from(item);
+      if (_readString(map['type']) != 'system') {
+        continue;
+      }
+      final text = _readString(map['text']);
+      if (text != null) {
+        systemPrompts.add(text);
+      }
+    }
+    return OpenCodeSessionContext(
+      systemPrompts: List.unmodifiable(systemPrompts),
+      messageCount: list.length,
+    );
   }
 
   /// Lists slash commands available at [directory], or the server default.
@@ -310,12 +533,18 @@ class OpenCodeClient {
           }
         }
       }
+      final limit = map['limit'];
+      final limitMap = limit is Map
+          ? Map<String, Object?>.from(limit)
+          : const <String, Object?>{};
       models.add(
         OpenCodeModel(
           id: id,
           providerId: providerId,
           name: _readString(map['name']) ?? id,
           variants: List.unmodifiable(variants),
+          contextLimit: _readInt(limitMap['context']),
+          outputLimit: _readInt(limitMap['output']),
         ),
       );
     }
@@ -327,7 +556,14 @@ class OpenCodeClient {
   /// Each page holds at most 200 messages. [pages] caps how many pages are
   /// loaded, newest first; older pages are fetched through the cursor.
   Future<List<OpenCodeMessage>> messages(String id, {int pages = 1}) async {
+    return (await transcript(id, pages: pages)).messages;
+  }
+
+  /// Fetches messages and collects system prompts found in the loaded pages.
+  Future<OpenCodeTranscript> transcript(String id, {int pages = 1}) async {
     final messages = <OpenCodeMessage>[];
+    String? latestSystemPrompt;
+    var latestSystemTime = -1;
     String? cursor;
     for (var page = 0; page < pages.clamp(1, 20); page++) {
       final query = StringBuffer(
@@ -339,6 +575,19 @@ class OpenCodeClient {
       final decoded = await _getJson(query.toString());
       final list = _readDataList(decoded);
       for (final item in list) {
+        final systemPrompt = _readSystemPrompt(item);
+        if (systemPrompt != null && !_isTransientSystemPrompt(systemPrompt)) {
+          final createdAt =
+              _readTime(
+                (item as Map)['time'],
+                'created',
+              )?.millisecondsSinceEpoch ??
+              0;
+          if (createdAt >= latestSystemTime) {
+            latestSystemTime = createdAt;
+            latestSystemPrompt = systemPrompt;
+          }
+        }
         final message = _parseMessage(item);
         if (message != null) {
           messages.add(message);
@@ -358,7 +607,12 @@ class OpenCodeClient {
       final right = b.createdAt?.millisecondsSinceEpoch ?? 0;
       return left.compareTo(right);
     });
-    return List.unmodifiable(messages);
+    return OpenCodeTranscript(
+      messages: List.unmodifiable(messages),
+      systemPrompts: latestSystemPrompt == null
+          ? const []
+          : [latestSystemPrompt],
+    );
   }
 
   /// Sends a prompt to a session.
@@ -678,6 +932,10 @@ class OpenCodeClient {
     final modelMap = model is Map
         ? Map<String, Object?>.from(model)
         : const <String, Object?>{};
+    final tokenCache = tokenMap['cache'];
+    final cacheMap = tokenCache is Map
+        ? Map<String, Object?>.from(tokenCache)
+        : const <String, Object?>{};
     return OpenCodeSession(
       id: id.trim(),
       title: title is String && title.trim().isNotEmpty
@@ -685,10 +943,14 @@ class OpenCodeClient {
           : 'Untitled session',
       project: _readProject(map),
       directory: _readString(locationMap['directory']),
+      createdAt: _readTime(map['time'], 'created'),
       updatedAt: _readUpdatedAt(map),
       cost: _readDouble(map['cost']),
       tokensInput: _readInt(tokenMap['input']),
       tokensOutput: _readInt(tokenMap['output']),
+      tokensReasoning: _readInt(tokenMap['reasoning']),
+      tokensCacheRead: _readInt(cacheMap['read']),
+      tokensCacheWrite: _readInt(cacheMap['write']),
       agentId: _readString(map['agent']),
       modelId: _readString(modelMap['id']) ?? _readString(modelMap['modelID']),
       modelProviderId: _readString(modelMap['providerID']),
@@ -785,6 +1047,23 @@ class OpenCodeClient {
       );
     }
     return list;
+  }
+
+  String? _readSystemPrompt(Object? value) {
+    if (value is! Map) {
+      return null;
+    }
+    final map = Map<String, Object?>.from(value);
+    if (_readString(map['type']) != 'system') {
+      return null;
+    }
+    return _readString(map['text']);
+  }
+
+  /// Date/time reminders are system messages too, but they are not the prompt
+  /// the web UI shows in the session info panel.
+  bool _isTransientSystemPrompt(String text) {
+    return text.trimLeft().toLowerCase().startsWith("today's date is now");
   }
 
   OpenCodeMessage? _parseMessage(Object? value) {

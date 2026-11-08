@@ -11,6 +11,7 @@ import '../shared/empty_state.dart';
 import '../shared/scroll_to_bottom.dart';
 import 'opencode_failure_text.dart';
 import 'opencode_session_controller.dart';
+import 'opencode_session_sheets.dart';
 import 'opencode_transcript.dart';
 
 class OpenCodeSessionScreen extends ConsumerStatefulWidget {
@@ -121,7 +122,17 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
           ],
         ),
         actions: [
-          if (value != null)
+          if (value != null) ...[
+            IconButton(
+              tooltip: l10n.openCodeContextTitle,
+              onPressed: () => _showContext(value),
+              icon: const Icon(Icons.info_outline_rounded),
+            ),
+            IconButton(
+              tooltip: l10n.openCodeExtensionsTitle,
+              onPressed: () => _showExtensions(value),
+              icon: const Icon(Icons.grid_view_rounded),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Tooltip(
@@ -140,6 +151,7 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
                 ),
               ),
             ),
+          ],
           PopupMenuButton<_SessionMenuAction>(
             enabled: value != null,
             onSelected: (action) => _onMenu(action, value),
@@ -326,10 +338,32 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
       case _SessionMenuAction.rename:
         unawaited(_renameSession(current));
       case _SessionMenuAction.info:
-        unawaited(_showSessionInfo(current));
+        _showContext(current);
       case _SessionMenuAction.delete:
         unawaited(_deleteSession(current));
     }
+  }
+
+  void _showContext(OpenCodeSessionState current) {
+    unawaited(
+      showOpenCodeContextSheet(
+        context,
+        connectionId: widget.connectionId,
+        session: current.session,
+        messages: current.messages,
+        systemPrompts: current.systemPrompts,
+      ),
+    );
+  }
+
+  void _showExtensions(OpenCodeSessionState current) {
+    unawaited(
+      showOpenCodeExtensionsSheet(
+        context,
+        connectionId: widget.connectionId,
+        directory: current.session.directory,
+      ),
+    );
   }
 
   Future<void> _pickCommand() async {
@@ -465,53 +499,6 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
         _snack(openCodeFailureText(l10n, error));
       }
     }
-  }
-
-  Future<void> _showSessionInfo(OpenCodeSessionState current) async {
-    final l10n = AppLocalizations.of(context);
-    final session = current.session;
-    final cost = session.cost;
-    final tokensInput = session.tokensInput ?? 0;
-    final tokensOutput = session.tokensOutput ?? 0;
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            _SheetHeader(title: l10n.openCodeSessionInfoTitle),
-            ListTile(
-              title: Text(l10n.openCodeSessionInfoId),
-              subtitle: SelectableText(session.id),
-            ),
-            ListTile(
-              title: Text(l10n.openCodeSessionInfoProject),
-              subtitle: SelectableText(
-                session.directory ?? session.project ?? '—',
-              ),
-            ),
-            if (session.updatedAt != null)
-              ListTile(
-                title: Text(l10n.openCodeSessionInfoUpdated),
-                subtitle: Text(
-                  MaterialLocalizations.of(context)
-                      .formatMediumDate(session.updatedAt!),
-                ),
-              ),
-            ListTile(
-              title: Text(l10n.openCodeSessionInfoTokens),
-              subtitle: Text('$tokensInput / $tokensOutput'),
-            ),
-            if (cost != null)
-              ListTile(
-                title: Text(l10n.openCodeSessionInfoCost),
-                subtitle: Text('\$${cost.toStringAsFixed(4)}'),
-              ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _insertText(String text) {

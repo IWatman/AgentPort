@@ -144,6 +144,10 @@ class _FakeOpenCodeClient extends OpenCodeClient {
       List.of(history);
 
   @override
+  Future<OpenCodeTranscript> transcript(String id, {int pages = 1}) async =>
+      OpenCodeTranscript(messages: List.of(history));
+
+  @override
   Future<void> sendPrompt(String id, String prompt) async {
     sentPrompts.add(prompt);
   }

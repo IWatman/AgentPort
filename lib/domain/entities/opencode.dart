@@ -83,10 +83,14 @@ class OpenCodeSession {
     required this.title,
     this.project,
     this.directory,
+    this.createdAt,
     this.updatedAt,
     this.cost,
     this.tokensInput,
     this.tokensOutput,
+    this.tokensReasoning,
+    this.tokensCacheRead,
+    this.tokensCacheWrite,
     this.agentId,
     this.modelId,
     this.modelProviderId,
@@ -100,14 +104,25 @@ class OpenCodeSession {
   /// Absolute project directory reported by the server.
   final String? directory;
 
+  final DateTime? createdAt;
   final DateTime? updatedAt;
   final double? cost;
   final int? tokensInput;
   final int? tokensOutput;
+  final int? tokensReasoning;
+  final int? tokensCacheRead;
+  final int? tokensCacheWrite;
   final String? agentId;
   final String? modelId;
   final String? modelProviderId;
   final String? modelVariant;
+
+  int get tokensTotal =>
+      (tokensInput ?? 0) +
+      (tokensOutput ?? 0) +
+      (tokensReasoning ?? 0) +
+      (tokensCacheRead ?? 0) +
+      (tokensCacheWrite ?? 0);
 
   OpenCodeSession copyWith({String? title}) {
     return OpenCodeSession(
@@ -115,10 +130,14 @@ class OpenCodeSession {
       title: title ?? this.title,
       project: project,
       directory: directory,
+      createdAt: createdAt,
       updatedAt: updatedAt,
       cost: cost,
       tokensInput: tokensInput,
       tokensOutput: tokensOutput,
+      tokensReasoning: tokensReasoning,
+      tokensCacheRead: tokensCacheRead,
+      tokensCacheWrite: tokensCacheWrite,
       agentId: agentId,
       modelId: modelId,
       modelProviderId: modelProviderId,
@@ -204,6 +223,8 @@ class OpenCodeModel {
     required this.providerId,
     required this.name,
     this.variants = const [],
+    this.contextLimit,
+    this.outputLimit,
   });
 
   final String id;
@@ -213,7 +234,126 @@ class OpenCodeModel {
   /// Optional variant IDs such as `max`, `high`, or `fast`.
   final List<String> variants;
 
+  /// Maximum context window reported by the server, when available.
+  final int? contextLimit;
+
+  /// Maximum output tokens reported by the server, when available.
+  final int? outputLimit;
+
   OpenCodeModelRef get ref => OpenCodeModelRef(id: id, providerId: providerId);
+}
+
+/// An MCP server configured in the OpenCode host.
+class OpenCodeMcpServer {
+  const OpenCodeMcpServer({
+    required this.name,
+    required this.status,
+    this.title,
+    this.error,
+  });
+
+  final String name;
+  final String status;
+  final String? title;
+  final String? error;
+
+  String get displayName =>
+      title?.trim().isNotEmpty == true ? title!.trim() : name;
+
+  bool get isConnected => status == 'connected';
+  bool get needsAuth => status == 'needs-auth';
+  bool get hasFailed => status == 'failed';
+}
+
+/// A plugin loaded by the OpenCode host.
+class OpenCodePlugin {
+  const OpenCodePlugin({
+    required this.id,
+    required this.sourceType,
+    required this.status,
+    this.sourceLabel,
+    this.version,
+    this.error,
+  });
+
+  final String id;
+  final String sourceType;
+  final String status;
+  final String? sourceLabel;
+  final String? version;
+  final String? error;
+
+  bool get isBuiltin => sourceType == 'builtin';
+  bool get hasFailed => status == 'failed';
+
+  String get displayName {
+    final label = sourceLabel?.trim();
+    if (label != null && label.isNotEmpty) {
+      return label;
+    }
+    return id;
+  }
+}
+
+/// A skill exposed by the OpenCode host.
+class OpenCodeSkill {
+  const OpenCodeSkill({
+    required this.id,
+    required this.name,
+    required this.description,
+    this.path,
+  });
+
+  final String id;
+  final String name;
+  final String description;
+  final String? path;
+}
+
+/// System context returned by `GET /api/session/{id}/context`.
+class OpenCodeSessionContext {
+  const OpenCodeSessionContext({
+    required this.systemPrompts,
+    required this.messageCount,
+  });
+
+  final List<String> systemPrompts;
+  final int messageCount;
+}
+
+/// A loaded transcript and the system prompts found among its messages.
+class OpenCodeTranscript {
+  const OpenCodeTranscript({
+    required this.messages,
+    this.systemPrompts = const [],
+  });
+
+  final List<OpenCodeMessage> messages;
+  final List<String> systemPrompts;
+}
+
+/// A project registered by `GET /api/location`.
+class OpenCodeProjectRegistration {
+  const OpenCodeProjectRegistration({
+    required this.project,
+    required this.directory,
+  });
+
+  final OpenCodeProject project;
+
+  /// Canonical location directory reported by the server.
+  final String directory;
+}
+
+/// A directory returned by the OpenCode filesystem browser.
+class OpenCodeDirectoryEntry {
+  const OpenCodeDirectoryEntry({required this.path, required this.name});
+
+  /// Absolute path on the OpenCode host.
+  final String path;
+
+  /// Last path segment shown in the picker.
+  final String name;
 }
 
 /// A model reference accepted by the session model endpoint.

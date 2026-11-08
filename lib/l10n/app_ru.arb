@@ -562,6 +562,107 @@
   "openCodeSessionInfoUpdated": "Обновлена",
   "openCodeSessionInfoTokens": "Токены вход / выход",
   "openCodeSessionInfoCost": "Стоимость",
+  "openCodeNewProject": "Новый проект",
+  "openCodeNewProjectTitle": "Новый проект",
+  "openCodeProjectNoBaseProject": "Сначала откройте существующий проект, чтобы AgentPort мог показать папки на хосте.",
+  "openCodeChooseFolderHelp": "Выберите папку на хосте OpenCode — она станет проектом.",
+  "openCodeFolderUp": "На уровень выше",
+  "openCodeFolderEmpty": "Здесь нет вложенных папок.",
+  "openCodeDrive": "Диск",
+  "openCodeSelectFolder": "Выбрать эту папку",
+  "openCodeProjectAdded": "Проект «{name}» добавлен.",
+  "@openCodeProjectAdded": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeContextTitle": "Контекст сессии",
+  "openCodeContextSession": "Сессия",
+  "openCodeContextProject": "Проект",
+  "openCodeContextProvider": "Провайдер",
+  "openCodeContextModel": "Модель",
+  "openCodeContextAgent": "Агент",
+  "openCodeContextUnknown": "Неизвестно",
+  "openCodeContextUsage": "Использование контекста",
+  "openCodeContextTokensUsed": "{used} / {limit} токенов",
+  "@openCodeContextTokensUsed": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeContextTokensTotal": "{total} токенов",
+  "@openCodeContextTokensTotal": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeContextTokens": "Токены",
+  "openCodeContextInput": "Входные",
+  "openCodeContextOutput": "Выходные",
+  "openCodeContextReasoning": "Рассуждения",
+  "openCodeContextCacheRead": "Чтение кэша",
+  "openCodeContextCacheWrite": "Запись кэша",
+  "openCodeContextTotal": "Всего",
+  "openCodeContextCost": "Стоимость",
+  "openCodeContextMessages": "Сообщения",
+  "openCodeContextAllMessages": "Всего сообщений",
+  "openCodeContextUserMessages": "Сообщения пользователя",
+  "openCodeContextAssistantMessages": "Сообщения ассистента",
+  "openCodeContextWindowMessages": "В окне контекста",
+  "openCodeContextDates": "Даты",
+  "openCodeContextCreated": "Создана",
+  "openCodeContextUpdated": "Последняя активность",
+  "openCodeContextSystemPrompt": "Системный промпт",
+  "openCodeContextSystemPromptEmpty": "В текущем контексте нет системного промпта.",
+  "openCodeExtensionsTitle": "Расширения",
+  "openCodeExtensionsMcp": "MCP",
+  "openCodeExtensionsPlugins": "Плагины",
+  "openCodeExtensionsSkills": "Навыки",
+  "openCodeExtensionsLsp": "LSP",
+  "openCodeExtensionsLspUnavailable": "Языковые серверы настраиваются на хосте OpenCode. Этот API не отдаёт их статус.",
+  "openCodeExtensionsConnected": "Подключён",
+  "openCodeExtensionsFailed": "Ошибка",
+  "openCodeExtensionsNeedsAuth": "Требуется вход",
+  "openCodeExtensionsPending": "Подключается",
+  "openCodeExtensionsDisabled": "Отключён",
+  "openCodeExtensionsNoMcp": "Для этого проекта нет MCP-серверов.",
+  "openCodeExtensionsNoPlugins": "Плагины не загружены.",
+  "openCodeExtensionsNoExternalPlugins": "Внешних плагинов нет. Встроенные функции активны.",
+  "openCodeExtensionsBuiltinPlugins": "{count} встроенных плагинов",
+  "@openCodeExtensionsBuiltinPlugins": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeExtensionsSkillsCount": "Доступно навыков: {count}",
+  "@openCodeExtensionsSkillsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeExtensionsSearchSkills": "Поиск навыков",
+  "openCodeExtensionsNoSkills": "По этому запросу навыков нет.",
+  "openCodeExtensionsMoreSkills": "Ещё {count}…",
+  "@openCodeExtensionsMoreSkills": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "openCodeDeleteSession": "Удалить сессию",
   "openCodeDeleteSessionBody": "Удалить «{name}»? Сессия и её сообщения будут удалены.",
   "@openCodeDeleteSessionBody": {

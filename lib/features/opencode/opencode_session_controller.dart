@@ -18,6 +18,7 @@ class OpenCodeSessionState {
     required this.connection,
     required this.session,
     required this.messages,
+    this.systemPrompts = const [],
     this.streamingText = '',
     this.busy = false,
     this.linkState = OpenCodeLinkState.connected,
@@ -31,6 +32,9 @@ class OpenCodeSessionState {
   final OpenCodeConnection connection;
   final OpenCodeSession session;
   final List<OpenCodeMessage> messages;
+
+  /// System prompts found in the loaded pages of the transcript.
+  final List<String> systemPrompts;
   final String streamingText;
   final bool busy;
   final OpenCodeLinkState linkState;
@@ -46,6 +50,7 @@ class OpenCodeSessionState {
     OpenCodeConnection? connection,
     OpenCodeSession? session,
     List<OpenCodeMessage>? messages,
+    List<String>? systemPrompts,
     String? streamingText,
     bool? busy,
     OpenCodeLinkState? linkState,
@@ -60,6 +65,7 @@ class OpenCodeSessionState {
       connection: connection ?? this.connection,
       session: session ?? this.session,
       messages: messages ?? this.messages,
+      systemPrompts: systemPrompts ?? this.systemPrompts,
       streamingText: streamingText ?? this.streamingText,
       busy: busy ?? this.busy,
       linkState: linkState ?? this.linkState,
@@ -399,13 +405,14 @@ class OpenCodeSessionController extends AsyncNotifier<OpenCodeSessionState> {
 
     final client = await repository.clientFor(connection);
     final session = await client.session(key.sessionId);
-    final messages = await client.messages(key.sessionId, pages: 4);
+    final transcript = await client.transcript(key.sessionId, pages: 5);
     return _LoadedSession(
       client: client,
       state: OpenCodeSessionState(
         connection: connection,
         session: session,
-        messages: messages,
+        messages: transcript.messages,
+        systemPrompts: transcript.systemPrompts,
         agentId: session.agentId,
         model: session.modelId != null && session.modelProviderId != null
             ? OpenCodeModelRef(

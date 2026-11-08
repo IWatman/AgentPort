@@ -577,6 +577,107 @@
   "openCodeSessionInfoUpdated": "Updated",
   "openCodeSessionInfoTokens": "Tokens in / out",
   "openCodeSessionInfoCost": "Cost",
+  "openCodeNewProject": "New project",
+  "openCodeNewProjectTitle": "New project",
+  "openCodeProjectNoBaseProject": "Open an existing project first so AgentPort can browse folders on the host.",
+  "openCodeChooseFolderHelp": "Browse folders on the OpenCode host, then select the project folder.",
+  "openCodeFolderUp": "Up one level",
+  "openCodeFolderEmpty": "No subfolders here.",
+  "openCodeDrive": "Drive",
+  "openCodeSelectFolder": "Select this folder",
+  "openCodeProjectAdded": "Project “{name}” added.",
+  "@openCodeProjectAdded": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeContextTitle": "Session context",
+  "openCodeContextSession": "Session",
+  "openCodeContextProject": "Project",
+  "openCodeContextProvider": "Provider",
+  "openCodeContextModel": "Model",
+  "openCodeContextAgent": "Agent",
+  "openCodeContextUnknown": "Unknown",
+  "openCodeContextUsage": "Context usage",
+  "openCodeContextTokensUsed": "{used} / {limit} tokens",
+  "@openCodeContextTokensUsed": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeContextTokensTotal": "{total} tokens",
+  "@openCodeContextTokensTotal": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeContextTokens": "Tokens",
+  "openCodeContextInput": "Input",
+  "openCodeContextOutput": "Output",
+  "openCodeContextReasoning": "Reasoning",
+  "openCodeContextCacheRead": "Cache read",
+  "openCodeContextCacheWrite": "Cache write",
+  "openCodeContextTotal": "Total",
+  "openCodeContextCost": "Cost",
+  "openCodeContextMessages": "Messages",
+  "openCodeContextAllMessages": "All messages",
+  "openCodeContextUserMessages": "User messages",
+  "openCodeContextAssistantMessages": "Assistant messages",
+  "openCodeContextWindowMessages": "In context window",
+  "openCodeContextDates": "Dates",
+  "openCodeContextCreated": "Created",
+  "openCodeContextUpdated": "Last activity",
+  "openCodeContextSystemPrompt": "System prompt",
+  "openCodeContextSystemPromptEmpty": "No system prompt is present in the current context.",
+  "openCodeExtensionsTitle": "Extensions",
+  "openCodeExtensionsMcp": "MCP",
+  "openCodeExtensionsPlugins": "Plugins",
+  "openCodeExtensionsSkills": "Skills",
+  "openCodeExtensionsLsp": "LSP",
+  "openCodeExtensionsLspUnavailable": "Language servers are configured on the OpenCode host. This API does not expose their status.",
+  "openCodeExtensionsConnected": "Connected",
+  "openCodeExtensionsFailed": "Failed",
+  "openCodeExtensionsNeedsAuth": "Needs sign-in",
+  "openCodeExtensionsPending": "Connecting",
+  "openCodeExtensionsDisabled": "Disabled",
+  "openCodeExtensionsNoMcp": "No MCP servers configured for this project.",
+  "openCodeExtensionsNoPlugins": "No plugins loaded.",
+  "openCodeExtensionsNoExternalPlugins": "No external plugins. Built-in features are still active.",
+  "openCodeExtensionsBuiltinPlugins": "{count} built-in plugins",
+  "@openCodeExtensionsBuiltinPlugins": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeExtensionsSkillsCount": "{count} skills available",
+  "@openCodeExtensionsSkillsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "openCodeExtensionsSearchSkills": "Search skills",
+  "openCodeExtensionsNoSkills": "No skills match this search.",
+  "openCodeExtensionsMoreSkills": "{count} more…",
+  "@openCodeExtensionsMoreSkills": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "openCodeDeleteSession": "Delete session",
   "openCodeDeleteSessionBody": "Delete “{name}”? This removes the session and its messages.",
   "@openCodeDeleteSessionBody": {

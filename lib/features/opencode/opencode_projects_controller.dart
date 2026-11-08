@@ -48,6 +48,39 @@ class OpenCodeProjectsController extends AsyncNotifier<OpenCodeProjectsState> {
     }
   }
 
+  /// Registers a server directory as a project and adds it to the list.
+  Future<OpenCodeProject> addProject(String directory) async {
+    final current = state.value;
+    if (current == null) {
+      throw const OpenCodeFailure(
+        OpenCodeFailureKind.invalidPayload,
+        detail: 'The project list is not loaded yet.',
+      );
+    }
+    final client = await ref
+        .read(openCodeRepositoryProvider)
+        .clientFor(current.connection);
+    final registered = await client.registerProject(directory);
+    if (ref.mounted) {
+      final projects = [...current.projects];
+      final index = projects.indexWhere(
+        (project) => project.id == registered.project.id,
+      );
+      if (index >= 0) {
+        projects[index] = registered.project;
+      } else {
+        projects.insert(0, registered.project);
+      }
+      state = AsyncData(
+        OpenCodeProjectsState(
+          connection: current.connection,
+          projects: projects,
+        ),
+      );
+    }
+    return registered.project;
+  }
+
   Future<OpenCodeProjectsState> _load(OpenCodeRepository repository) async {
     final connection = await repository.connection(connectionId);
     if (connection == null) {

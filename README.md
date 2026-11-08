@@ -25,7 +25,8 @@ Android AI chat client with a built-in MCP marketplace and remote control for [O
 - Browse MCP connectors from Claude-compatible plugin marketplaces.
 - Install remote MCP servers from marketplace plugins and configure header authorization in Connections.
 - Let the model call MCP tools from chat, with automatic read-only calls and approval for write tools.
-- Control OpenCode sessions from your phone: pair by QR or URL, read grouped transcripts with hidden reasoning and one-line tool summaries, send prompts, stream replies, stop, and switch agent/model.
+- Control OpenCode sessions from your phone: pair by QR or URL, create projects with a remote folder browser, read grouped transcripts with hidden reasoning and one-line tool summaries, inspect session context and extensions, send prompts, stream replies, stop, and switch agent/model.
+- Inspect OpenCode session context (tokens, cache, cost, timestamps, system prompts) and extensions (MCP, plugins, skills) from the session screen.
 - Local encrypted storage for chats, keys, and tokens.
 - Export chats and providers to a JSON backup without secrets, and import them back from Settings.
 - Automatic stable-channel update checks with a popup, release notes, progress, checksum verification, and the Android installer.
@@ -131,6 +132,8 @@ opencode pair
 In AgentPort, open the **Chats** tab and switch to **OpenCode → Pair**. Scan the QR code shown by `opencode pair`, or switch to **Manual** and enter the server URL plus the service password. For a remote connection use `opencode pair --remote`, or pass a custom URL with `opencode pair --url https://your-host`.
 
 After pairing, open the connection to browse its projects, then open a project to see only its sessions. Use **New session** to create one in that project, read the transcript, and send prompts. The session screen streams live output, groups a whole assistant reply into one turn, keeps reasoning hidden behind the psychology button, collapses tool calls into one "Used N" summary, and lets you switch the agent or model.
+
+Use **New project** to browse directories on the OpenCode host and register a folder as a project. The **info** button opens session context (model limit, tokens, cache, cost, timestamps, message counts, system prompts); the **grid** button opens extensions (MCP servers, plugins, skills). LSP status is not exposed by the OpenCode API. See [docs/OPENCODE.md](docs/OPENCODE.md) for the full support matrix and the remaining API capabilities.
 
 Minimum supported OpenCode version: **2.2.5**. The OpenCode API v2 is experimental.
 
