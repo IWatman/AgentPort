@@ -18,6 +18,7 @@ import '../providers/model_catalog.dart';
 import '../providers/providers_controller.dart';
 import '../shared/empty_state.dart';
 import '../shared/failure_text.dart';
+import '../shared/scroll_to_bottom.dart';
 import 'chat_controller.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -78,11 +79,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (_showScrollDown) {
       setState(() => _showScrollDown = false);
     }
-    _scroll.animateTo(
-      _scroll.position.maxScrollExtent,
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-    );
+    settleScrollToBottom(_scroll);
   }
 
   void _scrollToBottomSoon() {
@@ -906,11 +903,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         return;
       }
       _didInitialScroll = true;
-      _scroll.animateTo(
-        _scroll.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOut,
-      );
+      settleScrollToBottom(_scroll);
     });
   }
 }

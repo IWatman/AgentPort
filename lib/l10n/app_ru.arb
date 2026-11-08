@@ -510,6 +510,17 @@
   "openCodeSessionsError": "Не удалось загрузить сессии",
   "openCodeNewSession": "Новая сессия",
   "openCodeCreatingSession": "Создаю…",
+  "openCodeToolsUsedSummary": "Использовано {count}: {names}",
+  "@openCodeToolsUsedSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "names": {
+        "type": "String"
+      }
+    }
+  },
   "openCodeSessionUpdated": "Обновлено {date}",
   "@openCodeSessionUpdated": {
     "placeholders": {

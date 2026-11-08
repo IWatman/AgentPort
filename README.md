@@ -12,7 +12,7 @@ Android AI chat client with a built-in MCP marketplace and remote control for [O
 - Browse MCP connectors from Claude-compatible plugin marketplaces.
 - Install remote MCP servers from marketplace plugins and configure header authorization in Connections.
 - Let the model call MCP tools from chat, with automatic read-only calls and approval for write tools.
-- Control OpenCode sessions from your phone: pair by QR or URL, read transcripts, send prompts, stream replies, stop, and switch agent/model.
+- Control OpenCode sessions from your phone: pair by QR or URL, read grouped transcripts with hidden reasoning and one-line tool summaries, send prompts, stream replies, stop, and switch agent/model.
 - Local encrypted storage for chats, keys, and tokens.
 - Export chats and providers to a JSON backup without secrets, and import them back from Settings.
 - Automatic stable-channel update checks with a popup, release notes, progress, checksum verification, and the Android installer.
@@ -113,7 +113,7 @@ opencode pair
 
 In AgentPort, open the **Chats** tab and switch to **OpenCode → Pair**. Scan the QR code shown by `opencode pair`, or switch to **Manual** and enter the server URL plus the service password. For a remote connection use `opencode pair --remote`, or pass a custom URL with `opencode pair --url https://your-host`.
 
-After pairing, open the connection to browse its projects, then open a project to see only its sessions. Use **New session** to create one in that project, read the transcript, and send prompts. The session screen streams live output, shows reasoning blocks and tool chips, supports stop, and lets you switch the agent or model.
+After pairing, open the connection to browse its projects, then open a project to see only its sessions. Use **New session** to create one in that project, read the transcript, and send prompts. The session screen streams live output, groups a whole assistant reply into one turn, keeps reasoning hidden behind the psychology button, collapses tool calls into one "Used N" summary, and lets you switch the agent or model.
 
 Minimum supported OpenCode version: **2.2.5**. The OpenCode API v2 is experimental.
 

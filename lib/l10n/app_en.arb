@@ -525,6 +525,17 @@
   "openCodeSessionsError": "Could not load sessions",
   "openCodeNewSession": "New session",
   "openCodeCreatingSession": "Creating…",
+  "openCodeToolsUsedSummary": "Used {count}: {names}",
+  "@openCodeToolsUsedSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "names": {
+        "type": "String"
+      }
+    }
+  },
   "openCodeSessionUpdated": "Updated {date}",
   "@openCodeSessionUpdated": {
     "placeholders": {

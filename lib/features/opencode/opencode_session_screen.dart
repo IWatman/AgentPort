@@ -8,8 +8,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/opencode.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../shared/empty_state.dart';
+import '../shared/scroll_to_bottom.dart';
 import 'opencode_failure_text.dart';
 import 'opencode_session_controller.dart';
+import 'opencode_transcript.dart';
 
 class OpenCodeSessionScreen extends ConsumerStatefulWidget {
   const OpenCodeSessionScreen({
@@ -74,11 +76,7 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
     if (_showScrollDown) {
       setState(() => _showScrollDown = false);
     }
-    _scroll.animateTo(
-      _scroll.position.maxScrollExtent,
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-    );
+    settleScrollToBottom(_scroll);
   }
 
   void _scrollToBottomSoon() {
@@ -175,6 +173,7 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
         ),
         data: (current) {
           _scheduleScroll(current);
+          final turns = groupOpenCodeMessages(current.messages);
           return Column(
             children: [
               Expanded(
@@ -199,16 +198,20 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
                                 24,
                               ),
                               itemCount:
-                                  current.messages.length +
+                                  turns.length +
                                   (current.streamingText.isNotEmpty ||
                                           current.busy
                                       ? 1
                                       : 0),
                               itemBuilder: (context, index) {
-                                if (index < current.messages.length) {
-                                  return _MessageBubble(
-                                    message: current.messages[index],
-                                  );
+                                if (index < turns.length) {
+                                  final turn = turns[index];
+                                  return switch (turn) {
+                                    OpenCodeUserTurn(:final message) =>
+                                      _MessageBubble(message: message),
+                                    OpenCodeAssistantTurn() =>
+                                      _AssistantTurnView(turn: turn),
+                                  };
                                 }
                                 return _StreamingBubble(
                                   text: current.streamingText,
@@ -643,16 +646,120 @@ class _OpenCodeSessionScreenState extends ConsumerState<OpenCodeSessionScreen> {
         return;
       }
       _didInitialScroll = true;
-      _scroll.animateTo(
-        _scroll.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOut,
-      );
+      settleScrollToBottom(_scroll);
     });
   }
 }
 
 enum _SessionMenuAction { rename, info, delete }
+
+class _AssistantTurnView extends StatelessWidget {
+  const _AssistantTurnView({required this.turn});
+
+  final OpenCodeAssistantTurn turn;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final hasReasoning = turn.reasoning.trim().isNotEmpty;
+    final toolNames = turn.tools.toSet().toList(growable: false);
+    final shownNames = toolNames.take(3).join(', ');
+    final names = toolNames.length > 3 ? '$shownNames…' : shownNames;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20, right: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (turn.tools.isNotEmpty)
+            Row(
+              children: [
+                Icon(
+                  Icons.build_rounded,
+                  size: 15,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    l10n.openCodeToolsUsedSummary(turn.tools.length, names),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                if (hasReasoning)
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    tooltip: l10n.chatReasoning,
+                    onPressed: () => _showReasoning(context),
+                    icon: const Icon(Icons.psychology_outlined, size: 18),
+                  ),
+              ],
+            )
+          else if (hasReasoning)
+            TextButton.icon(
+              onPressed: () => _showReasoning(context),
+              icon: const Icon(Icons.psychology_outlined, size: 18),
+              label: Text(l10n.chatReasoning),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                foregroundColor: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          if (turn.text.isNotEmpty) ...[
+            if (turn.tools.isNotEmpty || hasReasoning)
+              const SizedBox(height: 6),
+            MarkdownBody(
+              data: turn.text,
+              selectable: true,
+              styleSheet: _markdownStyle(context),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showReasoning(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(sheetContext).height * 0.75,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: Text(
+                  l10n.chatReasoning,
+                  style: Theme.of(sheetContext).textTheme.titleSmall,
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  child: MarkdownBody(
+                    data: turn.reasoning,
+                    selectable: true,
+                    styleSheet: _markdownStyle(sheetContext),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _MessageBubble extends StatelessWidget {
   const _MessageBubble({required this.message});

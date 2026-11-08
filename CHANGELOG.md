@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- OpenCode transcripts now group a whole assistant reply into one turn: reasoning stays hidden behind a psychology button, tool calls collapse into a single "Used N" summary, and only the final answer is shown.
+- The scroll-to-bottom button now jumps to the real end of the list in one tap in AI and OpenCode chats, including lazily built lists and streaming content.
+
 ## [0.1.0] - 2026-11-08
 
 ### Added
