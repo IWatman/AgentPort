@@ -35,7 +35,8 @@ class McpServer {
   String get displayName =>
       pluginTitle?.trim().isNotEmpty == true ? pluginTitle!.trim() : name;
 
-  bool get supportsCurrentTransport => transport == McpTransport.http;
+  bool get supportsCurrentTransport =>
+      transport == McpTransport.http || transport == McpTransport.sse;
 
   List<String> get requiredHeaders {
     final names = <String>{...headerNames};

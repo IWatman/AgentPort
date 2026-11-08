@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:agentport/data/mcp/mcp_client.dart';
@@ -92,6 +93,90 @@ class _FakeMcpServer {
   }
 }
 
+class _FakeLegacySseServer extends http.BaseClient {
+  _FakeLegacySseServer({
+    this.endpoint = '/messages?session=legacy',
+    this.sse = true,
+    this.directResponses = false,
+  });
+
+  final String endpoint;
+  final bool sse;
+  final bool directResponses;
+  final StreamController<List<int>> _events = StreamController<List<int>>();
+  final List<http.BaseRequest> requests = [];
+  final List<http.Request> posts = [];
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    requests.add(request);
+    if (request.method == 'GET') {
+      if (!sse) {
+        return http.StreamedResponse(
+          Stream.value(utf8.encode('not an event stream')),
+          200,
+          headers: const {'content-type': 'text/plain'},
+        );
+      }
+      _events.add(utf8.encode('event: endpoint\ndata: $endpoint\n\n'));
+      return http.StreamedResponse(
+        _events.stream,
+        200,
+        headers: const {'content-type': 'text/event-stream'},
+      );
+    }
+
+    final post = request as http.Request;
+    posts.add(post);
+    final body = jsonDecode(post.body) as Map<String, Object?>;
+    final method = body['method'];
+    if (method == 'notifications/initialized') {
+      return http.StreamedResponse(Stream<List<int>>.empty(), 202);
+    }
+
+    final result = switch (method) {
+      'initialize' => {
+        'protocolVersion': McpClient.legacyProtocolVersion,
+        'capabilities': {'tools': {}},
+        'serverInfo': {'name': 'legacy', 'version': '1'},
+      },
+      'tools/list' => {
+        'tools': [
+          {
+            'name': 'search_docs',
+            'description': 'Search documentation',
+            'inputSchema': {'type': 'object'},
+          },
+        ],
+      },
+      'tools/call' => {
+        'content': [
+          {'type': 'text', 'text': 'legacy result'},
+        ],
+      },
+      _ => null,
+    };
+    final message = jsonEncode({
+      'jsonrpc': '2.0',
+      'id': body['id'],
+      'result': result,
+    });
+    if (directResponses) {
+      return http.StreamedResponse(
+        Stream.value(utf8.encode(message)),
+        200,
+        headers: const {'content-type': 'application/json'},
+      );
+    }
+    _events.add(utf8.encode('event: message\ndata: $message\n\n'));
+    return http.StreamedResponse(Stream<List<int>>.empty(), 202);
+  }
+
+  void dispose() {
+    unawaited(_events.close());
+  }
+}
+
 void main() {
   group('McpClient', () {
     test('initializes, sends the session id, and lists tools', () async {
@@ -172,8 +257,75 @@ void main() {
       );
     });
 
-    test('rejects SSE-only transport for now', () async {
-      final client = McpClient(clientFactory: _FakeMcpServer().client);
+    test(
+      'completes initialize, tools/list, and tools/call over legacy SSE',
+      () async {
+        final fake = _FakeLegacySseServer();
+        addTearDown(fake.dispose);
+        final client = McpClient(clientFactory: () => fake);
+
+        final session = await client.connect(
+          server: _server(transport: McpTransport.sse),
+          headers: const {'Authorization': 'Bearer legacy'},
+        );
+        addTearDown(session.close);
+
+        final tools = await session.listTools();
+        expect(tools.map((tool) => tool.name), ['search_docs']);
+
+        final result = await session.callTool('search_docs', {'query': 'sse'});
+        expect(result.content, 'legacy result');
+
+        final get = fake.requests.singleWhere(
+          (request) => request.method == 'GET',
+        );
+        expect(get.url.path, '/mcp');
+        expect(get.headers['Accept'], 'text/event-stream');
+        expect(get.headers['Authorization'], 'Bearer legacy');
+
+        final initialize = fake.posts.firstWhere(
+          (request) => request.body.contains('"method":"initialize"'),
+        );
+        expect(initialize.url.path, '/messages');
+        expect(initialize.url.queryParameters['session'], 'legacy');
+        expect(initialize.headers['Authorization'], 'Bearer legacy');
+        final params =
+            (jsonDecode(initialize.body) as Map<String, Object?>)['params']
+                as Map<String, Object?>;
+        expect(params['protocolVersion'], '2024-11-05');
+        expect(params['protocolVersion'], McpClient.legacyProtocolVersion);
+
+        expect(fake.posts, isNotEmpty);
+        for (final post in fake.posts) {
+          expect(post.headers['Authorization'], 'Bearer legacy');
+        }
+        expect(
+          fake.posts.map((request) => request.body),
+          contains(contains('notifications/initialized')),
+        );
+      },
+    );
+
+    test('accepts direct JSON responses to legacy POSTs', () async {
+      final fake = _FakeLegacySseServer(directResponses: true);
+      addTearDown(fake.dispose);
+      final client = McpClient(clientFactory: () => fake);
+
+      final session = await client.connect(
+        server: _server(transport: McpTransport.sse),
+      );
+      addTearDown(session.close);
+      final tools = await session.listTools();
+
+      expect(tools.map((tool) => tool.name), ['search_docs']);
+    });
+
+    test('rejects a legacy endpoint on a different host', () async {
+      final fake = _FakeLegacySseServer(
+        endpoint: 'https://evil.example.com/messages',
+      );
+      addTearDown(fake.dispose);
+      final client = McpClient(clientFactory: () => fake);
 
       await expectLater(
         client.connect(server: _server(transport: McpTransport.sse)),
@@ -181,7 +333,25 @@ void main() {
           isA<McpFailure>().having(
             (failure) => failure.kind,
             'kind',
-            McpFailureKind.unsupportedTransport,
+            McpFailureKind.protocol,
+          ),
+        ),
+      );
+      expect(fake.posts, isEmpty);
+    });
+
+    test('rejects a legacy GET response that is not an SSE stream', () async {
+      final fake = _FakeLegacySseServer(sse: false);
+      addTearDown(fake.dispose);
+      final client = McpClient(clientFactory: () => fake);
+
+      await expectLater(
+        client.connect(server: _server(transport: McpTransport.sse)),
+        throwsA(
+          isA<McpFailure>().having(
+            (failure) => failure.kind,
+            'kind',
+            McpFailureKind.protocol,
           ),
         ),
       );

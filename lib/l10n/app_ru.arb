@@ -439,11 +439,10 @@
       }
     }
   },
-  "mcpAuthOAuthUnsupported": "OAuth через браузер пока не реализован. Сервер может работать и без учётных данных.",
   "mcpAuthMissing": "Сервер требует заголовки. Добавьте их ниже.",
   "mcpSaveAndConnect": "Сохранить и подключиться",
   "mcpAuthSaved": "Авторизация сохранена.",
-  "mcpTransportUnsupported": "Этот транспорт пока не поддерживается. Работает только Streamable HTTP.",
+  "mcpTransportUnsupported": "Этот транспорт MCP не поддерживается.",
   "mcpApprovalRequired": "Требует подтверждения",
   "mcpReadOnlyTool": "Только чтение",
   "mcpServerTitle": "MCP-сервер",
@@ -453,7 +452,7 @@
   "mcpErrorTimeout": "MCP-сервер не ответил вовремя.",
   "mcpErrorProtocol": "MCP-сервер вернул некорректный ответ.",
   "mcpErrorInvalidResponse": "MCP-сервер вернул неожиданный ответ.",
-  "mcpErrorUnsupportedTransport": "Сейчас поддерживаются только Streamable HTTP MCP-серверы.",
+  "mcpErrorUnsupportedTransport": "Этот транспорт MCP не поддерживается.",
   "mcpErrorTool": "Вызов инструмента завершился ошибкой.",
   "settingsOpenCodeSubtitle": "Управляйте сессиями OpenCode с телефона.",
   "openCodeTitle": "OpenCode",

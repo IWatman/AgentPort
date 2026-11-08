@@ -454,11 +454,10 @@
       }
     }
   },
-  "mcpAuthOAuthUnsupported": "Browser OAuth is not implemented yet. This server may still work without credentials.",
   "mcpAuthMissing": "This server reports required headers. Add them below.",
   "mcpSaveAndConnect": "Save and connect",
   "mcpAuthSaved": "Authorization saved.",
-  "mcpTransportUnsupported": "This transport is not supported yet. Only Streamable HTTP works now.",
+  "mcpTransportUnsupported": "This MCP transport is not supported.",
   "mcpApprovalRequired": "Requires approval",
   "mcpReadOnlyTool": "Read-only",
   "mcpServerTitle": "MCP server",
@@ -468,7 +467,7 @@
   "mcpErrorTimeout": "The MCP server timed out.",
   "mcpErrorProtocol": "The MCP server returned an invalid response.",
   "mcpErrorInvalidResponse": "The MCP server returned an unexpected response.",
-  "mcpErrorUnsupportedTransport": "Only Streamable HTTP MCP servers are supported right now.",
+  "mcpErrorUnsupportedTransport": "This MCP transport is not supported.",
   "mcpErrorTool": "The tool call failed.",
   "settingsOpenCodeSubtitle": "Control OpenCode sessions from your phone.",
   "openCodeTitle": "OpenCode",
