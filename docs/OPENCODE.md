@@ -19,6 +19,7 @@ OpenCode **2.2.5+**.
 ### Sessions
 
 - Create a session in a project.
+- Search sessions across projects by title, directory, or ID.
 - Read a session transcript with images and file attachments.
 - Rename and delete sessions; show the session ID and metadata.
 - Send prompts, run slash commands, mention project files, and attach images or

@@ -62,7 +62,7 @@ AgentPort is a local-first Android app for chatting with AI models using your ow
 ### OpenCode remote control
 
 - Pair by QR code or URL; connect over LAN, a tunnel, or a remote host.
-- Browse projects, create a project with a remote folder browser, and list only that project's sessions.
+- Browse projects, create a project with a remote folder browser, and list only that project's sessions; search all sessions by title, directory, or ID.
 - Grouped transcripts: hidden reasoning behind a psychology button, one **Used N** tool summary, then the final answer.
 - Slash commands, `@` project-file mentions, image and file attachments.
 - Agent, model, and model-variant switching; token, cost, and context details.

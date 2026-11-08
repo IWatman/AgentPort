@@ -47,6 +47,11 @@ class OpenCodeProjectsScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
+            onPressed: () => _searchSessions(context, ref, connectionId),
+            tooltip: l10n.openCodeSearchSessions,
+            icon: const Icon(Icons.search_rounded),
+          ),
+          IconButton(
             onPressed: () => _addProject(context, ref, connectionId),
             tooltip: l10n.openCodeNewProject,
             icon: const Icon(Icons.create_new_folder_rounded),
@@ -156,6 +161,25 @@ class _ProjectCard extends StatelessWidget {
   }
 }
 
+Future<void> _searchSessions(
+  BuildContext context,
+  WidgetRef ref,
+  String connectionId,
+) async {
+  final session = await showDialog<OpenCodeSession>(
+    context: context,
+    builder: (dialogContext) =>
+        _SessionSearchDialog(connectionId: connectionId),
+  );
+  if (session == null || !context.mounted) {
+    return;
+  }
+  context.push(
+    '/opencode/${Uri.encodeComponent(connectionId)}/sessions/'
+    '${Uri.encodeComponent(session.id)}',
+  );
+}
+
 Future<void> _addProject(
   BuildContext context,
   WidgetRef ref,
@@ -213,6 +237,162 @@ Future<void> _addProject(
         ),
       );
     }
+  }
+}
+
+class _SessionSearchDialog extends ConsumerStatefulWidget {
+  const _SessionSearchDialog({required this.connectionId});
+
+  final String connectionId;
+
+  @override
+  ConsumerState<_SessionSearchDialog> createState() =>
+      _SessionSearchDialogState();
+}
+
+class _SessionSearchDialogState extends ConsumerState<_SessionSearchDialog> {
+  List<OpenCodeSession> _sessions = const [];
+  var _loading = true;
+  String? _error;
+  var _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final repository = ref.read(openCodeRepositoryProvider);
+      final connection = await repository.connection(widget.connectionId);
+      if (connection == null) {
+        throw const OpenCodeFailure(
+          OpenCodeFailureKind.invalidPayload,
+          detail: 'The OpenCode connection no longer exists.',
+        );
+      }
+      final client = await repository.clientFor(connection);
+      final sessions = await client.sessions();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _sessions = sessions;
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _loading = false;
+        _error = openCodeFailureText(AppLocalizations.of(context), error);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final query = _query.trim().toLowerCase();
+    final filtered = query.isEmpty
+        ? _sessions
+        : _sessions
+              .where(
+                (session) =>
+                    session.title.toLowerCase().contains(query) ||
+                    session.id.toLowerCase().contains(query) ||
+                    (session.directory?.toLowerCase().contains(query) ?? false),
+              )
+              .toList(growable: false);
+
+    return AlertDialog(
+      title: Text(l10n.openCodeSearchSessions),
+      contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: MediaQuery.sizeOf(context).height * 0.65,
+        child: Column(
+          children: [
+            TextField(
+              autofocus: true,
+              onChanged: (value) => setState(() => _query = value),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search_rounded),
+                hintText: l10n.openCodeSearchSessionsHint,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _error!,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _load,
+                            child: Text(l10n.commonRetry),
+                          ),
+                        ],
+                      ),
+                    )
+                  : filtered.isEmpty
+                  ? Center(
+                      child: Text(
+                        l10n.openCodeNoSessionsFound,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      primary: false,
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final session = filtered[index];
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.forum_outlined),
+                          title: Text(
+                            session.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            session.directory ?? session.project ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          onTap: () => Navigator.of(context).pop(session),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.commonCancel),
+        ),
+      ],
+    );
   }
 }
 
