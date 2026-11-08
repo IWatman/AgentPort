@@ -5,12 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.1] - 2026-11-08
+
+### Added
+
+- MCP legacy HTTP+SSE transport: incremental SSE parsing, endpoint origin checks, per-request response routing, timeouts, and cleanup, alongside Streamable HTTP.
+- README screenshots and a Phase 1 security review with a verification checklist in `docs/SECURITY.md`.
 
 ### Changed
 
 - OpenCode transcripts now group a whole assistant reply into one turn: reasoning stays hidden behind a psychology button, tool calls collapse into a single "Used N" summary, and only the final answer is shown.
 - The scroll-to-bottom button now jumps to the real end of the list in one tap in AI and OpenCode chats, including lazily built lists and streaming content.
+- Release builds show a neutral error screen for uncaught widget errors, and plain HTTP OpenCode URLs show an unencrypted-connection warning.
 
 ## [0.1.0] - 2026-11-08
 
