@@ -27,3 +27,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update infrastructure: stable-only GitHub Releases client, semantic version checks, streaming APK downloader with SHA-256 verification, Android PackageInstaller/FileProvider bridge, and a tag-driven signed release workflow with checksums.
 - In-app updates: daily automatic check, manual check in Settings, release-notes popup, download progress, checksum verification, install-permission guidance, and the system installer handoff.
 - Data backup: export chats and providers to JSON without API keys or tokens, and import them back from Settings.
+- Polish: reasoning is collapsed by default in AI and OpenCode chats, release builds show a neutral error screen for uncaught widget errors, and plain HTTP OpenCode URLs show an unencrypted-connection warning.
