@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- Expanded the Google Workspace section with project-number registration in the Developer Preview Program, API/MCP service hosts, OAuth client requirements, scopes, per-service consent, and troubleshooting.
+
 ## [0.2.4] - 2026-11-10
 
 ### Fixed

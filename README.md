@@ -18,6 +18,7 @@ AgentPort is a local-first Android app for chatting with AI models using your ow
 - [Install](#install)
 - [OpenCode](#opencode)
 - [MCP marketplace](#mcp-marketplace)
+  - [Google Workspace](#google-workspace)
 - [Providers](#providers)
 - [Security and privacy](#security-and-privacy)
 - [Build from source](#build-from-source)
@@ -127,9 +128,64 @@ Only remote MCP servers over HTTPS are supported on Android. The Plugins tab hid
 
 ### Google Workspace
 
-Open **Connections → Add Google Workspace**. The screen accepts a Google Cloud OAuth client ID and secret, shows the exact redirect URI, and creates a separate MCP connection for each selected service. The built-in instructions cover the Workspace Developer Preview, the APIs and MCP services to enable, the OAuth consent screen, and the **Use this client for an AI-powered agent** requirement.
+AgentPort ships presets for the nine official Google Workspace remote MCP servers:
 
-Google Workspace MCP servers are in Developer Preview and require access to the Google Workspace Developer Preview Program. A Desktop app OAuth client is recommended; a Web application client also works after adding `http://127.0.0.1:53682/callback` to its authorized redirect URIs. The OAuth client secret and tokens are stored only in the Android Keystore.
+| Service | Google API to enable | MCP service to enable |
+| --- | --- | --- |
+| Calendar | `calendar-json.googleapis.com` | `calendarmcp.googleapis.com` |
+| Gmail | `gmail.googleapis.com` | `gmailmcp.googleapis.com` |
+| Drive | `drive.googleapis.com` | `drivemcp.googleapis.com` |
+| Docs | `docs.googleapis.com` | `docsmcp.googleapis.com` |
+| Sheets | `sheets.googleapis.com` | `sheetsmcp.googleapis.com` |
+| Slides | `slides.googleapis.com` | `slidesmcp.googleapis.com` |
+| Chat | `chat.googleapis.com` | `chatmcp.googleapis.com` |
+| People | `people.googleapis.com` | `people.googleapis.com` |
+| Classroom | `classroom.googleapis.com` | `classroommcp.googleapis.com` |
+
+Google Workspace MCP is in **Developer Preview**. Three separate things must be configured; doing one does not enable the others:
+
+1. **Developer Preview Program registration.** Join the [Google Workspace Developer Preview Program](https://developers.google.com/workspace/preview) with a Google Workspace account and register the exact Google Cloud **project number** (not the project ID). If the account is already a member, use the program's "add or remove a Google Cloud project" form. Google verifies this manually; it can take a few days. Until the project is registered, the MCP tool returns `Access to this tool requires that your Google Cloud project (<number>) is enrolled in the Google Workspace Developer Preview Program`.
+2. **APIs in that project.** Enable the product API and the matching MCP service in the same project as the OAuth client. If an MCP service is not listed in the API Library, enable it with `gcloud services enable <service>`.
+3. **OAuth client.** Create a **Web application** client (the official Workspace MCP path) or a **Desktop app** client. For a Web application client, add the exact redirect URI `http://127.0.0.1:53682/callback`. Select **Use this client for an AI-powered agent**. Since **11 November 2026**, Google rejects Workspace MCP clients without this flag; on **12 November 2026** the flag locks on existing clients, so a client that was not marked must be replaced.
+
+OAuth consent screen:
+
+- **Internal** is the better choice for a single Workspace organization.
+- **External + Testing** works for personal testing: add the Google account under **Audience → Test users**. Google may expire refresh tokens for testing apps after about seven days.
+- Add scopes only for the services you selected. AgentPort requests them automatically; the exact list is shown in the app's setup guide.
+
+<details>
+<summary>Scopes requested by AgentPort</summary>
+
+| Service | Scopes |
+| --- | --- |
+| Calendar | `https://www.googleapis.com/auth/calendar` |
+| Gmail | `https://www.googleapis.com/auth/gmail.modify` |
+| Drive | `https://www.googleapis.com/auth/drive` |
+| Docs | `https://www.googleapis.com/auth/documents`, `https://www.googleapis.com/auth/drive.readonly` |
+| Sheets | `https://www.googleapis.com/auth/spreadsheets`, `https://www.googleapis.com/auth/drive.readonly` |
+| Slides | `https://www.googleapis.com/auth/presentations`, `https://www.googleapis.com/auth/drive.readonly` |
+| Chat | `https://www.googleapis.com/auth/chat.spaces`, `https://www.googleapis.com/auth/chat.messages`, `https://www.googleapis.com/auth/chat.memberships.readonly` |
+| People | `https://www.googleapis.com/auth/contacts.readonly`, `https://www.googleapis.com/auth/directory.readonly`, `https://www.googleapis.com/auth/userinfo.profile` |
+| Classroom | `https://www.googleapis.com/auth/classroom.courses`, `https://www.googleapis.com/auth/classroom.coursework.me`, `https://www.googleapis.com/auth/classroom.coursework.students`, `https://www.googleapis.com/auth/classroom.rosters.readonly`, `https://www.googleapis.com/auth/classroom.announcements.readonly`, `https://www.googleapis.com/auth/classroom.topics.readonly`, `https://www.googleapis.com/auth/classroom.profile.emails` |
+
+</details>
+
+In AgentPort, open **Connections → Add Google Workspace**, paste the client ID and secret, select services, and tap **Add selected**. Open each created server and tap **Connect with Google**. Every service creates its own MCP connection and token, so consent is requested separately for each one — each MCP endpoint is a separate OAuth resource. The OAuth client secret and tokens are stored only in the Android Keystore.
+
+Common errors:
+
+| Error | Cause and fix |
+| --- | --- |
+| `OAuth client was not found` | Wrong client type (Android/iOS instead of Web/Desktop), a mistyped or deleted client ID, or the ID and secret swapped. Create a **Web application** client in the same project and paste it again into every Google service. |
+| `Access to this tool requires ... project ... enrolled` | The project number is not registered in the Developer Preview Program. Use the program application or the existing-member project form. There is no Cloud Console toggle. |
+| `redirect_uri_mismatch` | The Web application client must contain exactly `http://127.0.0.1:53682/callback` (not `localhost`, no trailing slash). Google can take a few minutes to apply the change. |
+| `access_denied` | The account is not a test user, the wrong Google account was used, or the consent screen is not configured. |
+| `403` or the MCP server rejects the client | **Use this client for an AI-powered agent** is not selected, or the APIs/MCP services are enabled in a different project than the OAuth client. |
+| `Port 53682 is busy` | Another app is using the loopback port. Close it and retry. |
+| Workspace admin blocks access | Allow the OAuth app/API in the Admin console under **Security → API controls → App access control**. |
+
+See the [official Google Workspace MCP setup guide](https://developers.google.com/workspace/guides/configure-mcp-servers) for the current Google-side requirements.
 
 Trust labels:
 
@@ -208,7 +264,7 @@ The app checks for stable updates once per day when automatic checks are enabled
 
 - Android only for now; a Windows client is planned after the MVP.
 - Remote MCP servers only on Android; local `stdio` servers cannot run inside the app.
-- Google Workspace MCP servers are in Developer Preview, require the Workspace Developer Preview Program, and need your own Google Cloud OAuth client.
+- Google Workspace MCP servers are in Developer Preview: the Google Cloud **project** must be registered in the Workspace Developer Preview Program, the product APIs and `*mcp.googleapis.com` services must be enabled, and the OAuth client must be marked **Use this client for an AI-powered agent**.
 - The OpenCode v2 API is experimental and may change between versions.
 - OpenCode does not expose LSP status through its API, so AgentPort cannot list language servers.
 - OpenCode terminal, file browser, diff/VCS, worktrees, and session fork/move/compact/revert are not implemented yet; they are tracked in [docs/OPENCODE.md](docs/OPENCODE.md).
