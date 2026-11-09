@@ -66,6 +66,9 @@ abstract final class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return base.textTheme.labelMedium?.copyWith(
+            fontSize: 11,
+            height: 1.1,
+            letterSpacing: 0,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             color: selected ? scheme.onSurface : scheme.onSurfaceVariant,
           );

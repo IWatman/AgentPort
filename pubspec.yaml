@@ -1,7 +1,7 @@
 name: agentport
 description: "Android AI chat client with MCP marketplace and OpenCode remote control."
 publish_to: "none"
-version: 0.2.3+20300
+version: 0.2.4+20400
 
 environment:
   sdk: ^3.13.7

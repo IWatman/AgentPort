@@ -15,36 +15,40 @@ class HomeShell extends StatelessWidget {
 
     return Scaffold(
       body: UpdatePromptHost(child: navigationShell),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: (index) {
-          navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
-          );
-        },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.chat_bubble_outline_rounded),
-            selectedIcon: const Icon(Icons.chat_bubble_rounded),
-            label: l10n.tabChats,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.storefront_outlined),
-            selectedIcon: const Icon(Icons.storefront_rounded),
-            label: l10n.tabMarketplace,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.hub_outlined),
-            selectedIcon: const Icon(Icons.hub_rounded),
-            label: l10n.tabConnections,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings_rounded),
-            label: l10n.tabSettings,
-          ),
-        ],
+      bottomNavigationBar: MediaQuery.withClampedTextScaling(
+        // Keep the four labels on one line even with a large system font.
+        maxScaleFactor: 1,
+        child: NavigationBar(
+          selectedIndex: navigationShell.currentIndex,
+          onDestinationSelected: (index) {
+            navigationShell.goBranch(
+              index,
+              initialLocation: index == navigationShell.currentIndex,
+            );
+          },
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.chat_bubble_outline_rounded),
+              selectedIcon: const Icon(Icons.chat_bubble_rounded),
+              label: l10n.tabChats,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.storefront_outlined),
+              selectedIcon: const Icon(Icons.storefront_rounded),
+              label: l10n.tabMarketplace,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.hub_outlined),
+              selectedIcon: const Icon(Icons.hub_rounded),
+              label: l10n.tabConnections,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.settings_outlined),
+              selectedIcon: const Icon(Icons.settings_rounded),
+              label: l10n.tabSettings,
+            ),
+          ],
+        ),
       ),
     );
   }

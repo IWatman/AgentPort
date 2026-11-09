@@ -9,7 +9,7 @@
 
 AgentPort is a local-first Android app for chatting with AI models using your own API key, connecting remote MCP servers, and controlling OpenCode sessions from your phone.
 
-> **Status:** `v0.2.3` is the latest stable release.
+> **Status:** `v0.2.4` is the latest stable release.
 
 ## Contents
 

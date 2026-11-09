@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-11-10
+
+### Fixed
+
+- Bottom navigation labels no longer wrap or clip on narrow screens or with a large system font.
+- The Connections tab label is now **Servers** / **Серверы**; its screen title remains **Connections** / **Подключения**.
+
 ## [0.2.3] - 2026-11-10
 
 ### Fixed
