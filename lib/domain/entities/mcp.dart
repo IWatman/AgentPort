@@ -1,3 +1,4 @@
+import 'google_mcp.dart';
 import 'marketplace.dart';
 
 /// An installed remote MCP server.
@@ -34,6 +35,9 @@ class McpServer {
 
   String get displayName =>
       pluginTitle?.trim().isNotEmpty == true ? pluginTitle!.trim() : name;
+
+  /// The Google Workspace product this server belongs to, when applicable.
+  GoogleMcpService? get googleService => googleMcpServiceForUrl(url);
 
   bool get supportsCurrentTransport =>
       transport == McpTransport.http || transport == McpTransport.sse;

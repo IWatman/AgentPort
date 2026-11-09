@@ -46,7 +46,7 @@ exercised against a third-party legacy server.
 | --- | --- | --- |
 | Provider API keys | Android Keystore-backed secure storage via `SecureStore` | Database stores only `apiKeyRef`; key value is written by `ProviderRepository`. |
 | MCP manual header values | Android Keystore-backed secure storage via `McpCredentialStore` | Database stores header names and non-secret templates only. |
-| MCP OAuth access/refresh tokens, client secret | Android Keystore-backed secure storage via `McpCredentialStore` | Token set is serialized as JSON into a Keystore-backed entry. |
+| MCP OAuth access/refresh tokens, pre-registered client ID/secret | Android Keystore-backed secure storage via `McpCredentialStore` | Token set and `McpOAuthClientConfig` are serialized as JSON into separate Keystore-backed entries. |
 | Chats, messages, attachments, tool output | SQLCipher database | Encrypted at rest with a 256-bit key stored through `SecureStore` (Keystore-backed encryption). |
 | Backup file | User-selected location, plaintext JSON | Excludes API keys, MCP headers/tokens, and OpenCode tokens; includes chat content and provider configuration. |
 | OpenCode pairing token | Android Keystore-backed secure storage via `SecureStore` | Database stores only `tokenRef` plus server metadata; the token is sent as the HTTP Basic password. |
@@ -125,9 +125,14 @@ AgentPort is a local-first Android client. The relevant trust boundaries are:
   code verifier, builds an S256 challenge
   (`base64url(sha256(verifier))` without padding), generates a random `state`, and
   sends `response_type=code`, `code_challenge_method=S256`, and `state`.
+- **Pre-registered clients.** `McpOAuthClientConfig` supplies a client ID/secret,
+  optional fixed redirect URI, custom scopes, and extra authorization parameters.
+  Google connections use `http://127.0.0.1:53682/callback`,
+  `access_type=offline`, and `prompt=consent`. The client secret is stored in the
+  Keystore, never in a Drift row.
 - **Loopback callback.** `_CallbackServer.start` binds
-  `InternetAddress.loopbackIPv4` on an ephemeral port and uses
-  `http://127.0.0.1:<port>/callback` as the redirect URI. The callback is checked
+  `InternetAddress.loopbackIPv4` on an ephemeral port or the configured fixed port and
+  uses `http://127.0.0.1:<port>/callback` as the redirect URI. The callback is checked
   against the generated `state` before the code is exchanged. The HTTP scheme here is
   limited to the loopback interface and does not traverse the network.
 - **Token exchange and refresh.** `exchangeCode` sends the code and verifier to the

@@ -253,6 +253,43 @@ void main() {
     });
   });
 
+  group('MarketplaceRepository Android compatibility', () {
+    test('probes unknown plugins and hides unsupported ones', () async {
+      final server = _MockMarketplaceServer(
+        manifest: _manifestV1,
+        mcpFiles: const {_alphaMcpUrl: _alphaMcpJson},
+      );
+      final repository = repositoryFor(server);
+      final marketplace = await repository.addMarketplace('owner/repo');
+
+      expect(await repository.pendingProbeCount(), 2);
+      final probed = <MarketplacePlugin>[];
+      await repository.probePendingPlugins(onProbed: probed.add);
+
+      expect(probed, hasLength(2));
+      expect(await repository.pendingProbeCount(), 0);
+
+      final alpha = await repository.pluginById(
+        repository.pluginIdFor(marketplace.id, 'alpha'),
+      );
+      final beta = await repository.pluginById(
+        repository.pluginIdFor(marketplace.id, 'beta'),
+      );
+      expect(alpha!.mcpStatus, PluginMcpStatus.remote);
+      expect(alpha.isAvailableOnAndroid, isTrue);
+      expect(beta!.mcpStatus, PluginMcpStatus.none);
+      expect(beta.isAvailableOnAndroid, isFalse);
+
+      final catalog = await repository.loadCatalog();
+      expect(
+        catalog.plugins
+            .where((plugin) => plugin.isAvailableOnAndroid)
+            .map((plugin) => plugin.name),
+        ['alpha'],
+      );
+    });
+  });
+
   group('MarketplaceRepository.refreshMarketplace', () {
     test(
       'keeps installed state and drops removed uninstalled plugins',

@@ -17,6 +17,9 @@ class McpCredentialStore {
 
   String _oauthKey(String serverId) => 'agentport.mcp.$serverId.oauth.v1';
 
+  String _oauthClientKey(String serverId) =>
+      'agentport.mcp.$serverId.oauth_client.v1';
+
   Future<Map<String, String>> headers(String serverId) async {
     final raw = await _secureStore.read(_key(serverId));
     if (raw == null || raw.isEmpty) {
@@ -65,6 +68,32 @@ class McpCredentialStore {
 
   Future<void> deleteOAuthToken(String serverId) async {
     await _secureStore.delete(_oauthKey(serverId));
+  }
+
+  Future<McpOAuthClientConfig?> oauthClient(String serverId) async {
+    final raw = await _secureStore.read(_oauthClientKey(serverId));
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+    try {
+      return McpOAuthClientConfig.fromJson(jsonDecode(raw));
+    } on FormatException {
+      return null;
+    }
+  }
+
+  Future<void> saveOAuthClient(
+    String serverId,
+    McpOAuthClientConfig config,
+  ) async {
+    await _secureStore.write(
+      _oauthClientKey(serverId),
+      jsonEncode(config.toJson()),
+    );
+  }
+
+  Future<void> deleteOAuthClient(String serverId) async {
+    await _secureStore.delete(_oauthClientKey(serverId));
   }
 }
 

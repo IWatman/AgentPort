@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:agentport/data/mcp/mcp_oauth.dart';
 import 'package:agentport/domain/entities/mcp_oauth.dart';
@@ -120,6 +121,89 @@ void main() {
       expect(tokenForm?['client_id'], 'client-1');
       expect(tokenForm?['code_verifier'], isNotEmpty);
       expect(tokenForm?['resource'], 'https://mcp.example/mcp');
+    });
+
+    test('uses a pre-registered client and fixed redirect', () async {
+      final probe = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      final port = probe.port;
+      await probe.close();
+
+      final requests = <http.Request>[];
+      Map<String, String>? tokenForm;
+      Uri? authorization;
+      final flow = McpOAuthFlow(
+        clientFactory: () => MockClient((request) async {
+          requests.add(request);
+          if (request.url.path.contains('oauth-protected-resource')) {
+            return _json({
+              'resource': 'https://mcp.example/mcp',
+              'authorization_servers': ['https://auth.example'],
+            });
+          }
+          if (request.url.path == '/.well-known/oauth-authorization-server') {
+            return _json({
+              'authorization_endpoint': 'https://auth.example/authorize',
+              'token_endpoint': 'https://auth.example/token',
+              'scopes_supported': ['profile', 'email'],
+            });
+          }
+          if (request.url.path == '/token') {
+            tokenForm = request.bodyFields;
+            return _json({
+              'access_token': 'access-google',
+              'refresh_token': 'refresh-google',
+              'expires_in': 3600,
+            });
+          }
+          return _json({'error': 'not found'}, 404);
+        }),
+        browserLauncher: (uri) async {
+          authorization = uri;
+          final state = uri.queryParameters['state'];
+          final redirect = Uri.parse(uri.queryParameters['redirect_uri']!);
+          expect(redirect.toString(), 'http://127.0.0.1:$port/callback');
+          final callback = redirect.replace(
+            queryParameters: {'code': 'code-google', 'state': state},
+          );
+          final response = await http.get(callback);
+          return response.statusCode == 200;
+        },
+      );
+
+      final token = await flow.authorize(
+        resourceUrl: 'https://mcp.example/mcp',
+        clientConfig: McpOAuthClientConfig(
+          clientId: 'client-google',
+          clientSecret: 'secret-google',
+          redirectUri: 'http://127.0.0.1:$port/callback',
+          scopes: const ['https://www.googleapis.com/auth/calendar'],
+          authorizationParams: const {
+            'access_type': 'offline',
+            'prompt': 'consent',
+          },
+        ),
+      );
+
+      expect(token.accessToken, 'access-google');
+      expect(token.clientId, 'client-google');
+      expect(token.clientSecret, 'secret-google');
+      expect(
+        requests.where((request) => request.url.path == '/register'),
+        isEmpty,
+      );
+      expect(authorization!.queryParameters['client_id'], 'client-google');
+      expect(
+        authorization!.queryParameters['scope'],
+        'https://www.googleapis.com/auth/calendar',
+      );
+      expect(authorization!.queryParameters['access_type'], 'offline');
+      expect(authorization!.queryParameters['prompt'], 'consent');
+      expect(
+        authorization!.queryParameters['redirect_uri'],
+        'http://127.0.0.1:$port/callback',
+      );
+      expect(tokenForm?['client_secret'], 'secret-google');
+      expect(tokenForm?['redirect_uri'], 'http://127.0.0.1:$port/callback');
     });
 
     test('refreshes an expired token', () async {

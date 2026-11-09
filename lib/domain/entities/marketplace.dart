@@ -224,6 +224,10 @@ class MarketplacePlugin {
 
   bool get supportsAndroid => hasRemoteServers;
 
+  /// Whether the plugin should be listed on Android. Installed plugins stay
+  /// visible so they can be managed or removed even if a catalog changed.
+  bool get isAvailableOnAndroid => installed || supportsAndroid;
+
   TrustLevel get trustLevel {
     // Trust is determined by the marketplace we resolved the plugin from, not
     // by free-text author fields that a manifest can spoof.

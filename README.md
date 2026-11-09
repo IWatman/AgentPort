@@ -9,7 +9,7 @@
 
 AgentPort is a local-first Android app for chatting with AI models using your own API key, connecting remote MCP servers, and controlling OpenCode sessions from your phone.
 
-> **Status:** `v0.2.0` is the latest stable release.
+> **Status:** `v0.2.1` is the latest stable release.
 
 ## Contents
 
@@ -54,8 +54,10 @@ AgentPort is a local-first Android app for chatting with AI models using your ow
 ### MCP connectors
 
 - Browse Claude-compatible plugin marketplaces and install remote MCP servers.
+- Google Workspace presets for Calendar, Gmail, Drive, Docs, Sheets, Slides, Chat, People, and Classroom; paste one Google Cloud OAuth client and select the services you need.
 - Streamable HTTP and legacy HTTP+SSE transports over HTTPS.
 - Browser OAuth with discovery, dynamic registration, Authorization Code + PKCE, a loopback callback, and automatic token refresh.
+- Pre-registered OAuth clients with fixed redirect URIs, custom scopes, and extra authorization parameters for providers such as Google.
 - Manual API key or header authorization as a fallback.
 - Tool calls in chat: read-only tools run automatically, write tools ask for approval, and a turn is capped at four tool rounds.
 
@@ -117,9 +119,15 @@ The Marketplace screen has two tabs:
 - **Plugins** — search and filter by **All**, **MCP available**, or **Installed**.
 - **Marketplaces** — refresh sources or add one with `owner/repo`, a GitHub URL, or a direct `marketplace.json` URL.
 
-GitHub marketplaces keep their manifest at `.claude-plugin/marketplace.json`. A plugin's `.mcp.json` is fetched lazily when the plugin is opened, not during catalog sync.
+GitHub marketplaces keep their manifest at `.claude-plugin/marketplace.json`. After a catalog sync, AgentPort checks each plugin's `.mcp.json` in the background and caches the result.
 
-Only remote MCP servers over HTTPS are supported on Android. Plugins that declare only `stdio`/local commands are listed but marked unsupported and cannot be installed. Install state is stored locally; if a plugin's MCP configuration changes, it is disabled until the new configuration is reviewed and accepted.
+Only remote MCP servers over HTTPS are supported on Android. The Plugins tab hides plugins that cannot run on a phone: local `stdio`/command servers, plugins without a remote MCP server, and plugins with an unresolved or failed compatibility check. Installed plugins stay visible so they can be managed or removed. Install state is stored locally; if a plugin's MCP configuration changes, it is disabled until the new configuration is reviewed and accepted.
+
+### Google Workspace
+
+Open **Connections → Add Google Workspace**. The screen accepts a Google Cloud OAuth client ID and secret, shows the exact redirect URI, and creates a separate MCP connection for each selected service. The built-in instructions cover the Workspace Developer Preview, the APIs and MCP services to enable, the OAuth consent screen, and the **Use this client for an AI-powered agent** requirement.
+
+Google Workspace MCP servers are in Developer Preview and require access to the Google Workspace Developer Preview Program. A Desktop app OAuth client is recommended; a Web application client also works after adding `http://127.0.0.1:53682/callback` to its authorized redirect URIs. The OAuth client secret and tokens are stored only in the Android Keystore.
 
 Trust labels:
 
@@ -133,10 +141,10 @@ Add a provider in **Settings → AI providers**. Presets fill the name and base 
 
 ## Security and privacy
 
-- API keys, MCP header values, OAuth tokens, and the OpenCode pairing token live in the Android Keystore.
+- API keys, MCP header values, OAuth client IDs/secrets, OAuth tokens, and the OpenCode pairing token live in the Android Keystore.
 - Chats and messages are stored in a SQLCipher-encrypted database.
 - Backups exclude API keys, tokens, MCP credentials, and OpenCode connections.
-- MCP OAuth uses PKCE and `state`; the loopback callback listens only on `127.0.0.1`.
+- MCP OAuth uses PKCE and `state`; the loopback callback listens only on `127.0.0.1`. Google connections use the fixed `http://127.0.0.1:53682/callback` redirect.
 - Remote MCP URLs must use HTTPS. Plain HTTP is accepted for OpenCode only with an explicit unencrypted-connection warning.
 - Updates are stable-only, checksum-verified, and installed through Android's package installer.
 
@@ -198,9 +206,10 @@ The app checks for stable updates once per day when automatic checks are enabled
 
 - Android only for now; a Windows client is planned after the MVP.
 - Remote MCP servers only on Android; local `stdio` servers cannot run inside the app.
+- Google Workspace MCP servers are in Developer Preview, require the Workspace Developer Preview Program, and need your own Google Cloud OAuth client.
 - The OpenCode v2 API is experimental and may change between versions.
 - OpenCode does not expose LSP status through its API, so AgentPort cannot list language servers.
-- OpenCode terminal, file browser, diff/VCS, worktrees, permission replies, and session fork/move/compact/revert are not implemented yet; they are tracked in [docs/OPENCODE.md](docs/OPENCODE.md).
+- OpenCode terminal, file browser, diff/VCS, worktrees, and session fork/move/compact/revert are not implemented yet; they are tracked in [docs/OPENCODE.md](docs/OPENCODE.md).
 
 ## Contributing
 

@@ -64,14 +64,30 @@ class McpOAuthFlow {
   }
 
   /// Opens the browser, waits for the loopback callback, and returns tokens.
-  Future<McpOAuthToken> authorize({required String resourceUrl}) async {
-    final callback = await _CallbackServer.start();
+  ///
+  /// When [clientConfig] is provided the flow uses that pre-registered OAuth
+  /// client instead of dynamic registration. This is required for Google,
+  /// which does not publish a registration endpoint.
+  Future<McpOAuthToken> authorize({
+    required String resourceUrl,
+    McpOAuthClientConfig? clientConfig,
+  }) async {
+    final fixedRedirect = clientConfig?.redirectUri;
+    final callback = await _CallbackServer.start(
+      port: fixedRedirect == null ? 0 : _redirectPort(fixedRedirect),
+      path: fixedRedirect == null ? '/callback' : _redirectPath(fixedRedirect),
+    );
+    final redirectUri = fixedRedirect == null
+        ? callback.redirectUri
+        : Uri.parse(fixedRedirect);
     try {
       final discovery = await discover(resourceUrl);
-      final client = await register(
-        discovery,
-        redirectUri: callback.redirectUri,
-      );
+      final client = clientConfig == null
+          ? await register(discovery, redirectUri: redirectUri)
+          : McpOAuthClient(
+              clientId: clientConfig.clientId,
+              clientSecret: clientConfig.clientSecret,
+            );
       final verifier = _randomToken(48);
       final challenge = base64Url
           .encode(sha256.convert(utf8.encode(verifier)).bytes)
@@ -80,9 +96,13 @@ class McpOAuthFlow {
       final authorization = _authorizationUri(
         discovery: discovery,
         client: client,
-        redirectUri: callback.redirectUri,
+        redirectUri: redirectUri,
         state: state,
         challenge: challenge,
+        scope: clientConfig == null
+            ? _scopeFor(discovery.scopesSupported)
+            : clientConfig.scope,
+        extraParams: clientConfig?.authorizationParams ?? const {},
       );
 
       final launched = await _browserLauncher(authorization);
@@ -121,11 +141,35 @@ class McpOAuthFlow {
         client: client,
         code: code,
         codeVerifier: verifier,
-        redirectUri: callback.redirectUri,
+        redirectUri: redirectUri,
+        extraParams: clientConfig?.tokenParams ?? const {},
       );
     } finally {
       await callback.close();
     }
+  }
+
+  int _redirectPort(String redirectUri) {
+    final uri = Uri.tryParse(redirectUri);
+    if (uri == null ||
+        uri.scheme != 'http' ||
+        (uri.host != '127.0.0.1' && uri.host != 'localhost') ||
+        !uri.hasPort) {
+      throw const McpOAuthException(
+        'The OAuth redirect URI must be an http://127.0.0.1 loopback URI '
+        'with an explicit port.',
+      );
+    }
+    return uri.port;
+  }
+
+  String _redirectPath(String redirectUri) {
+    final uri = Uri.tryParse(redirectUri);
+    final path = uri?.path;
+    if (path == null || path.isEmpty) {
+      return '/callback';
+    }
+    return path;
   }
 
   Future<McpOAuthDiscovery> discover(String resourceUrl) async {
@@ -263,8 +307,10 @@ class McpOAuthFlow {
     required String code,
     required String codeVerifier,
     required Uri redirectUri,
+    Map<String, String> extraParams = const {},
   }) async {
     final response = await _postForm(discovery.tokenEndpoint, {
+      ...extraParams,
       'grant_type': 'authorization_code',
       'code': code,
       'redirect_uri': redirectUri.toString(),
@@ -353,8 +399,9 @@ class McpOAuthFlow {
     required Uri redirectUri,
     required String state,
     required String challenge,
+    required String scope,
+    required Map<String, String> extraParams,
   }) {
-    final scope = _scopeFor(discovery.scopesSupported);
     final params = <String, String>{
       'response_type': 'code',
       'client_id': client.clientId,
@@ -364,6 +411,7 @@ class McpOAuthFlow {
       'code_challenge_method': 'S256',
       if (scope.isNotEmpty) 'scope': scope,
       if (discovery.resource.isNotEmpty) 'resource': discovery.resource,
+      ...extraParams,
     };
     return discovery.authorizationEndpoint.replace(
       queryParameters: {
@@ -529,26 +577,43 @@ class McpOAuthFlow {
 }
 
 class _CallbackServer {
-  _CallbackServer._(this._server)
-    : redirectUri = Uri.parse('http://127.0.0.1:${_server.port}/callback');
+  _CallbackServer._(this._server, this._path)
+    : redirectUri = Uri(
+        scheme: 'http',
+        host: '127.0.0.1',
+        port: _server.port,
+        path: _path,
+      );
 
   final HttpServer _server;
+  final String _path;
   final Uri redirectUri;
   final Completer<Uri> _completer = Completer<Uri>();
   var _closed = false;
 
-  static Future<_CallbackServer> start() async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    final callback = _CallbackServer._(server);
-    unawaited(callback._listen());
-    return callback;
+  static Future<_CallbackServer> start({
+    int port = 0,
+    String path = '/callback',
+  }) async {
+    try {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
+      final callback = _CallbackServer._(server, path);
+      unawaited(callback._listen());
+      return callback;
+    } on SocketException {
+      throw McpOAuthException(
+        port == 0
+            ? 'Could not start the local authorization callback.'
+            : 'Port $port is busy. Close the app using it and try again.',
+      );
+    }
   }
 
   Future<Uri> waitForCallback() => _completer.future;
 
   Future<void> _listen() async {
     await for (final request in _server) {
-      if (request.uri.path != '/callback') {
+      if (request.uri.path != _path) {
         request.response.statusCode = HttpStatus.notFound;
         await request.response.close();
         continue;

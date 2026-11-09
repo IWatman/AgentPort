@@ -1,3 +1,84 @@
+/// A pre-registered OAuth client supplied by the user.
+///
+/// Google does not support dynamic client registration, so remote MCP servers
+/// that rely on a Google Cloud OAuth client need the client id and secret to be
+/// configured up front. The values are persisted in the Android Keystore.
+class McpOAuthClientConfig {
+  const McpOAuthClientConfig({
+    required this.clientId,
+    this.clientSecret,
+    this.redirectUri,
+    this.scopes = const [],
+    this.authorizationParams = const {},
+    this.tokenParams = const {},
+  });
+
+  final String clientId;
+  final String? clientSecret;
+
+  /// Fixed loopback redirect URI. When omitted the flow uses an ephemeral port.
+  final String? redirectUri;
+
+  /// Scopes requested from the authorization server.
+  final List<String> scopes;
+
+  /// Extra authorization request parameters, such as `access_type=offline`.
+  final Map<String, String> authorizationParams;
+
+  /// Extra token request parameters.
+  final Map<String, String> tokenParams;
+
+  String get scope => scopes.join(' ');
+
+  Map<String, Object?> toJson() => {
+    'client_id': clientId,
+    'client_secret': clientSecret,
+    'redirect_uri': redirectUri,
+    'scopes': scopes,
+    'authorization_params': authorizationParams,
+    'token_params': tokenParams,
+  };
+
+  static McpOAuthClientConfig? fromJson(Object? value) {
+    if (value is! Map) {
+      return null;
+    }
+    final map = Map<String, Object?>.from(value);
+    final clientId = map['client_id'];
+    if (clientId is! String || clientId.isEmpty) {
+      return null;
+    }
+    final rawScopes = map['scopes'];
+    final rawAuthParams = map['authorization_params'];
+    final rawTokenParams = map['token_params'];
+    return McpOAuthClientConfig(
+      clientId: clientId,
+      clientSecret: map['client_secret'] is String
+          ? map['client_secret'] as String
+          : null,
+      redirectUri: map['redirect_uri'] is String
+          ? map['redirect_uri'] as String
+          : null,
+      scopes: rawScopes is List
+          ? rawScopes.whereType<String>().toList(growable: false)
+          : const [],
+      authorizationParams: _stringMap(rawAuthParams),
+      tokenParams: _stringMap(rawTokenParams),
+    );
+  }
+
+  static Map<String, String> _stringMap(Object? value) {
+    if (value is! Map) {
+      return const {};
+    }
+    return {
+      for (final entry in value.entries)
+        if (entry.key is String && entry.value is String)
+          entry.key! as String: entry.value! as String,
+    };
+  }
+}
+
 /// OAuth credentials for one MCP server.
 ///
 /// The token set is persisted in the Android Keystore as JSON; secret values

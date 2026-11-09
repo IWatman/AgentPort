@@ -87,6 +87,54 @@ class McpServerRepository {
     return result;
   }
 
+  /// Creates or updates a standalone (non-marketplace) MCP server.
+  Future<McpServer> saveServer({
+    required String id,
+    required String name,
+    required String url,
+    McpTransport transport = McpTransport.http,
+    McpAuthType authType = McpAuthType.oauth,
+  }) async {
+    final existing = await (_database.select(
+      _database.mcpServerEntries,
+    )..where((table) => table.id.equals(id))).getSingleOrNull();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (existing == null) {
+      await _database
+          .into(_database.mcpServerEntries)
+          .insert(
+            McpServerEntriesCompanion.insert(
+              id: id,
+              name: name,
+              url: url,
+              transport: transport.storageValue,
+              authType: authType.storageValue,
+              configHash: url,
+              createdAt: now,
+            ),
+          );
+    } else {
+      await (_database.update(
+        _database.mcpServerEntries,
+      )..where((table) => table.id.equals(id))).write(
+        McpServerEntriesCompanion(
+          name: Value(name),
+          url: Value(url),
+          transport: Value(transport.storageValue),
+          authType: Value(authType.storageValue),
+        ),
+      );
+    }
+    final server = await serverById(id);
+    if (server == null) {
+      throw const McpFailure(
+        McpFailureKind.protocol,
+        'The MCP server could not be saved.',
+      );
+    }
+    return server;
+  }
+
   Future<void> setEnabled(String serverId, bool enabled) async {
     await (_database.update(_database.mcpServerEntries)
           ..where((table) => table.id.equals(serverId)))
@@ -105,6 +153,34 @@ class McpServerRepository {
     await _credentials.deleteOAuthToken(serverId);
   }
 
+  Future<McpOAuthClientConfig?> oauthClientFor(String serverId) {
+    return _credentials.oauthClient(serverId);
+  }
+
+  /// Saves a pre-registered OAuth client and invalidates tokens that belong to
+  /// a different client configuration.
+  Future<void> saveOAuthClient(
+    String serverId,
+    McpOAuthClientConfig config,
+  ) async {
+    final existing = await _credentials.oauthClient(serverId);
+    final changed =
+        existing == null ||
+        existing.clientId != config.clientId ||
+        existing.clientSecret != config.clientSecret ||
+        existing.redirectUri != config.redirectUri ||
+        existing.scope != config.scope;
+    await _credentials.saveOAuthClient(serverId, config);
+    if (changed) {
+      await _credentials.deleteOAuthToken(serverId);
+    }
+  }
+
+  Future<void> clearOAuthClient(String serverId) async {
+    await _credentials.deleteOAuthClient(serverId);
+    await _credentials.deleteOAuthToken(serverId);
+  }
+
   /// Opens the browser OAuth flow and caches the discovered tools.
   Future<List<McpTool>> authorizeOAuth(String serverId) async {
     final server = await serverById(serverId);
@@ -114,7 +190,10 @@ class McpServerRepository {
         'The MCP server is not installed.',
       );
     }
-    final token = await _oauth.authorize(resourceUrl: server.url);
+    final token = await _oauth.authorize(
+      resourceUrl: server.url,
+      clientConfig: await _credentials.oauthClient(serverId),
+    );
     await _credentials.saveOAuthToken(serverId, token);
     return refreshTools(serverId);
   }

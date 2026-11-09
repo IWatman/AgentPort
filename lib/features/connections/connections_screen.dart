@@ -6,6 +6,7 @@ import '../../domain/entities/mcp.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../marketplace/marketplace_failure_text.dart';
 import '../shared/empty_state.dart';
+import 'google_mcp_text.dart';
 import 'mcp_connections_controller.dart';
 import 'mcp_text.dart';
 
@@ -28,6 +29,11 @@ class ConnectionsScreen extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/connections/google'),
+        icon: const Icon(Icons.add_rounded),
+        label: Text(l10n.googleMcpAdd),
+      ),
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stackTrace) => EmptyState(
@@ -45,15 +51,26 @@ class ConnectionsScreen extends ConsumerWidget {
               icon: Icons.hub_outlined,
               title: l10n.mcpNoServersTitle,
               body: l10n.mcpNoServersBody,
-              action: FilledButton.icon(
-                onPressed: () => context.go('/marketplace'),
-                icon: const Icon(Icons.storefront_rounded),
-                label: Text(l10n.mcpOpenMarketplace),
+              action: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FilledButton.icon(
+                    onPressed: () => context.push('/connections/google'),
+                    icon: const Icon(Icons.workspaces_outline),
+                    label: Text(l10n.googleMcpAdd),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () => context.go('/marketplace'),
+                    icon: const Icon(Icons.storefront_rounded),
+                    label: Text(l10n.mcpOpenMarketplace),
+                  ),
+                ],
               ),
             );
           }
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
             children: [
               Text(
                 l10n.mcpServersSection,
@@ -105,7 +122,7 @@ class _ServerCard extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          server.displayName,
+                          mcpServerDisplayName(l10n, server),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleSmall?.copyWith(
@@ -114,7 +131,9 @@ class _ServerCard extends ConsumerWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          server.name,
+                          server.googleService == null
+                              ? server.name
+                              : l10n.googleMcpTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
@@ -154,6 +173,8 @@ class _ServerCard extends ConsumerWidget {
                     label: l10n.mcpToolsCount(view.tools.length),
                     highlighted: view.tools.isNotEmpty,
                   ),
+                  if (server.googleService != null)
+                    _Tag(label: l10n.googleMcpTitle, highlighted: true),
                   if (!server.enabled) _Tag(label: l10n.mcpServerDisabled),
                   if (server.needsReconsent)
                     _Tag(label: l10n.marketplaceNeedsReconsent),

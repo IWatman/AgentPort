@@ -6,6 +6,7 @@ import '../core/settings/settings_controller.dart';
 import '../features/chat/chat_screen.dart';
 import '../features/chats/chats_screen.dart';
 import '../features/connections/connections_screen.dart';
+import '../features/connections/google_mcp_setup_screen.dart';
 import '../features/connections/mcp_server_screen.dart';
 import '../features/marketplace/marketplace_screen.dart';
 import '../features/marketplace/plugin_detail_screen.dart';
@@ -109,6 +110,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             ChatScreen(conversationId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/connections/google',
+        name: 'googleMcpSetup',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const GoogleMcpSetupScreen(),
       ),
       GoRoute(
         path: '/connections/:id',

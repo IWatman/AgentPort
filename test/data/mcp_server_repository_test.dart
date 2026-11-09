@@ -210,6 +210,78 @@ void main() {
     expect(await repository.hasOAuthToken(serverId), isFalse);
   });
 
+  test('saves standalone Google servers', () async {
+    final repository = repositoryFor(_FakeServer());
+
+    final server = await repository.saveServer(
+      id: 'google-calendar',
+      name: 'Google Calendar',
+      url: 'https://calendarmcp.googleapis.com/mcp/v1',
+    );
+
+    expect(server.id, 'google-calendar');
+    expect(server.googleService?.id, 'calendar');
+    expect(server.authType.storageValue, 'oauth');
+    expect(server.enabled, isTrue);
+
+    final updated = await repository.saveServer(
+      id: 'google-calendar',
+      name: 'Google Calendar updated',
+      url: 'https://calendarmcp.googleapis.com/mcp/v1',
+    );
+    expect(updated.name, 'Google Calendar updated');
+  });
+
+  test('stores pre-registered OAuth clients and clears stale tokens', () async {
+    final credentials = McpCredentialStore(secureStore);
+    final repository = McpServerRepository(
+      database,
+      credentials,
+      client: McpClient(clientFactory: _FakeServer().client),
+    );
+    const serverId = 'p1/context7';
+    const config = McpOAuthClientConfig(
+      clientId: 'client-google',
+      clientSecret: 'secret-google',
+      redirectUri: 'http://127.0.0.1:53682/callback',
+      scopes: ['https://www.googleapis.com/auth/calendar'],
+      authorizationParams: {'access_type': 'offline', 'prompt': 'consent'},
+    );
+
+    await credentials.saveOAuthToken(
+      serverId,
+      const McpOAuthToken(
+        accessToken: 'access-1',
+        tokenEndpoint: 'https://auth.example/token',
+        clientId: 'client-google',
+      ),
+    );
+    expect(await repository.hasOAuthToken(serverId), isTrue);
+
+    await repository.saveOAuthClient(serverId, config);
+    expect(await repository.hasOAuthToken(serverId), isFalse);
+
+    final stored = await repository.oauthClientFor(serverId);
+    expect(stored?.clientId, 'client-google');
+    expect(stored?.clientSecret, 'secret-google');
+    expect(stored?.authorizationParams['access_type'], 'offline');
+
+    await credentials.saveOAuthToken(
+      serverId,
+      const McpOAuthToken(
+        accessToken: 'access-2',
+        tokenEndpoint: 'https://auth.example/token',
+        clientId: 'client-google',
+      ),
+    );
+    await repository.saveOAuthClient(serverId, config);
+    expect(await repository.hasOAuthToken(serverId), isTrue);
+
+    await repository.clearOAuthClient(serverId);
+    expect(await repository.oauthClientFor(serverId), isNull);
+    expect(await repository.hasOAuthToken(serverId), isFalse);
+  });
+
   test('lists installed servers with plugin and template metadata', () async {
     final repository = repositoryFor(_FakeServer());
     final servers = await repository.listServers();

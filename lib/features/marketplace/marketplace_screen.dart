@@ -183,7 +183,10 @@ class _PluginsTab extends ConsumerWidget {
     }
 
     final query = search.text.trim().toLowerCase();
-    final matching = state.catalog.plugins
+    final androidPlugins = state.catalog.plugins
+        .where((plugin) => plugin.isAvailableOnAndroid)
+        .toList(growable: false);
+    final matching = androidPlugins
         .where((plugin) {
           final matchesQuery =
               query.isEmpty ||
@@ -257,13 +260,36 @@ class _PluginsTab extends ConsumerWidget {
             ],
           ),
         ),
+        if (state.scanningCompatibility)
+          _CompatibilityBanner(done: state.scanDone, total: state.scanTotal)
+        else if (state.compatibilityErrors > 0)
+          _CompatibilityErrorsBanner(
+            onRetry: () => ref
+                .read(marketplaceControllerProvider.notifier)
+                .retryCompatibility(),
+          ),
         Expanded(
           child: matching.isEmpty
-              ? EmptyState(
-                  icon: Icons.search_off_rounded,
-                  title: l10n.marketplaceNoResultsTitle,
-                  body: l10n.marketplaceNoResultsBody,
-                )
+              ? state.scanningCompatibility
+                    ? EmptyState(
+                        icon: Icons.android_rounded,
+                        title: l10n.marketplaceCheckingCompatibility,
+                        body: l10n.marketplaceCompatibilityProgress(
+                          state.scanDone,
+                          state.scanTotal,
+                        ),
+                      )
+                    : EmptyState(
+                        icon: androidPlugins.isEmpty
+                            ? Icons.android_rounded
+                            : Icons.search_off_rounded,
+                        title: androidPlugins.isEmpty
+                            ? l10n.marketplaceNoAndroidPluginsTitle
+                            : l10n.marketplaceNoResultsTitle,
+                        body: androidPlugins.isEmpty
+                            ? l10n.marketplaceNoAndroidPluginsBody
+                            : l10n.marketplaceNoResultsBody,
+                      )
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                   itemCount: rows.length,
@@ -305,6 +331,87 @@ class _PluginsTab extends ConsumerWidget {
         );
       }
     }
+  }
+}
+
+class _CompatibilityBanner extends StatelessWidget {
+  const _CompatibilityBanner({required this.done, required this.total});
+
+  final int done;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.marketplaceCheckingCompatibility,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: total <= 0 ? null : (done / total).clamp(0.0, 1.0),
+              minHeight: 4,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            l10n.marketplaceCompatibilityProgress(done, total),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompatibilityErrorsBanner extends StatelessWidget {
+  const _CompatibilityErrorsBanner({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 2, 8, 6),
+      child: Row(
+        children: [
+          Icon(
+            Icons.error_outline_rounded,
+            size: 16,
+            color: theme.colorScheme.error,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              l10n.marketplaceCompatibilityError,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            child: Text(l10n.marketplaceRetryCompatibility),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -514,7 +621,11 @@ class _MarketplacesTabState extends ConsumerState<_MarketplacesTab> {
             child: _MarketplaceCard(
               marketplace: marketplace,
               pluginCount: widget.state.catalog.plugins
-                  .where((plugin) => plugin.marketplaceId == marketplace.id)
+                  .where(
+                    (plugin) =>
+                        plugin.marketplaceId == marketplace.id &&
+                        plugin.isAvailableOnAndroid,
+                  )
                   .length,
               refreshing: widget.state.refreshing.contains(marketplace.id),
               onRefresh: () => _refresh(marketplace),
@@ -683,7 +794,7 @@ class _MarketplaceCard extends StatelessWidget {
                     highlighted: true,
                   ),
                 _Tag(
-                  label: l10n.marketplacePluginCount(pluginCount),
+                  label: l10n.marketplaceAndroidPluginCount(pluginCount),
                   icon: Icons.extension_outlined,
                 ),
                 _Tag(

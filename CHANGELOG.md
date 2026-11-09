@@ -7,9 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-09
+
 ### Added
 
+- Google Workspace MCP presets for Calendar, Gmail, Drive, Docs, Sheets, Slides, Chat, People, and Classroom.
+- Pre-registered OAuth client support with a fixed loopback redirect, custom scopes, `access_type=offline`, and `prompt=consent`.
+- Google Workspace setup screen with a copyable redirect URI and an in-app setup guide.
+- Background plugin compatibility checks for Android; unsupported plugins are hidden from the Plugins tab.
 - OpenCode session search across projects by title, directory, or session ID.
+
+### Changed
+
+- MCP OAuth client secrets are stored in the Android Keystore alongside tokens.
 
 ## [0.2.0] - 2026-11-09
 

@@ -222,11 +222,35 @@
   "marketplaceAvailableSection": "Available",
   "marketplaceNoResultsTitle": "Nothing found",
   "marketplaceNoResultsBody": "Try a different search or filter.",
+  "marketplaceCheckingCompatibility": "Checking which plugins work on Android…",
+  "marketplaceCompatibilityProgress": "Checked {done} of {total} plugins",
+  "@marketplaceCompatibilityProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "marketplaceNoAndroidPluginsTitle": "No Android-compatible plugins",
+  "marketplaceNoAndroidPluginsBody": "Plugins that need a desktop runtime, a local command, or no remote MCP server are hidden on Android.",
+  "marketplaceRetryCompatibility": "Retry compatibility check",
+  "marketplaceCompatibilityError": "Some plugins could not be checked and stay hidden until the check succeeds.",
   "marketplaceAdd": "Add",
   "marketplaceAddHint": "owner/repo or marketplace URL",
   "marketplaceAddHelp": "Add any Claude-compatible marketplace. The official Anthropic marketplace is built in.",
   "marketplaceBuiltIn": "Built in",
   "marketplacePluginCount": "{count, plural, =1{{count} plugin} other{{count} plugins}}",
+  "marketplaceAndroidPluginCount": "{count, plural, =1{{count} Android plugin} other{{count} Android plugins}}",
+  "@marketplaceAndroidPluginCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "@marketplacePluginCount": {
     "placeholders": {
       "count": {
@@ -469,6 +493,77 @@
   "mcpErrorInvalidResponse": "The MCP server returned an unexpected response.",
   "mcpErrorUnsupportedTransport": "This MCP transport is not supported.",
   "mcpErrorTool": "The tool call failed.",
+  "googleMcpTitle": "Google Workspace",
+  "googleMcpAdd": "Add Google Workspace",
+  "googleMcpIntro": "Connect Google's official Workspace MCP servers. Paste your Google Cloud OAuth client once and AgentPort adds the services you select.",
+  "googleMcpPreviewNote": "Google Workspace MCP servers are in Developer Preview. You need access to the Google Workspace Developer Preview Program.",
+  "googleMcpClientCardTitle": "Google OAuth client",
+  "googleMcpClientCardHelp": "Create one OAuth client in Google Cloud and reuse it for every selected service.",
+  "googleMcpClientId": "OAuth client ID",
+  "googleMcpClientSecret": "OAuth client secret",
+  "googleMcpClientIdHint": "1234567890-abc.apps.googleusercontent.com",
+  "googleMcpRedirectUri": "Redirect URI",
+  "googleMcpRedirectHelp": "If you create a Web application client, add this exact redirect URI. Desktop app clients accept loopback redirects automatically.",
+  "googleMcpHowTo": "How to set up",
+  "googleMcpInstructionsTitle": "Google Workspace MCP setup",
+  "googleMcpInstructionsIntro": "You need one OAuth client for all Workspace services. It takes about five minutes.",
+  "googleMcpStepPreview": "Join the Google Workspace Developer Preview Program and open the Google Cloud Console.",
+  "googleMcpStepProject": "Create or select a Google Cloud project.",
+  "googleMcpStepApis": "Enable the product APIs and the matching MCP services. The service list below shows the exact host names.",
+  "googleMcpStepConsent": "Configure the OAuth consent screen and add yourself as a test user while the app is in testing.",
+  "googleMcpStepClient": "Create an OAuth client of type Desktop app (recommended) or Web application.",
+  "googleMcpStepRedirect": "For a Web application client, add the redirect URI shown here. Desktop app clients do not need it.",
+  "googleMcpStepAgent": "Select “Use this client for an AI-powered agent” before creating the client.",
+  "googleMcpStepPaste": "Copy the client ID and client secret into AgentPort and select the services you need.",
+  "googleMcpOpenConsole": "Open Google Cloud Console",
+  "googleMcpOpenPreview": "Developer Preview program",
+  "googleMcpOpenDocs": "Official setup guide",
+  "googleMcpOpenLinkFailed": "Could not open the link.",
+  "googleMcpOpenApis": "Enable APIs",
+  "googleMcpCopy": "Copy",
+  "googleMcpCopied": "Copied.",
+  "googleMcpServicesTitle": "Services",
+  "googleMcpServicesHelp": "Each selected service gets its own MCP connection.",
+  "googleMcpSelectAll": "Select all",
+  "googleMcpCreate": "Add selected",
+  "googleMcpCreated": "Google connections added. Open a connection and tap “Connect with Google”.",
+  "googleMcpClientRequired": "Enter the OAuth client ID and client secret.",
+  "googleMcpServiceRequired": "Select at least one service.",
+  "googleMcpConfigured": "Google OAuth client configured",
+  "googleMcpNotConfigured": "Add your Google OAuth client to connect this service.",
+  "googleMcpConfigure": "Configure OAuth client",
+  "googleMcpChangeConfig": "Change OAuth client",
+  "googleMcpConnect": "Connect with Google",
+  "googleMcpReconnect": "Reconnect with Google",
+  "googleMcpDisconnect": "Disconnect Google account",
+  "googleMcpConfigSaved": "Google OAuth client saved.",
+  "googleMcpConfigRemoved": "Google OAuth client removed.",
+  "googleMcpClientIdLabel": "Client ID: {id}",
+  "@googleMcpClientIdLabel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "googleMcpServiceGmail": "Gmail",
+  "googleMcpServiceGmailDescription": "Search, read, and draft email.",
+  "googleMcpServiceCalendar": "Calendar",
+  "googleMcpServiceCalendarDescription": "View and change calendars and events.",
+  "googleMcpServiceDrive": "Drive",
+  "googleMcpServiceDriveDescription": "Find, read, and manage files.",
+  "googleMcpServiceDocs": "Docs",
+  "googleMcpServiceDocsDescription": "Read and edit Google Docs.",
+  "googleMcpServiceSheets": "Sheets",
+  "googleMcpServiceSheetsDescription": "Read and update spreadsheets.",
+  "googleMcpServiceSlides": "Slides",
+  "googleMcpServiceSlidesDescription": "Read and edit presentations.",
+  "googleMcpServiceChat": "Chat",
+  "googleMcpServiceChatDescription": "Work with spaces and messages.",
+  "googleMcpServicePeople": "People",
+  "googleMcpServicePeopleDescription": "Look up contacts and directory profiles.",
+  "googleMcpServiceClassroom": "Classroom",
+  "googleMcpServiceClassroomDescription": "Work with courses, coursework, and rosters.",
   "settingsOpenCodeSubtitle": "Control OpenCode sessions from your phone.",
   "openCodeTitle": "OpenCode",
   "openCodePair": "Pair",

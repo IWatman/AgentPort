@@ -292,7 +292,79 @@ class MarketplaceRepository {
   }
 
   /// Fetches `.mcp.json` for a plugin and caches the result.
-  Future<MarketplacePlugin> probePlugin(String pluginId) async {
+  Future<MarketplacePlugin> probePlugin(String pluginId) {
+    return _probePlugin(pluginId);
+  }
+
+  /// Number of uninstalled plugins whose Android compatibility is unknown.
+  Future<int> pendingProbeCount() async {
+    final count = _database.marketplacePluginEntries.id.count();
+    final query = _database.selectOnly(_database.marketplacePluginEntries)
+      ..addColumns([count])
+      ..where(
+        _database.marketplacePluginEntries.installed.equals(false) &
+            (_database.marketplacePluginEntries.mcpCheckedAt.isNull() |
+                _database.marketplacePluginEntries.mcpStatus.equals('unknown')),
+      );
+    final row = await query.getSingle();
+    return row.read(count) ?? 0;
+  }
+
+  /// Probes unknown plugins with a small worker pool. Results are cached on
+  /// each row and reported through [onProbed] so the UI can update live.
+  Future<void> probePendingPlugins({
+    int concurrency = 6,
+    bool includeErrors = false,
+    void Function(MarketplacePlugin plugin)? onProbed,
+  }) async {
+    final rows = await (_database.select(
+      _database.marketplacePluginEntries,
+    )..where((table) => table.installed.equals(false))).get();
+    final queue = [
+      for (final row in rows)
+        if (row.mcpCheckedAt == null ||
+            row.mcpStatus == PluginMcpStatus.unknown.storageValue ||
+            (includeErrors &&
+                row.mcpStatus == PluginMcpStatus.error.storageValue))
+          row,
+    ];
+    if (queue.isEmpty) {
+      return;
+    }
+    final workers = concurrency < queue.length ? concurrency : queue.length;
+    await Future.wait([
+      for (var index = 0; index < workers; index++)
+        _probeWorker(queue, onProbed),
+    ]);
+  }
+
+  Future<void> _probeWorker(
+    List<MarketplacePluginEntry> queue,
+    void Function(MarketplacePlugin plugin)? onProbed,
+  ) async {
+    var consecutiveErrors = 0;
+    while (queue.isNotEmpty) {
+      final row = queue.removeAt(0);
+      try {
+        final plugin = await _probePlugin(row.id);
+        onProbed?.call(plugin);
+        if (plugin.mcpStatus == PluginMcpStatus.error) {
+          consecutiveErrors++;
+        } else {
+          consecutiveErrors = 0;
+        }
+        if (consecutiveErrors >= 8) {
+          // Likely offline or rate-limited. Leave the rest for an explicit
+          // retry instead of hammering the network for minutes.
+          queue.clear();
+        }
+      } catch (_) {
+        // The failure is cached on the row and will be retried explicitly.
+      }
+    }
+  }
+
+  Future<MarketplacePlugin> _probePlugin(String pluginId) async {
     final plugin = await pluginById(pluginId);
     if (plugin == null) {
       throw const MarketplaceFailure(

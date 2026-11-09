@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/mcp/mcp_oauth.dart';
 import '../../data/repositories/mcp_server_repository.dart';
 import '../../domain/entities/mcp.dart';
+import '../../domain/entities/mcp_oauth.dart';
 
 class McpServerView {
   const McpServerView({
@@ -214,6 +215,39 @@ class McpConnectionsController extends AsyncNotifier<McpConnectionsState> {
 
   Future<Map<String, String>> headersFor(String serverId) {
     return ref.read(mcpServerRepositoryProvider).headersFor(serverId);
+  }
+
+  Future<McpOAuthClientConfig?> oauthClientFor(String serverId) {
+    return ref.read(mcpServerRepositoryProvider).oauthClientFor(serverId);
+  }
+
+  Future<void> saveOAuthClient(
+    String serverId,
+    McpOAuthClientConfig config,
+  ) async {
+    await ref
+        .read(mcpServerRepositoryProvider)
+        .saveOAuthClient(serverId, config);
+    _update(
+      serverId,
+      (view) => view.copyWith(
+        oauthConnected: false,
+        status: McpConnectionStatus.disconnected,
+        clearError: true,
+      ),
+    );
+  }
+
+  Future<void> clearOAuthClient(String serverId) async {
+    await ref.read(mcpServerRepositoryProvider).clearOAuthClient(serverId);
+    _update(
+      serverId,
+      (view) => view.copyWith(
+        oauthConnected: false,
+        status: McpConnectionStatus.disconnected,
+        clearError: true,
+      ),
+    );
   }
 
   Future<void> saveHeaders(String serverId, Map<String, String> headers) async {

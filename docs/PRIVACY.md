@@ -9,14 +9,15 @@ AgentPort is a local-first client. The project has no backend and no telemetry.
 - MCP server configuration.
 - OpenCode connection metadata.
 
-API keys, OAuth tokens, MCP headers, and the OpenCode token are stored in the Android Keystore via `flutter_secure_storage`. The chat database is encrypted with SQLCipher. The database key is kept in the Keystore.
+API keys, OAuth tokens, pre-registered OAuth client secrets, MCP headers, and the OpenCode token are stored in the Android Keystore via `flutter_secure_storage`. The chat database is encrypted with SQLCipher. The database key is kept in the Keystore.
 
 ## Data sent over the network
 
 AgentPort connects directly to the endpoints you configure:
 
 - Your model provider (for example `https://api.deepseek.com`).
-- MCP servers installed from marketplaces.
+- MCP servers installed from marketplaces and Google Workspace MCP endpoints.
+- Google OAuth endpoints when you connect a Google Workspace service.
 - Your OpenCode server.
 - `api.github.com` for update checks.
 - Marketplace sources on GitHub when you open the marketplace.

@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/entities/google_mcp.dart';
 import '../../domain/entities/mcp.dart';
+import '../../domain/entities/mcp_oauth.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../marketplace/marketplace_failure_text.dart';
 import '../shared/empty_state.dart';
+import 'google_mcp_client_dialog.dart';
+import 'google_mcp_info_dialog.dart';
+import 'google_mcp_text.dart';
 import 'mcp_connections_controller.dart';
 import 'mcp_text.dart';
 
@@ -130,7 +135,7 @@ class _ServerHeader extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        server.displayName,
+                        mcpServerDisplayName(l10n, server),
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -163,6 +168,8 @@ class _ServerHeader extends StatelessWidget {
               children: [
                 _Tag(label: server.transport.storageValue.toUpperCase()),
                 _Tag(label: marketplaceAuthText(l10n, server.authType)),
+                if (server.googleService != null)
+                  _Tag(label: l10n.googleMcpTitle, highlighted: true),
                 if (server.marketplaceName != null)
                   _Tag(label: server.marketplaceName!),
               ],
@@ -305,6 +312,10 @@ class _AuthCardState extends ConsumerState<_AuthCard> {
 
   Future<void> _load() async {
     final server = widget.view.server;
+    if (server.googleService != null) {
+      setState(() => _loading = false);
+      return;
+    }
     final stored = await ref
         .read(mcpConnectionsControllerProvider.notifier)
         .headersFor(server.id);
@@ -346,6 +357,10 @@ class _AuthCardState extends ConsumerState<_AuthCard> {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final server = widget.view.server;
+
+    if (server.googleService != null) {
+      return _GoogleAuthCard(view: widget.view);
+    }
 
     if (_loading) {
       return const Card(
@@ -484,6 +499,217 @@ class _AuthCardState extends ConsumerState<_AuthCard> {
         lower.contains('token') ||
         lower.contains('key') ||
         lower.contains('secret');
+  }
+}
+
+class _GoogleAuthCard extends ConsumerStatefulWidget {
+  const _GoogleAuthCard({required this.view});
+
+  final McpServerView view;
+
+  @override
+  ConsumerState<_GoogleAuthCard> createState() => _GoogleAuthCardState();
+}
+
+class _GoogleAuthCardState extends ConsumerState<_GoogleAuthCard> {
+  McpOAuthClientConfig? _config;
+  var _loading = true;
+  var _busy = false;
+
+  GoogleMcpService get _service => widget.view.server.googleService!;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final config = await ref
+        .read(mcpConnectionsControllerProvider.notifier)
+        .oauthClientFor(widget.view.server.id);
+    if (mounted) {
+      setState(() {
+        _config = config;
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _configure() async {
+    final result = await showGoogleMcpClientDialog(
+      context,
+      service: _service,
+      initial: _config,
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+    setState(() => _busy = true);
+    final l10n = AppLocalizations.of(context);
+    try {
+      await ref
+          .read(mcpConnectionsControllerProvider.notifier)
+          .saveOAuthClient(widget.view.server.id, result);
+      if (!mounted) {
+        return;
+      }
+      setState(() => _config = result);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.googleMcpConfigSaved)));
+    } catch (error) {
+      if (mounted) {
+        final message = error is McpFailure
+            ? mcpFailureText(l10n, error)
+            : error.toString();
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  Future<void> _connect() async {
+    final l10n = AppLocalizations.of(context);
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(mcpConnectionsControllerProvider.notifier)
+          .connectOAuth(widget.view.server.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.mcpOAuthConnected)));
+      }
+    } catch (error) {
+      if (mounted) {
+        final message = error is McpFailure
+            ? mcpFailureText(l10n, error)
+            : error.toString();
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.mcpOAuthError(message))));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  Future<void> _disconnect() async {
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(mcpConnectionsControllerProvider.notifier)
+          .disconnectOAuth(widget.view.server.id);
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    if (_loading) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: LinearProgressIndicator(),
+        ),
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.verified_user_outlined,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _config == null
+                        ? l10n.googleMcpNotConfigured
+                        : l10n.googleMcpConfigured,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () =>
+                      showGoogleMcpInfoDialog(context, services: [_service]),
+                  tooltip: l10n.googleMcpHowTo,
+                  icon: const Icon(Icons.info_outline_rounded),
+                ),
+              ],
+            ),
+            if (_config != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                l10n.googleMcpClientIdLabel(_config!.clientId),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const GoogleMcpRedirectUriBox(),
+            ],
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _busy || _config == null ? null : _connect,
+              icon: _busy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.login_rounded),
+              label: Text(
+                widget.view.oauthConnected
+                    ? l10n.googleMcpReconnect
+                    : l10n.googleMcpConnect,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8,
+              children: [
+                TextButton.icon(
+                  onPressed: _busy ? null : _configure,
+                  icon: const Icon(Icons.settings_outlined, size: 18),
+                  label: Text(
+                    _config == null
+                        ? l10n.googleMcpConfigure
+                        : l10n.googleMcpChangeConfig,
+                  ),
+                ),
+                if (widget.view.oauthConnected)
+                  TextButton.icon(
+                    onPressed: _busy ? null : _disconnect,
+                    icon: const Icon(Icons.logout_rounded, size: 18),
+                    label: Text(l10n.googleMcpDisconnect),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -207,11 +207,35 @@
   "marketplaceAvailableSection": "Доступные",
   "marketplaceNoResultsTitle": "Ничего не найдено",
   "marketplaceNoResultsBody": "Измените запрос или фильтр.",
+  "marketplaceCheckingCompatibility": "Проверяем, какие плагины работают на Android…",
+  "marketplaceCompatibilityProgress": "Проверено {done} из {total} плагинов",
+  "@marketplaceCompatibilityProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "marketplaceNoAndroidPluginsTitle": "Нет плагинов для Android",
+  "marketplaceNoAndroidPluginsBody": "Плагины, которым нужен компьютер, локальная команда или удалённый MCP-сервер, скрыты на Android.",
+  "marketplaceRetryCompatibility": "Повторить проверку",
+  "marketplaceCompatibilityError": "Некоторые плагины не удалось проверить. Они останутся скрытыми до успешной проверки.",
   "marketplaceAdd": "Добавить",
   "marketplaceAddHint": "owner/repo или URL маркетплейса",
   "marketplaceAddHelp": "Добавьте любой совместимый с Claude маркетплейс. Официальный маркетплейс Anthropic уже встроен.",
   "marketplaceBuiltIn": "Встроенный",
   "marketplacePluginCount": "{count, plural, =1{{count} плагин} few{{count} плагина} many{{count} плагинов} other{{count} плагина}}",
+  "marketplaceAndroidPluginCount": "{count, plural, =1{{count} плагин для Android} few{{count} плагина для Android} many{{count} плагинов для Android} other{{count} плагина для Android}}",
+  "@marketplaceAndroidPluginCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "@marketplacePluginCount": {
     "placeholders": {
       "count": {
@@ -454,6 +478,77 @@
   "mcpErrorInvalidResponse": "MCP-сервер вернул неожиданный ответ.",
   "mcpErrorUnsupportedTransport": "Этот транспорт MCP не поддерживается.",
   "mcpErrorTool": "Вызов инструмента завершился ошибкой.",
+  "googleMcpTitle": "Google Workspace",
+  "googleMcpAdd": "Добавить Google Workspace",
+  "googleMcpIntro": "Подключите официальные MCP-серверы Google Workspace. Один раз вставьте OAuth-клиент из Google Cloud — AgentPort добавит выбранные сервисы.",
+  "googleMcpPreviewNote": "MCP-серверы Google Workspace находятся в Developer Preview. Нужен доступ к программе Google Workspace Developer Preview.",
+  "googleMcpClientCardTitle": "OAuth-клиент Google",
+  "googleMcpClientCardHelp": "Создайте один OAuth-клиент в Google Cloud и используйте его для всех выбранных сервисов.",
+  "googleMcpClientId": "OAuth client ID",
+  "googleMcpClientSecret": "OAuth client secret",
+  "googleMcpClientIdHint": "1234567890-abc.apps.googleusercontent.com",
+  "googleMcpRedirectUri": "Redirect URI",
+  "googleMcpRedirectHelp": "Для клиента Web application добавьте этот точный redirect URI. Клиентам Desktop app loopback-адрес разрешён автоматически.",
+  "googleMcpHowTo": "Как настроить",
+  "googleMcpInstructionsTitle": "Настройка Google Workspace MCP",
+  "googleMcpInstructionsIntro": "Один OAuth-клиент подходит для всех сервисов Workspace. Настройка занимает около пяти минут.",
+  "googleMcpStepPreview": "Вступите в Google Workspace Developer Preview Program и откройте Google Cloud Console.",
+  "googleMcpStepProject": "Создайте или выберите проект Google Cloud.",
+  "googleMcpStepApis": "Включите API продуктов и соответствующие MCP-сервисы. Точные имена хостов показаны в списке сервисов ниже.",
+  "googleMcpStepConsent": "Настройте экран согласия OAuth и добавьте себя в тестовые пользователи, пока приложение в режиме тестирования.",
+  "googleMcpStepClient": "Создайте OAuth-клиент типа Desktop app (рекомендуется) или Web application.",
+  "googleMcpStepRedirect": "Для Web application добавьте показанный здесь redirect URI. Клиентам Desktop app он не нужен.",
+  "googleMcpStepAgent": "Перед созданием клиента включите «Use this client for an AI-powered agent».",
+  "googleMcpStepPaste": "Скопируйте client ID и client secret в AgentPort и выберите нужные сервисы.",
+  "googleMcpOpenConsole": "Открыть Google Cloud Console",
+  "googleMcpOpenPreview": "Программа Developer Preview",
+  "googleMcpOpenDocs": "Официальная инструкция",
+  "googleMcpOpenLinkFailed": "Не удалось открыть ссылку.",
+  "googleMcpOpenApis": "Включить API",
+  "googleMcpCopy": "Копировать",
+  "googleMcpCopied": "Скопировано.",
+  "googleMcpServicesTitle": "Сервисы",
+  "googleMcpServicesHelp": "Для каждого выбранного сервиса создаётся отдельное MCP-подключение.",
+  "googleMcpSelectAll": "Выбрать все",
+  "googleMcpCreate": "Добавить выбранные",
+  "googleMcpCreated": "Подключения Google добавлены. Откройте подключение и нажмите «Подключить Google».",
+  "googleMcpClientRequired": "Введите OAuth client ID и client secret.",
+  "googleMcpServiceRequired": "Выберите хотя бы один сервис.",
+  "googleMcpConfigured": "OAuth-клиент Google настроен",
+  "googleMcpNotConfigured": "Добавьте OAuth-клиент Google, чтобы подключить этот сервис.",
+  "googleMcpConfigure": "Настроить OAuth-клиент",
+  "googleMcpChangeConfig": "Изменить OAuth-клиент",
+  "googleMcpConnect": "Подключить Google",
+  "googleMcpReconnect": "Подключить Google заново",
+  "googleMcpDisconnect": "Отключить аккаунт Google",
+  "googleMcpConfigSaved": "OAuth-клиент Google сохранён.",
+  "googleMcpConfigRemoved": "OAuth-клиент Google удалён.",
+  "googleMcpClientIdLabel": "Client ID: {id}",
+  "@googleMcpClientIdLabel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "googleMcpServiceGmail": "Gmail",
+  "googleMcpServiceGmailDescription": "Поиск, чтение и черновики писем.",
+  "googleMcpServiceCalendar": "Календарь",
+  "googleMcpServiceCalendarDescription": "Просмотр и изменение календарей и событий.",
+  "googleMcpServiceDrive": "Диск",
+  "googleMcpServiceDriveDescription": "Поиск, чтение и управление файлами.",
+  "googleMcpServiceDocs": "Документы",
+  "googleMcpServiceDocsDescription": "Чтение и редактирование Google Docs.",
+  "googleMcpServiceSheets": "Таблицы",
+  "googleMcpServiceSheetsDescription": "Чтение и обновление таблиц.",
+  "googleMcpServiceSlides": "Презентации",
+  "googleMcpServiceSlidesDescription": "Чтение и редактирование презентаций.",
+  "googleMcpServiceChat": "Chat",
+  "googleMcpServiceChatDescription": "Работа с пространствами и сообщениями.",
+  "googleMcpServicePeople": "Контакты",
+  "googleMcpServicePeopleDescription": "Поиск контактов и профилей каталога.",
+  "googleMcpServiceClassroom": "Classroom",
+  "googleMcpServiceClassroomDescription": "Курсы, задания и списки учеников.",
   "settingsOpenCodeSubtitle": "Управляйте сессиями OpenCode с телефона.",
   "openCodeTitle": "OpenCode",
   "openCodePair": "Сопряжение",
