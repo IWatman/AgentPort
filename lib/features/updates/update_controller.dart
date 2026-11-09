@@ -1,14 +1,18 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 import '../../core/settings/settings_controller.dart';
 import '../../core/updates/apk_installer.dart';
+import '../../data/updates/background_update_downloader.dart';
 import '../../data/updates/github_release_client.dart';
 import '../../data/updates/release_downloader.dart';
 import '../../domain/entities/app_release.dart';
+import '../../domain/entities/pending_update_download.dart';
 
 enum UpdatePhase { idle, checking, downloading, installing }
 
@@ -91,20 +95,23 @@ final githubReleaseClientProvider = Provider<GitHubReleaseClient>(
   (ref) => GitHubReleaseClient(),
 );
 
-typedef ReleaseDownload = Future<DownloadedRelease> Function(
-  AppRelease release, {
-  required Directory targetDir,
-  void Function(int received, int? total)? onProgress,
+typedef ApkChecksumVerifier = Future<bool> Function(
+  File file, {
+  required String apkName,
+  ReleaseAsset? checksumAsset,
 });
 
-final releaseDownloadProvider = Provider<ReleaseDownload>(
+final releaseVerifierProvider = Provider<ApkChecksumVerifier>(
   (ref) =>
-      (release, {required targetDir, onProgress}) =>
-          downloadApk(release, targetDir: targetDir, onProgress: onProgress),
+      (file, {required apkName, checksumAsset}) => verifyDownloadedApk(
+        file,
+        apkName: apkName,
+        checksumAsset: checksumAsset,
+      ),
 );
 
-final updateTempDirectoryProvider = FutureProvider<Directory>(
-  (ref) => getTemporaryDirectory(),
+final updateDownloadPollIntervalProvider = Provider<Duration>(
+  (ref) => const Duration(milliseconds: 500),
 );
 
 final updateControllerProvider =
@@ -112,13 +119,44 @@ final updateControllerProvider =
 
 /// Checks GitHub Releases and drives the download/install flow.
 class UpdateController extends AsyncNotifier<UpdateState> {
+  var _monitoringDownload = false;
+
   @override
   Future<UpdateState> build() async {
     final info = await ref.watch(packageInfoProvider.future);
     final lastCheck = await ref
         .read(settingsRepositoryProvider)
         .loadLastUpdateCheck();
-    return UpdateState(currentVersion: info.version, lastCheck: lastCheck);
+    final pending = await ref
+        .read(settingsRepositoryProvider)
+        .loadPendingUpdateDownload();
+    final initial = UpdateState(
+      currentVersion: info.version,
+      lastCheck: lastCheck,
+    );
+    if (pending != null) {
+      final pendingVersion = AppVersion.tryParse(pending.version);
+      final currentVersion = AppVersion.tryParse(info.version);
+      if (pendingVersion == null ||
+          currentVersion == null ||
+          !pendingVersion.isNewerThan(currentVersion)) {
+        // The update was already installed or the metadata is stale.
+        await ref.read(settingsRepositoryProvider).clearPendingUpdateDownload();
+      } else {
+        unawaited(_resumePendingDownload(pending));
+        return initial.copyWith(phase: UpdatePhase.downloading);
+      }
+    }
+    return initial;
+  }
+
+  Future<void> _resumePendingDownload(PendingUpdateDownload pending) async {
+    // Let the provider publish the initial state before monitoring updates it.
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    if (!ref.mounted) {
+      return;
+    }
+    await _monitorDownload(pending);
   }
 
   /// Checks for a newer stable release.
@@ -187,12 +225,33 @@ class UpdateController extends AsyncNotifier<UpdateState> {
     }
   }
 
-  /// Downloads the pending release and starts the system installer.
+  /// Starts a system-managed background download and installs the APK when it
+  /// completes. DownloadManager keeps running when the screen is off or the app
+  /// is in the background.
   Future<void> downloadAndInstall() async {
     final current = state.value;
     final release = current?.release;
     if (current == null || release == null || current.isBusy) {
       return;
+    }
+
+    final asset = selectApkAsset(release.assets);
+    if (asset == null) {
+      final failure = const UpdateFailure(
+        UpdateFailureKind.invalidResponse,
+        detail: 'The release does not contain an APK asset.',
+      );
+      _fail(failure);
+      throw failure;
+    }
+    final fileName = p.basename(asset.name);
+    if (fileName.isEmpty || fileName == '.' || fileName == '..') {
+      final failure = const UpdateFailure(
+        UpdateFailureKind.invalidResponse,
+        detail: 'The APK asset has an invalid file name.',
+      );
+      _fail(failure);
+      throw failure;
     }
 
     final installer = ref.read(apkInstallerProvider);
@@ -210,6 +269,17 @@ class UpdateController extends AsyncNotifier<UpdateState> {
       return;
     }
 
+    final settings = ref.read(settingsRepositoryProvider);
+    final previous = await settings.loadPendingUpdateDownload();
+    if (previous != null) {
+      try {
+        await ref.read(backgroundUpdateDownloaderProvider).remove(previous.id);
+      } on UpdateFailure {
+        // The system may already have removed the download.
+      }
+      await settings.clearPendingUpdateDownload();
+    }
+
     state = AsyncData(
       current.copyWith(
         phase: UpdatePhase.downloading,
@@ -224,49 +294,35 @@ class UpdateController extends AsyncNotifier<UpdateState> {
     );
 
     try {
-      final temp = await ref.read(updateTempDirectoryProvider.future);
-      final target = Directory('${temp.path}/updates');
-      final downloaded = await ref.read(releaseDownloadProvider)(
-        release,
-        targetDir: target,
-        onProgress: (received, total) {
-          if (!ref.mounted) {
-            return;
-          }
-          final latest = state.value;
-          if (latest == null) {
-            return;
-          }
-          state = AsyncData(
-            latest.copyWith(
-              receivedBytes: received,
-              totalBytes: total,
-              progress: total == null || total <= 0
-                  ? 0
-                  : (received / total).clamp(0, 1),
-            ),
+      final id = await ref
+          .read(backgroundUpdateDownloaderProvider)
+          .enqueue(
+            url: asset.downloadUrl,
+            fileName: fileName,
+            title: 'AgentPort update',
+            description: 'Downloading AgentPort ${release.version}',
           );
-        },
+      final pending = PendingUpdateDownload(
+        id: id,
+        version: release.version,
+        fileName: fileName,
+        checksumUrl: selectChecksumAsset(release.assets, fileName)?.downloadUrl,
       );
-
-      if (!ref.mounted) {
-        return;
+      try {
+        await settings.savePendingUpdateDownload(pending);
+      } catch (error) {
+        try {
+          await ref.read(backgroundUpdateDownloaderProvider).remove(id);
+        } on UpdateFailure {
+          // Best-effort cleanup.
+        }
+        rethrow;
       }
-      state = AsyncData(
-        state.value!.copyWith(
-          phase: UpdatePhase.installing,
-          downloadedFile: downloaded.file,
-          checksumVerified: downloaded.checksumVerified,
-          progress: 1,
-        ),
-      );
-      await installer.install(downloaded.file);
-      if (!ref.mounted) {
-        return;
+      await _monitorDownload(pending);
+      final failure = state.value?.error;
+      if (failure != null) {
+        throw failure;
       }
-      state = AsyncData(
-        state.value!.copyWith(phase: UpdatePhase.idle, error: null),
-      );
     } on UpdateFailure catch (error) {
       _fail(error);
       rethrow;
@@ -284,6 +340,216 @@ class UpdateController extends AsyncNotifier<UpdateState> {
       );
       _fail(failure);
       throw failure;
+    }
+  }
+
+  Future<void> _monitorDownload(PendingUpdateDownload pending) async {
+    if (_monitoringDownload) {
+      return;
+    }
+    _monitoringDownload = true;
+    final service = ref.read(backgroundUpdateDownloaderProvider);
+    final installer = ref.read(apkInstallerProvider);
+    final verifier = ref.read(releaseVerifierProvider);
+    final settings = ref.read(settingsRepositoryProvider);
+    final interval = ref.read(updateDownloadPollIntervalProvider);
+
+    try {
+      while (ref.mounted) {
+        final status = await service.query(
+          id: pending.id,
+          fileName: pending.fileName,
+        );
+        if (!ref.mounted) {
+          return;
+        }
+        switch (status.phase) {
+          case BackgroundDownloadPhase.pending:
+          case BackgroundDownloadPhase.running:
+          case BackgroundDownloadPhase.paused:
+            _publishProgress(status);
+            await Future<void>.delayed(interval);
+          case BackgroundDownloadPhase.successful:
+            await _finishDownload(
+              pending,
+              status,
+              installer: installer,
+              verifier: verifier,
+            );
+            await settings.clearPendingUpdateDownload();
+            return;
+          case BackgroundDownloadPhase.failed:
+            await settings.clearPendingUpdateDownload();
+            try {
+              await service.remove(pending.id);
+            } on UpdateFailure {
+              // Best-effort cleanup.
+            }
+            _fail(
+              UpdateFailure(
+                UpdateFailureKind.network,
+                detail: status.reason == null
+                    ? 'The background download failed.'
+                    : 'The background download failed (code ${status.reason}).',
+              ),
+            );
+            return;
+          case BackgroundDownloadPhase.unknown:
+            await settings.clearPendingUpdateDownload();
+            _fail(
+              const UpdateFailure(
+                UpdateFailureKind.invalidResponse,
+                detail:
+                    'The background download was not found. Start the update '
+                    'again.',
+              ),
+            );
+            return;
+        }
+      }
+    } on UpdateFailure catch (error) {
+      await settings.clearPendingUpdateDownload();
+      _fail(error);
+    } on ApkInstallFailure catch (error) {
+      await settings.clearPendingUpdateDownload();
+      if (_isInstallCancelled(error)) {
+        final current = state.value;
+        if (current != null && ref.mounted) {
+          state = AsyncData(
+            current.copyWith(phase: UpdatePhase.idle, error: null),
+          );
+        }
+      } else {
+        _fail(
+          UpdateFailure(
+            UpdateFailureKind.invalidResponse,
+            detail: error.message,
+          ),
+        );
+      }
+    } catch (error) {
+      await settings.clearPendingUpdateDownload();
+      _fail(
+        UpdateFailure(
+          UpdateFailureKind.invalidResponse,
+          detail: error.toString(),
+        ),
+      );
+    } finally {
+      _monitoringDownload = false;
+    }
+  }
+
+  void _publishProgress(BackgroundDownloadStatus status) {
+    final current = state.value;
+    if (current == null) {
+      return;
+    }
+    final total = status.totalBytes;
+    state = AsyncData(
+      current.copyWith(
+        phase: UpdatePhase.downloading,
+        receivedBytes: status.downloadedBytes,
+        totalBytes: total,
+        progress: total == null || total <= 0
+            ? 0
+            : (status.downloadedBytes / total).clamp(0.0, 1.0),
+      ),
+    );
+  }
+
+  bool _isInstallCancelled(ApkInstallFailure error) {
+    final message = error.message.toLowerCase();
+    return message.contains('install_failed_aborted') ||
+        message.contains('user rejected');
+  }
+
+  Future<void> _waitForForeground() async {
+    while (ref.mounted) {
+      final lifecycle = WidgetsBinding.instance.lifecycleState;
+      if (lifecycle == null || lifecycle == AppLifecycleState.resumed) {
+        return;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+  }
+
+  Future<void> _finishDownload(
+    PendingUpdateDownload pending,
+    BackgroundDownloadStatus status, {
+    required ApkInstaller installer,
+    required ApkChecksumVerifier verifier,
+  }) async {
+    final path = status.path;
+    if (path == null) {
+      _fail(
+        const UpdateFailure(
+          UpdateFailureKind.invalidResponse,
+          detail: 'Android did not report the downloaded APK path.',
+        ),
+      );
+      return;
+    }
+    final file = File(path);
+    if (!await file.exists()) {
+      _fail(
+        const UpdateFailure(
+          UpdateFailureKind.invalidResponse,
+          detail: 'The downloaded APK file no longer exists.',
+        ),
+      );
+      return;
+    }
+
+    var checksumVerified = false;
+    if (pending.checksumUrl != null && pending.checksumUrl!.isNotEmpty) {
+      try {
+        checksumVerified = await verifier(
+          file,
+          apkName: pending.fileName,
+          checksumAsset: ReleaseAsset(
+            name: '${pending.fileName}.sha256',
+            downloadUrl: pending.checksumUrl!,
+            size: 0,
+          ),
+        );
+      } on UpdateFailure catch (error) {
+        if (error.kind == UpdateFailureKind.checksum) {
+          try {
+            await file.delete();
+          } on IOException {
+            // Best-effort cleanup of a corrupt download.
+          }
+        }
+        rethrow;
+      }
+    }
+
+    if (!ref.mounted) {
+      return;
+    }
+    final latest = state.value;
+    if (latest != null) {
+      state = AsyncData(
+        latest.copyWith(
+          phase: UpdatePhase.installing,
+          downloadedFile: file,
+          checksumVerified: checksumVerified,
+          progress: 1,
+        ),
+      );
+    }
+    await _waitForForeground();
+    if (!ref.mounted) {
+      return;
+    }
+    await installer.install(file);
+    if (!ref.mounted) {
+      return;
+    }
+    final current = state.value;
+    if (current != null) {
+      state = AsyncData(current.copyWith(phase: UpdatePhase.idle, error: null));
     }
   }
 

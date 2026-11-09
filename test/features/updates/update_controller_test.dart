@@ -5,9 +5,10 @@ import 'package:agentport/core/security/secure_store.dart';
 import 'package:agentport/core/settings/app_settings.dart';
 import 'package:agentport/core/settings/settings_controller.dart';
 import 'package:agentport/core/updates/apk_installer.dart';
+import 'package:agentport/data/updates/background_update_downloader.dart';
 import 'package:agentport/data/updates/github_release_client.dart';
-import 'package:agentport/data/updates/release_downloader.dart';
 import 'package:agentport/domain/entities/app_release.dart';
+import 'package:agentport/domain/entities/pending_update_download.dart';
 import 'package:agentport/features/updates/update_controller.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,6 +61,69 @@ class _FakeInstaller extends ApkInstaller {
   }
 }
 
+class _FakeBackgroundDownloader extends BackgroundUpdateDownloader {
+  _FakeBackgroundDownloader({required this.filePath, this.statuses = const []})
+    : super(isAndroid: true);
+
+  final String filePath;
+  final List<BackgroundDownloadStatus> statuses;
+  final List<Map<String, String>> enqueued = [];
+  final List<int> removed = [];
+  var nextId = 7;
+  var _queryIndex = 0;
+
+  @override
+  Future<int> enqueue({
+    required String url,
+    required String fileName,
+    required String title,
+    required String description,
+  }) async {
+    enqueued.add({
+      'url': url,
+      'fileName': fileName,
+      'title': title,
+      'description': description,
+    });
+    return nextId;
+  }
+
+  @override
+  Future<BackgroundDownloadStatus> query({
+    required int id,
+    required String fileName,
+  }) async {
+    final list = statuses.isEmpty
+        ? [
+            BackgroundDownloadStatus(
+              phase: BackgroundDownloadPhase.successful,
+              downloadedBytes: 4,
+              totalBytes: 4,
+              path: filePath,
+            ),
+          ]
+        : statuses;
+    final index = _queryIndex < list.length ? _queryIndex : list.length - 1;
+    _queryIndex++;
+    return list[index];
+  }
+
+  @override
+  Future<void> remove(int id) async {
+    removed.add(id);
+  }
+}
+
+Future<void> _waitUntil(bool Function() predicate) async {
+  for (var attempt = 0; attempt < 200; attempt++) {
+    if (predicate()) {
+      return;
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+  }
+  fail('Condition was not met in time.');
+}
+
 const _release = AppRelease(
   tagName: 'v0.2.0',
   version: '0.2.0',
@@ -82,6 +146,7 @@ const _release = AppRelease(
 );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late AppDatabase database;
   late Directory tempDir;
 
@@ -100,8 +165,14 @@ void main() {
   ProviderContainer createContainer({
     required _FakeReleaseClient releaseClient,
     _FakeInstaller? installer,
+    _FakeBackgroundDownloader? downloader,
+    ApkChecksumVerifier? verifier,
     String version = '0.1.0',
   }) {
+    final apk = File('${tempDir.path}/agentport-v0.2.0.apk');
+    if (!apk.existsSync()) {
+      apk.writeAsBytesSync(const [1, 2, 3, 4]);
+    }
     final container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
@@ -119,19 +190,13 @@ void main() {
         ),
         githubReleaseClientProvider.overrideWithValue(releaseClient),
         apkInstallerProvider.overrideWithValue(installer ?? _FakeInstaller()),
-        updateTempDirectoryProvider.overrideWith((ref) async => tempDir),
-        releaseDownloadProvider.overrideWithValue((
-          release, {
-          required targetDir,
-          onProgress,
-        }) async {
-          final file = File('${targetDir.path}/${release.version}.apk');
-          await file.parent.create(recursive: true);
-          await file.writeAsBytes(const [1, 2, 3, 4]);
-          onProgress?.call(2, 4);
-          onProgress?.call(4, 4);
-          return DownloadedRelease(file: file, checksumVerified: true);
-        }),
+        backgroundUpdateDownloaderProvider.overrideWithValue(
+          downloader ?? _FakeBackgroundDownloader(filePath: apk.path),
+        ),
+        updateDownloadPollIntervalProvider.overrideWithValue(Duration.zero),
+        releaseVerifierProvider.overrideWithValue(
+          verifier ?? (file, {required apkName, checksumAsset}) async => true,
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -190,12 +255,30 @@ void main() {
   });
 
   test(
-    'downloadAndInstall downloads, verifies, and installs the APK',
+    'downloadAndInstall uses the background downloader, verifies, and installs',
     () async {
+      final apkPath = '${tempDir.path}/agentport-v0.2.0.apk';
+      final downloader = _FakeBackgroundDownloader(
+        filePath: apkPath,
+        statuses: [
+          const BackgroundDownloadStatus(
+            phase: BackgroundDownloadPhase.running,
+            downloadedBytes: 2,
+            totalBytes: 4,
+          ),
+          BackgroundDownloadStatus(
+            phase: BackgroundDownloadPhase.successful,
+            downloadedBytes: 4,
+            totalBytes: 4,
+            path: apkPath,
+          ),
+        ],
+      );
       final installer = _FakeInstaller();
       final container = createContainer(
         releaseClient: _FakeReleaseClient(_release),
         installer: installer,
+        downloader: downloader,
       );
       await container.read(updateControllerProvider.future);
       final controller = container.read(updateControllerProvider.notifier);
@@ -204,11 +287,98 @@ void main() {
       await controller.downloadAndInstall();
 
       final state = container.read(updateControllerProvider).value!;
+      expect(downloader.enqueued, hasLength(1));
+      expect(
+        downloader.enqueued.single['url'],
+        'https://example.com/agentport-v0.2.0.apk',
+      );
+      expect(downloader.enqueued.single['fileName'], 'agentport-v0.2.0.apk');
       expect(installer.installed, hasLength(1));
-      expect(installer.installed.single.existsSync(), isTrue);
+      expect(installer.installed.single.path, apkPath);
       expect(state.checksumVerified, isTrue);
       expect(state.phase, UpdatePhase.idle);
       expect(state.error, isNull);
+      expect(
+        await container
+            .read(settingsRepositoryProvider)
+            .loadPendingUpdateDownload(),
+        isNull,
+      );
+    },
+  );
+
+  test('resumes a background download after the app restarts', () async {
+    final apkPath = '${tempDir.path}/agentport-v0.2.0.apk';
+    File(apkPath).writeAsBytesSync(const [1, 2, 3, 4]);
+    final downloader = _FakeBackgroundDownloader(filePath: apkPath);
+    final installer = _FakeInstaller();
+    final container = createContainer(
+      releaseClient: _FakeReleaseClient(_release),
+      installer: installer,
+      downloader: downloader,
+    );
+    await container
+        .read(settingsRepositoryProvider)
+        .savePendingUpdateDownload(
+          const PendingUpdateDownload(
+            id: 42,
+            version: '0.2.0',
+            fileName: 'agentport-v0.2.0.apk',
+          ),
+        );
+
+    await container.read(updateControllerProvider.future);
+    await _waitUntil(() => installer.installed.isNotEmpty);
+
+    expect(installer.installed.single.path, apkPath);
+    expect(
+      await container
+          .read(settingsRepositoryProvider)
+          .loadPendingUpdateDownload(),
+      isNull,
+    );
+    expect(
+      container.read(updateControllerProvider).value!.phase,
+      UpdatePhase.idle,
+    );
+  });
+
+  test(
+    'reports a failed background download and clears its metadata',
+    () async {
+      final downloader = _FakeBackgroundDownloader(
+        filePath: '${tempDir.path}/agentport-v0.2.0.apk',
+        statuses: const [
+          BackgroundDownloadStatus(
+            phase: BackgroundDownloadPhase.failed,
+            reason: 1006,
+          ),
+        ],
+      );
+      final installer = _FakeInstaller();
+      final container = createContainer(
+        releaseClient: _FakeReleaseClient(_release),
+        installer: installer,
+        downloader: downloader,
+      );
+      await container.read(updateControllerProvider.future);
+      final controller = container.read(updateControllerProvider.notifier);
+      await controller.check();
+
+      await expectLater(
+        controller.downloadAndInstall(),
+        throwsA(isA<UpdateFailure>()),
+      );
+
+      expect(installer.installed, isEmpty);
+      expect(downloader.removed, contains(7));
+      expect(
+        await container
+            .read(settingsRepositoryProvider)
+            .loadPendingUpdateDownload(),
+        isNull,
+      );
+      expect(container.read(updateControllerProvider).value!.error, isNotNull);
     },
   );
 

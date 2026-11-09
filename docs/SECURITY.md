@@ -52,6 +52,7 @@ exercised against a third-party legacy server.
 | OpenCode pairing token | Android Keystore-backed secure storage via `SecureStore` | Database stores only `tokenRef` plus server metadata; the token is sent as the HTTP Basic password. |
 | Marketplace/plugin metadata | SQLCipher database | URLs, header names/templates, config hashes, trust and re-consent flags. |
 | Update integrity inputs | GitHub Releases API, APK, optional SHA-256 asset | APK signature continuity is enforced by Android at install time. |
+| Downloaded update APK | App-specific external `Download/` directory | Written by Android DownloadManager; the app verifies the SHA-256 checksum before handing the file to `PackageInstaller`. |
 
 ## 2. Threat model
 
@@ -203,10 +204,17 @@ AgentPort is a local-first Android client. The relevant trust boundaries are:
 - **Stable channel.** `lib/data/updates/github_release_client.dart` reads the public
   GitHub Releases API and `lib/domain/entities/app_release.dart` rejects drafts,
   prereleases, and invalid versions. Only a newer stable release is returned.
+- **Background download.** `android/app/src/main/kotlin/com/iwatman/agentport/UpdateDownloadManager.kt`
+  hands the APK to Android's system `DownloadManager`, which keeps running with the
+  screen off or the app in the background. URLs must use HTTPS, the file name is
+  validated, and the target is the app-specific external `Download/` directory.
+  Pending download metadata is stored in the encrypted settings database so the app
+  can reconnect after a restart.
 - **SHA-256 verification.** `lib/data/updates/release_downloader.dart` streams the APK
-  to disk and, when the release publishes `<apk>.sha256` or `SHA256SUMS`, downloads
-  the checksum, parses it, compares the SHA-256 of the partial file, and deletes the
-  partial file on mismatch.
+  to disk in the Dart fallback and, when the release publishes `<apk>.sha256` or
+  `SHA256SUMS`, downloads the checksum, parses it, and compares the SHA-256.
+  `verifyDownloadedApk` performs the same check for the DownloadManager file before
+  installation. A mismatch deletes the downloaded file.
 - **Signed CI release.** `.github/workflows/release.yml` requires a `v*` tag whose
   commit is on `main`, verifies the tag version against `pubspec.yaml`, builds with
   release signing material injected from GitHub secrets, writes SHA-256 checksums, and
@@ -268,7 +276,7 @@ Status values are **Pass**, **Gap**, or **Accepted risk**.
 | 18 | OpenCode HTTP warning | Pass | `lib/features/opencode/opencode_pair_screen.dart` displays the warning for `http://` URLs. HTTP is not blocked. |
 | 19 | Update channel is stable-only | Pass | `lib/data/updates/github_release_client.dart`; `lib/domain/entities/app_release.dart`; test `rejects drafts, pre-releases, and invalid tags` (`test/data/updates/app_release_test.dart`). |
 | 20 | SHA-256 is verified when a checksum asset exists | Pass | `lib/data/updates/release_downloader.dart`; tests `verifies a .sha256 asset with filename and hash`, `verifies the matching line in SHA256SUMS`, and `throws a checksum failure and removes the partial file` (`test/data/updates/release_downloader_test.dart`). |
-| 21 | Update install requires a verified checksum and reports verification | Gap | `DownloadedRelease.checksumVerified` is `false` when no checksum asset exists, but `UpdateController.downloadAndInstall` still installs. The UI never reads `checksumVerified` (`lib/features/updates/update_controller.dart`, `update_dialogs.dart`). |
+| 21 | Update install requires a verified checksum and reports verification | Gap | `UpdateState.checksumVerified` is `false` when no checksum asset exists, but `UpdateController._finishDownload` still installs. The UI never reads `checksumVerified` (`lib/features/updates/update_controller.dart`, `update_dialogs.dart`). |
 | 22 | Release is built and signed by CI from a tag on main | Pass | `.github/workflows/release.yml`; `docs/RELEASING.md`. Actions are referenced by version tag, not commit SHA, which is a supply-chain gap. |
 | 23 | Android auto backup disabled | Pass | `android/app/src/main/AndroidManifest.xml` `android:allowBackup="false"`. |
 | 24 | Release error screen hides implementation details | Pass | `lib/app/error_handling.dart` installs `AgentPortErrorScreen` only when `!kDebugMode`. |

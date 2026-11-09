@@ -127,6 +127,46 @@ Future<DownloadedRelease> downloadApk(
   }
 }
 
+/// Verifies an APK that was downloaded outside the Dart HTTP client.
+///
+/// Returns `false` when the release did not publish a checksum asset and no
+/// verification was possible.
+Future<bool> verifyDownloadedApk(
+  File file, {
+  required String apkName,
+  ReleaseAsset? checksumAsset,
+  http.Client? client,
+  Duration timeout = const Duration(seconds: 60),
+}) async {
+  if (checksumAsset == null) {
+    return false;
+  }
+  final activeClient = client ?? http.Client();
+  final ownsClient = client == null;
+  try {
+    final expected = await _fetchChecksum(
+      activeClient,
+      checksumAsset,
+      apkName,
+      timeout,
+    );
+    final actual = await _fileSha256(file);
+    if (actual != expected) {
+      throw const UpdateFailure(
+        UpdateFailureKind.checksum,
+        detail:
+            'The downloaded APK does not match the published SHA-256 '
+            'checksum.',
+      );
+    }
+    return true;
+  } finally {
+    if (ownsClient) {
+      activeClient.close();
+    }
+  }
+}
+
 /// Selects the APK asset to download.
 ///
 /// When multiple APKs are attached, an `arm64-v8a` release build is preferred,

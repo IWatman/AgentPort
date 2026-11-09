@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-10
+
+### Fixed
+
+- Update downloads now run through Android's DownloadManager and continue with the screen off or the app in the background. Pending download state is restored after a restart.
+- The update dialog explains that you can switch apps or turn off the screen while downloading.
+
+### Changed
+
+- Update progress and completion come from DownloadManager; the SHA-256 checksum is still verified before installation.
+
 ## [0.2.2] - 2026-11-09
 
 ### Fixed

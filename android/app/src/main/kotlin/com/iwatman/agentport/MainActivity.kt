@@ -11,5 +11,9 @@ class MainActivity : FlutterActivity() {
             flutterEngine.dartExecutor.binaryMessenger,
             ApkInstaller.CHANNEL,
         ).setMethodCallHandler(ApkInstaller(this))
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            UpdateDownloadManager.CHANNEL,
+        ).setMethodCallHandler(UpdateDownloadManager(this))
     }
 }

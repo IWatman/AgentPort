@@ -1,4 +1,5 @@
 import '../db/app_database.dart';
+import '../../domain/entities/pending_update_download.dart';
 import 'app_settings.dart';
 
 /// Persists [AppSettings] in the encrypted database.
@@ -9,6 +10,10 @@ class SettingsRepository {
   static const _onboardingKey = 'onboarding_complete';
   static const _autoUpdateKey = 'auto_update_check';
   static const _lastUpdateCheckKey = 'last_update_check';
+  static const _updateDownloadIdKey = 'update_download_id';
+  static const _updateDownloadVersionKey = 'update_download_version';
+  static const _updateDownloadFileKey = 'update_download_file';
+  static const _updateDownloadChecksumKey = 'update_download_checksum';
 
   final AppDatabase _database;
 
@@ -42,6 +47,47 @@ class SettingsRepository {
 
   Future<void> saveLastUpdateCheck(DateTime value) =>
       _write(_lastUpdateCheckKey, value.millisecondsSinceEpoch.toString());
+
+  Future<PendingUpdateDownload?> loadPendingUpdateDownload() async {
+    final rows = await _database.select(_database.settingEntries).get();
+    final values = {for (final row in rows) row.key: row.value};
+    final id = int.tryParse(values[_updateDownloadIdKey] ?? '');
+    final version = values[_updateDownloadVersionKey];
+    final fileName = values[_updateDownloadFileKey];
+    if (id == null ||
+        version == null ||
+        version.isEmpty ||
+        fileName == null ||
+        fileName.isEmpty) {
+      return null;
+    }
+    final checksum = values[_updateDownloadChecksumKey];
+    return PendingUpdateDownload(
+      id: id,
+      version: version,
+      fileName: fileName,
+      checksumUrl: checksum == null || checksum.isEmpty ? null : checksum,
+    );
+  }
+
+  Future<void> savePendingUpdateDownload(PendingUpdateDownload pending) async {
+    await _write(_updateDownloadIdKey, pending.id.toString());
+    await _write(_updateDownloadVersionKey, pending.version);
+    await _write(_updateDownloadFileKey, pending.fileName);
+    await _write(_updateDownloadChecksumKey, pending.checksumUrl ?? '');
+  }
+
+  Future<void> clearPendingUpdateDownload() async {
+    await (_database.delete(_database.settingEntries)..where(
+          (table) => table.key.isIn(const [
+            _updateDownloadIdKey,
+            _updateDownloadVersionKey,
+            _updateDownloadFileKey,
+            _updateDownloadChecksumKey,
+          ]),
+        ))
+        .go();
+  }
 
   Future<void> _write(String key, String value) {
     return _database

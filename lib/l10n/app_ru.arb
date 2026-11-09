@@ -75,7 +75,7 @@
   },
   "updatesInstalling": "Открываю установщик…",
   "updatesInstallerHint": "Подтвердите обновление в системном установщике.",
-  "updatesDoNotClose": "Не закрывайте AgentPort до окончания загрузки.",
+  "updatesDoNotClose": "Можно переключаться между приложениями или выключить экран — загрузка продолжится в фоне.",
   "updatesPermissionTitle": "Разрешите установку",
   "updatesPermissionBody": "Android блокирует установку из AgentPort. Разрешите «Установка неизвестных приложений» для AgentPort и повторите попытку.",
   "updatesOpenSettings": "Открыть настройки",

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:agentport/core/db/app_database.dart';
 import 'package:agentport/core/security/secure_store.dart';
 import 'package:agentport/core/settings/app_settings.dart';
@@ -52,8 +50,6 @@ void main() {
   ) async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
-    final tempDir = Directory.systemTemp.createTempSync('agentport_tile_');
-    addTearDown(() => tempDir.deleteSync(recursive: true));
 
     await tester.pumpWidget(
       ProviderScope(
@@ -75,7 +71,6 @@ void main() {
           apkInstallerProvider.overrideWithValue(
             ApkInstaller(isAndroid: false),
           ),
-          updateTempDirectoryProvider.overrideWith((ref) async => tempDir),
         ],
         child: MaterialApp(
           locale: const Locale('en'),

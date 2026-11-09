@@ -19,7 +19,7 @@ AgentPort connects directly to the endpoints you configure:
 - MCP servers installed from marketplaces and Google Workspace MCP endpoints.
 - Google OAuth endpoints when you connect a Google Workspace service.
 - Your OpenCode server.
-- `api.github.com` for update checks.
+- `api.github.com` for update checks and GitHub release asset downloads for updates.
 - Marketplace sources on GitHub when you open the marketplace.
 
 Requests go to these services only. No data is routed through the AgentPort project.

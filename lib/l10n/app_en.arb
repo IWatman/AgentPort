@@ -75,7 +75,7 @@
   },
   "updatesInstalling": "Opening the installer…",
   "updatesInstallerHint": "Confirm the update in the system installer.",
-  "updatesDoNotClose": "Keep AgentPort open until the download finishes.",
+  "updatesDoNotClose": "You can switch apps or turn off the screen; the download continues in the background.",
   "updatesPermissionTitle": "Allow installs",
   "updatesPermissionBody": "Android blocks installs from AgentPort. Allow “Install unknown apps” for AgentPort, then try again.",
   "updatesOpenSettings": "Open settings",

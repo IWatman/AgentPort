@@ -9,7 +9,7 @@
 
 AgentPort is a local-first Android app for chatting with AI models using your own API key, connecting remote MCP servers, and controlling OpenCode sessions from your phone.
 
-> **Status:** `v0.2.2` is the latest stable release.
+> **Status:** `v0.2.3` is the latest stable release.
 
 ## Contents
 
@@ -80,6 +80,7 @@ AgentPort is a local-first Android app for chatting with AI models using your ow
 - API keys and tokens in the Android Keystore, never in the database.
 - Export and import chats/providers without secrets.
 - Daily and on-demand stable update checks with release notes, download progress, SHA-256 verification, and the Android installer.
+- Update downloads run through Android's DownloadManager, so they continue with the screen off or the app in the background and resume after a restart.
 - English and Russian UI.
 
 ## Install
@@ -147,7 +148,7 @@ Add a provider in **Settings → AI providers**. Presets fill the name and base 
 - Backups exclude API keys, tokens, MCP credentials, and OpenCode connections.
 - MCP OAuth uses PKCE and `state`; the loopback callback listens only on `127.0.0.1`. Google connections use the fixed `http://127.0.0.1:53682/callback` redirect.
 - Remote MCP URLs must use HTTPS. Plain HTTP is accepted for OpenCode only with an explicit unencrypted-connection warning.
-- Updates are stable-only, checksum-verified, and installed through Android's package installer.
+- Updates are stable-only, checksum-verified, and installed through Android's package installer. The APK is downloaded by the system DownloadManager into the app-specific external storage and verified before installation.
 
 Read [docs/SECURITY.md](docs/SECURITY.md) for the Phase 1 security review, verification checklist, and residual risks. See [docs/PRIVACY.md](docs/PRIVACY.md) for the privacy policy.
 
