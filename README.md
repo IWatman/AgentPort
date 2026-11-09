@@ -9,7 +9,7 @@
 
 AgentPort is a local-first Android app for chatting with AI models using your own API key, connecting remote MCP servers, and controlling OpenCode sessions from your phone.
 
-> **Status:** `v0.2.1` is the latest stable release.
+> **Status:** `v0.2.2` is the latest stable release.
 
 ## Contents
 
@@ -47,6 +47,7 @@ AgentPort is a local-first Android app for chatting with AI models using your ow
 - DeepSeek and any OpenAI-compatible API with your own key.
 - Presets for DeepSeek, OpenAI, OpenRouter, Groq, Mistral, Together AI, xAI, and Google Gemini.
 - Streaming replies, stop and retry, Markdown and code blocks.
+- Replies keep generating while you browse other screens; return to the chat to see the finished answer.
 - Photos, text-file attachments, voice input, and per-conversation model selection.
 - Reasoning cards stay collapsed by default.
 - One-tap scroll to the true bottom of a long transcript.

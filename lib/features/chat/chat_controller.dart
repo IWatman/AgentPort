@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show KeepAliveLink;
 
 import '../../data/api/openai_compatible_client.dart';
 import '../../data/repositories/conversation_repository.dart';
@@ -45,7 +46,9 @@ class ChatSessionState {
   bool get canRetry =>
       !streaming &&
       lastUserMessage != null &&
-      (failure != null || messages.last.isUser);
+      (failure != null ||
+          messages.last.isUser ||
+          messages.last.status != ChatMessageStatus.complete);
 
   ChatSessionState copyWith({
     ChatConversation? conversation,
@@ -105,7 +108,9 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
   String _contentBuffer = '';
   String _reasoningBuffer = '';
   bool _cancelRequested = false;
+  bool _deleted = false;
   int _generation = 0;
+  KeepAliveLink? _keepAliveLink;
 
   @override
   Future<ChatSessionState> build() async {
@@ -130,12 +135,34 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
     final current = state.value;
     if ((trimmed.isEmpty && attachments.isEmpty) ||
         current == null ||
-        current.streaming) {
+        current.streaming ||
+        _deleted) {
+      return;
+    }
+    _holdAlive();
+    try {
+      await _send(text, attachments: attachments, onAccepted: onAccepted);
+    } finally {
+      _releaseAlive();
+    }
+  }
+
+  Future<void> _send(
+    String text, {
+    List<ChatMessageAttachment> attachments = const [],
+    void Function()? onAccepted,
+  }) async {
+    final trimmed = text.trim();
+    final current = state.value;
+    if ((trimmed.isEmpty && attachments.isEmpty) ||
+        current == null ||
+        current.streaming ||
+        _deleted) {
       return;
     }
 
     final provider = await _resolveProvider(current.conversation.providerId);
-    if (!ref.mounted) {
+    if (!ref.mounted || _deleted) {
       return;
     }
     if (provider == null) {
@@ -150,7 +177,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
     final apiKey = await ref
         .read(providerRepositoryProvider)
         .apiKeyFor(provider);
-    if (!ref.mounted) {
+    if (!ref.mounted || _deleted) {
       return;
     }
     if (apiKey == null || apiKey.isEmpty) {
@@ -227,7 +254,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
       }
       return;
     }
-    if (!ref.mounted) {
+    if (!ref.mounted || _deleted) {
       return;
     }
     _notifyList(conversation);
@@ -242,7 +269,20 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
 
   Future<void> retry() async {
     final current = state.value;
-    if (current == null || current.streaming || !current.canRetry) {
+    if (current == null || current.streaming || !current.canRetry || _deleted) {
+      return;
+    }
+    _holdAlive();
+    try {
+      await _retry();
+    } finally {
+      _releaseAlive();
+    }
+  }
+
+  Future<void> _retry() async {
+    final current = state.value;
+    if (current == null || current.streaming || !current.canRetry || _deleted) {
       return;
     }
 
@@ -254,7 +294,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
     }
 
     final provider = await _resolveProvider(current.conversation.providerId);
-    if (!ref.mounted) {
+    if (!ref.mounted || _deleted) {
       return;
     }
     if (provider == null) {
@@ -269,7 +309,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
     final apiKey = await ref
         .read(providerRepositoryProvider)
         .apiKeyFor(provider);
-    if (!ref.mounted) {
+    if (!ref.mounted || _deleted) {
       return;
     }
     if (apiKey == null || apiKey.isEmpty) {
@@ -320,7 +360,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
       }
       return;
     }
-    if (!ref.mounted) {
+    if (!ref.mounted || _deleted) {
       return;
     }
 
@@ -413,6 +453,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
   }
 
   Future<void> deleteConversation() async {
+    _deleted = true;
     await _cancelStreaming();
     await ref.read(conversationRepositoryProvider).delete(conversationId);
     if (ref.mounted) {
@@ -908,15 +949,39 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
       ),
     );
 
-    final repository = ref.read(conversationRepositoryProvider);
-    if (hasContent) {
-      await repository.insertMessage(message);
+    if (_deleted) {
+      return;
     }
-    await repository.touch(conversationId);
+    final repository = ref.read(conversationRepositoryProvider);
+    try {
+      final existing = await repository.get(conversationId);
+      if (existing == null) {
+        return;
+      }
+      if (hasContent) {
+        await repository.insertMessage(message);
+      }
+      await repository.touch(conversationId);
+    } catch (_) {
+      // The conversation may have been deleted while the answer streamed.
+      return;
+    }
     if (!ref.mounted) {
       return;
     }
     _notifyList(conversation);
+  }
+
+  /// Keeps this controller (and its HTTP stream) alive while the chat screen
+  /// is closed, so navigation does not cancel an in-flight answer.
+  void _holdAlive() {
+    _keepAliveLink ??= ref.keepAlive();
+  }
+
+  void _releaseAlive() {
+    final link = _keepAliveLink;
+    _keepAliveLink = null;
+    link?.close();
   }
 
   Future<void> _cancelStreaming() async {
@@ -968,6 +1033,7 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
 
   void _handleDispose() {
     _generation++;
+    _keepAliveLink = null;
     _cancelApproval();
     _subscription?.cancel();
     _subscription = null;
@@ -992,19 +1058,23 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
       return;
     }
 
-    unawaited(
-      repository.insertMessage(
-        ChatMessage(
-          id: messageId,
-          conversationId: conversationId,
-          role: ChatRole.assistant,
-          content: content,
-          reasoning: reasoning.isEmpty ? null : reasoning,
-          status: ChatMessageStatus.stopped,
-          createdAt: DateTime.now(),
-        ),
-      ),
-    );
+    unawaited(() async {
+      try {
+        await repository.insertMessage(
+          ChatMessage(
+            id: messageId,
+            conversationId: conversationId,
+            role: ChatRole.assistant,
+            content: content,
+            reasoning: reasoning.isEmpty ? null : reasoning,
+            status: ChatMessageStatus.stopped,
+            createdAt: DateTime.now(),
+          ),
+        );
+      } catch (_) {
+        // The conversation may have been deleted while the answer streamed.
+      }
+    }());
   }
 }
 

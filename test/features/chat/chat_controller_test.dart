@@ -71,6 +71,23 @@ class _FakeClient extends OpenAiCompatibleClient {
   }
 }
 
+class _ControlledClient extends OpenAiCompatibleClient {
+  final controller = StreamController<ChatDelta>();
+  int calls = 0;
+
+  @override
+  Stream<ChatDelta> streamChat({
+    required String baseUrl,
+    required String apiKey,
+    required String model,
+    required List<ChatRequestMessage> messages,
+    List<ChatToolDefinition> tools = const [],
+  }) {
+    calls++;
+    return controller.stream;
+  }
+}
+
 class _ToolFakeClient extends OpenAiCompatibleClient {
   int calls = 0;
   final List<List<ChatRequestMessage>> requests = [];
@@ -472,6 +489,39 @@ void main() {
       (message) => message.role == 'tool',
     );
     expect(toolMessage.content, contains('permission denied'));
+  });
+
+  test('keeps generating after the chat screen is closed', () async {
+    final provider = await createProvider();
+    final conversation = await conversations.create(providerId: provider.id);
+    final client = _ControlledClient();
+    container = createContainer(client);
+
+    final subscription = container.listen(
+      chatControllerProvider(conversation.id),
+      (previous, next) {},
+      fireImmediately: true,
+    );
+    await container.read(chatControllerProvider(conversation.id).future);
+
+    final notifier = container.read(
+      chatControllerProvider(conversation.id).notifier,
+    );
+    final sendFuture = notifier.send('Hello');
+    await _waitUntil(() => client.calls == 1 && client.controller.hasListener);
+
+    subscription.close();
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(client.controller.hasListener, isTrue);
+
+    client.controller.add(const ChatDelta(content: 'Background answer'));
+    await client.controller.close();
+    await sendFuture;
+
+    final stored = await conversations.messages(conversation.id);
+    expect(stored, hasLength(2));
+    expect(stored.last.content, 'Background answer');
+    expect(stored.last.status, ChatMessageStatus.complete);
   });
 
   test('retry removes the failed assistant reply and streams again', () async {
