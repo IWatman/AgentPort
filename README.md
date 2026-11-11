@@ -9,7 +9,7 @@
 
 AgentPort is a local-first Android app for chatting with AI models using your own API key, connecting remote MCP servers, and controlling OpenCode sessions from your phone.
 
-> **Status:** `v0.3.0` is the latest stable release.
+> **Status:** `v0.3.1` is the latest stable release.
 
 ## Contents
 
@@ -197,6 +197,8 @@ Trust labels:
 ## Providers
 
 Add a provider in **Settings → AI providers**. Presets fill the name and base URL for common OpenAI-compatible services; every field remains editable. The model is selected per conversation from the composer. Provider API keys are written to the Android Keystore and only a lookup reference is stored in the database.
+
+ChatGPT and OpenRouter can also be connected with an account. Account sign-in uses browser OAuth and the official provider endpoints; tokens stay in the Android Keystore. AgentPort follows Android's system HTTP proxy, so if your browser reaches the provider through a proxy or VPN helper app, configure the same proxy in Android's Wi-Fi settings or route AgentPort through the VPN. Per-app split tunneling that excludes AgentPort can cause "could not reach the authorization service" errors. Static HTTP proxies are supported; PAC-based proxies are not. OpenAI account sign-in is also subject to OpenAI's country and region availability.
 
 ## Security and privacy
 

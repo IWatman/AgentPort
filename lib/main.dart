@@ -9,6 +9,7 @@ import 'app/agent_port_app.dart';
 import 'app/error_handling.dart';
 import 'app/theme.dart';
 import 'core/db/app_database.dart';
+import 'core/network/system_proxy.dart';
 import 'core/security/secure_store.dart';
 import 'core/settings/settings_controller.dart';
 import 'core/settings/settings_repository.dart';
@@ -16,6 +17,7 @@ import 'core/settings/settings_repository.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   installErrorHandling();
+  await SystemProxy.apply();
 
   try {
     final secureStore = SecureStore();

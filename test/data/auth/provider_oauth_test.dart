@@ -563,6 +563,37 @@ void main() {
         _fails(ProviderOAuthError.network),
       );
     });
+
+    test('reports an OpenAI region block without exposing the body', () async {
+      final harness = _Harness(
+        onRequest: (_) async => http.Response(
+          jsonEncode({
+            'error': {
+              'code': 'unsupported_country_region_territory',
+              'message': 'sensitive-region-detail',
+            },
+          }),
+          403,
+        ),
+      );
+      try {
+        await harness.flow.authorizeChatGpt(hostId: _hostId);
+        fail('Expected a region error.');
+      } on ProviderOAuthException catch (error) {
+        expect(error.code, ProviderOAuthError.unsupportedRegion);
+        expect(error.toString(), isNot(contains('sensitive-region-detail')));
+      }
+    });
+
+    test('maps a non-JSON success body to invalidResponse', () async {
+      final harness = _Harness(
+        onRequest: (_) async => http.Response('<html>proxy</html>', 200),
+      );
+      await expectLater(
+        harness.flow.authorizeChatGpt(hostId: _hostId),
+        _fails(ProviderOAuthError.invalidResponse),
+      );
+    });
   });
 
   group('attempt lifecycle', () {

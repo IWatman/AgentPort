@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/network/system_proxy.dart';
 import '../../data/api/openai_compatible_client.dart';
 import '../../data/api/openai_responses_client.dart';
 import '../../data/auth/provider_oauth.dart';
@@ -14,6 +15,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../shared/empty_state.dart';
 import '../shared/failure_text.dart';
 import 'model_catalog.dart';
+import 'provider_oauth_text.dart';
 import 'provider_presets.dart';
 import 'providers_controller.dart';
 
@@ -514,6 +516,11 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
       _authorizing = true;
       _error = null;
     });
+    // Refresh the proxy in case the user connected a VPN/proxy after startup.
+    await SystemProxy.apply();
+    if (!mounted) {
+      return;
+    }
     final method = _authMethod;
     final flow = ref.read(providerOAuthFlowProvider);
     _activeFlow = flow;
@@ -555,6 +562,10 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
             setState(() => _error = l10n.providerAccountLoadFailed);
           }
         }
+      }
+    } on ProviderOAuthException catch (error) {
+      if (mounted) {
+        setState(() => _error = providerOAuthErrorText(l10n, error));
       }
     } catch (error) {
       if (mounted) {
@@ -821,7 +832,9 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
       }
       setState(() {
         _saving = false;
-        _error = error is ChatFailure
+        _error = error is ProviderOAuthException
+            ? providerOAuthErrorText(l10n, error)
+            : error is ChatFailure
             ? chatFailureText(l10n, error)
             : error.toString();
       });

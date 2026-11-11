@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-11
+
+### Fixed
+
+- ChatGPT and OpenRouter account sign-in now follow Android's system HTTP proxy. Previously the app's HTTP stack connected directly, so a proxy or VPN helper that worked in the browser could fail with "Could not contact the authorization service."
+- Proxy settings are refreshed when the app returns to the foreground and before each account sign-in.
+- Provider sign-in errors are localized and actionable instead of showing the raw `ProviderOAuthException` text.
+- OpenAI country and region blocks are reported explicitly instead of as a generic authorization failure.
+
+### Documentation
+
+- Explained proxy/VPN requirements, split tunneling, and the lack of PAC support for account sign-in.
+
 ## [0.3.0] - 2026-11-11
 
 ### Added

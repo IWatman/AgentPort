@@ -15,5 +15,9 @@ class MainActivity : FlutterActivity() {
             flutterEngine.dartExecutor.binaryMessenger,
             UpdateDownloadManager.CHANNEL,
         ).setMethodCallHandler(UpdateDownloadManager(this))
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            SystemProxyChannel.CHANNEL,
+        ).setMethodCallHandler(SystemProxyChannel(this))
     }
 }

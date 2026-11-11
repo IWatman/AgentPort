@@ -28,6 +28,9 @@ enum ProviderOAuthError {
   planPermissionRequired,
   reauthorizationRequired,
   network,
+  tls,
+  invalidResponse,
+  unsupportedRegion,
   authorizationFailed,
 }
 
@@ -60,6 +63,12 @@ class ProviderOAuthException implements Exception {
       'This session cannot be renewed. Please sign in again.',
     ProviderOAuthError.network =>
       'Could not contact the authorization service.',
+    ProviderOAuthError.tls =>
+      'The secure connection to the authorization service failed.',
+    ProviderOAuthError.invalidResponse =>
+      'The authorization service returned an unexpected response.',
+    ProviderOAuthError.unsupportedRegion =>
+      'The provider is not available in this country or region.',
     ProviderOAuthError.authorizationFailed =>
       'Authorization could not be completed. Please try again.',
   };
@@ -424,6 +433,11 @@ class ProviderOAuthFlow {
         await client.send(request),
       ))().timeout(httpTimeout);
       if (response.statusCode != 200) {
+        if (_isUnsupportedRegion(response.body)) {
+          throw const ProviderOAuthException(
+            ProviderOAuthError.unsupportedRegion,
+          );
+        }
         if (refresh &&
             (response.statusCode == 400 || response.statusCode == 401)) {
           throw const ProviderOAuthException(
@@ -436,16 +450,36 @@ class ProviderOAuthFlow {
       }
       final body = jsonDecode(response.body);
       if (body is! Map<String, dynamic>) {
-        throw const ProviderOAuthException(ProviderOAuthError.invalidToken);
+        throw const ProviderOAuthException(ProviderOAuthError.invalidResponse);
       }
       return body;
     } on ProviderOAuthException {
       rethrow;
     } on TimeoutException {
       throw const ProviderOAuthException(ProviderOAuthError.timeout);
+    } on HandshakeException {
+      throw const ProviderOAuthException(ProviderOAuthError.tls);
+    } on FormatException {
+      throw const ProviderOAuthException(ProviderOAuthError.invalidResponse);
     } catch (_) {
       throw const ProviderOAuthException(ProviderOAuthError.network);
     }
+  }
+
+  /// OpenAI reports region blocks with a fixed error code. Only the code is
+  /// inspected; the response body is never exposed or retained.
+  static bool _isUnsupportedRegion(String body) {
+    if (body.length > 8192) return false;
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map && decoded['error'] is Map) {
+        return (decoded['error'] as Map)['code'] ==
+            'unsupported_country_region_territory';
+      }
+    } catch (_) {
+      // Ignore malformed bodies and use the generic authorization error.
+    }
+    return false;
   }
 
   Future<Map<String, Object?>> _verifyIdentity(
