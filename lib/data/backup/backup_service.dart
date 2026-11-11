@@ -48,6 +48,7 @@ class BackupService {
             'type': provider.type,
             'base_url': provider.baseUrl,
             'model': provider.model,
+            'auth_method': provider.authMethod,
           },
       ],
       'conversations': [
@@ -138,6 +139,7 @@ class BackupService {
                 baseUrl: baseUrl,
                 model: model,
                 apiKeyRef: apiKeyRef,
+                authMethod: Value(_string(item['auth_method']) ?? 'api_key'),
                 createdAt:
                     _int(item['created_at']) ??
                     DateTime.now().millisecondsSinceEpoch,

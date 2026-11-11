@@ -1,9 +1,12 @@
 import 'package:agentport/core/db/app_database.dart';
 import 'package:agentport/core/security/secure_store.dart';
+import 'package:agentport/data/auth/provider_oauth.dart';
 import 'package:agentport/data/repositories/conversation_repository.dart';
 import 'package:agentport/data/repositories/provider_repository.dart';
 import 'package:agentport/domain/entities/ai_provider.dart';
+import 'package:agentport/domain/entities/chat_failure.dart';
 import 'package:agentport/domain/entities/chat_message.dart';
+import 'package:agentport/domain/entities/provider_oauth.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -22,6 +25,37 @@ class _MemorySecureStore extends SecureStore {
   Future<void> delete(String key) async {
     values.remove(key);
   }
+}
+
+class _FakeOAuthFlow extends ProviderOAuthFlow {
+  _FakeOAuthFlow(this.refreshed);
+
+  final ProviderOAuthCredential refreshed;
+  int refreshCalls = 0;
+
+  @override
+  Future<ProviderOAuthCredential> refreshChatGpt(
+    ProviderOAuthCredential credential,
+  ) async {
+    refreshCalls++;
+    return refreshed;
+  }
+}
+
+ProviderOAuthCredential _chatGptCredential({
+  String accessToken = 'access-1',
+  DateTime? expiresAt,
+}) {
+  return ProviderOAuthCredential(
+    method: ProviderAuthMethod.chatGpt,
+    accessToken: accessToken,
+    clientId: 'client-1',
+    hostId: 'urn:uuid:host-1',
+    subject: 'subject-1',
+    issuer: ProviderOAuthFlow.openAiIssuer,
+    refreshToken: 'refresh-1',
+    expiresAt: expiresAt ?? DateTime.now().add(const Duration(hours: 1)),
+  );
 }
 
 void main() {
@@ -111,6 +145,320 @@ void main() {
       expect(await providers.list(), isEmpty);
       expect(secureStore.values, isEmpty);
       expect((await conversations.get(conversation.id))?.providerId, isNull);
+    });
+  });
+
+  group('ProviderRepository accounts', () {
+    test('creates an account provider without storing an API key', () async {
+      final provider = await providers.create(
+        name: 'ChatGPT',
+        type: AiProviderType.openAiCompatible,
+        baseUrl: ProviderAuthMethod.chatGpt.baseUrl!,
+        model: 'gpt-5',
+        apiKey: '',
+        authMethod: ProviderAuthMethod.chatGpt,
+        credential: _chatGptCredential(),
+      );
+
+      expect(provider.usesAccount, isTrue);
+      expect(provider.usesResponses, isTrue);
+      expect(secureStore.values[provider.apiKeyRef], isNull);
+      expect(secureStore.values['${provider.apiKeyRef}.oauth'], isNotNull);
+      expect(await providers.apiKeyFor(provider), 'access-1');
+      expect(
+        (await providers.oauthCredentialFor(provider))?.method,
+        ProviderAuthMethod.chatGpt,
+      );
+    });
+
+    test('requires credentials for account providers', () async {
+      await expectLater(
+        providers.create(
+          name: 'ChatGPT',
+          type: AiProviderType.openAiCompatible,
+          baseUrl: ProviderAuthMethod.chatGpt.baseUrl!,
+          model: 'gpt-5',
+          apiKey: '',
+          authMethod: ProviderAuthMethod.chatGpt,
+        ),
+        throwsA(
+          isA<ChatFailure>().having(
+            (failure) => failure.kind,
+            'kind',
+            ChatFailureKind.badRequest,
+          ),
+        ),
+      );
+    });
+
+    test('pins account credentials to the official endpoint', () async {
+      for (final url in [
+        'https://api.openai.com.evil/v1',
+        'http://api.openai.com/v1',
+        'https://api.openai.com:8443/v1',
+        'https://api.openai.com/v1?redirect=1',
+        'https://api.openai.com/v1#fragment',
+      ]) {
+        await expectLater(
+          providers.create(
+            name: 'ChatGPT',
+            type: AiProviderType.openAiCompatible,
+            baseUrl: url,
+            model: 'gpt-5',
+            apiKey: '',
+            authMethod: ProviderAuthMethod.chatGpt,
+            credential: _chatGptCredential(),
+          ),
+          throwsA(
+            isA<ChatFailure>().having(
+              (failure) => failure.kind,
+              'kind',
+              ChatFailureKind.badRequest,
+            ),
+          ),
+          reason: url,
+        );
+      }
+
+      final provider = await providers.create(
+        name: 'ChatGPT',
+        type: AiProviderType.openAiCompatible,
+        baseUrl: '${ProviderAuthMethod.chatGpt.baseUrl}/',
+        model: 'gpt-5',
+        apiKey: '',
+        authMethod: ProviderAuthMethod.chatGpt,
+        credential: _chatGptCredential(),
+      );
+      expect(await providers.apiKeyFor(provider), 'access-1');
+    });
+
+    test('rejects credentials for a different account type', () async {
+      await expectLater(
+        providers.create(
+          name: 'ChatGPT',
+          type: AiProviderType.openAiCompatible,
+          baseUrl: ProviderAuthMethod.chatGpt.baseUrl!,
+          model: 'gpt-5',
+          apiKey: '',
+          authMethod: ProviderAuthMethod.chatGpt,
+          credential: ProviderOAuthCredential(
+            method: ProviderAuthMethod.openRouter,
+            accessToken: 'openrouter-key',
+          ),
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('refreshes an expired ChatGPT credential once', () async {
+      final repository = ProviderRepository(
+        database,
+        secureStore,
+        oauthFlow: _FakeOAuthFlow(_chatGptCredential(accessToken: 'access-2')),
+      );
+      final provider = await repository.create(
+        name: 'ChatGPT',
+        type: AiProviderType.openAiCompatible,
+        baseUrl: ProviderAuthMethod.chatGpt.baseUrl!,
+        model: 'gpt-5',
+        apiKey: '',
+        authMethod: ProviderAuthMethod.chatGpt,
+        credential: _chatGptCredential(
+          expiresAt: DateTime.now().subtract(const Duration(minutes: 1)),
+        ),
+      );
+
+      expect(await repository.apiKeyFor(provider), 'access-2');
+      expect(
+        (await repository.oauthCredentialFor(provider))?.accessToken,
+        'access-2',
+      );
+    });
+
+    test('switches an API-key provider to an account', () async {
+      final provider = await providers.create(
+        name: 'OpenAI',
+        type: AiProviderType.openAiCompatible,
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4o-mini',
+        apiKey: 'key-1',
+      );
+
+      await providers.update(
+        provider: provider,
+        name: 'ChatGPT',
+        type: AiProviderType.openAiCompatible,
+        baseUrl: ProviderAuthMethod.chatGpt.baseUrl!,
+        model: 'gpt-5',
+        authMethod: ProviderAuthMethod.chatGpt,
+        credential: _chatGptCredential(),
+      );
+
+      final updated = (await providers.get(provider.id))!;
+      expect(updated.authMethod, ProviderAuthMethod.chatGpt);
+      expect(secureStore.values[provider.apiKeyRef], isNull);
+      expect(await providers.apiKeyFor(updated), 'access-1');
+    });
+
+    test('does not switch to an account without credentials', () async {
+      final provider = await providers.create(
+        name: 'OpenAI',
+        type: AiProviderType.openAiCompatible,
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4o-mini',
+        apiKey: 'key-1',
+      );
+
+      await expectLater(
+        providers.update(
+          provider: provider,
+          name: 'ChatGPT',
+          type: AiProviderType.openAiCompatible,
+          baseUrl: ProviderAuthMethod.chatGpt.baseUrl!,
+          model: 'gpt-5',
+          authMethod: ProviderAuthMethod.chatGpt,
+        ),
+        throwsA(
+          isA<ChatFailure>().having(
+            (failure) => failure.kind,
+            'kind',
+            ChatFailureKind.badRequest,
+          ),
+        ),
+      );
+      expect(
+        (await providers.get(provider.id))?.authMethod,
+        ProviderAuthMethod.apiKey,
+      );
+      expect(await providers.apiKeyFor(provider), 'key-1');
+    });
+
+    test('keeps stored credentials when only metadata changes', () async {
+      final provider = await providers.create(
+        name: 'ChatGPT',
+        type: AiProviderType.openAiCompatible,
+        baseUrl: ProviderAuthMethod.chatGpt.baseUrl!,
+        model: 'gpt-5',
+        apiKey: '',
+        authMethod: ProviderAuthMethod.chatGpt,
+        credential: _chatGptCredential(),
+      );
+
+      await providers.update(
+        provider: provider,
+        name: 'My ChatGPT',
+        type: AiProviderType.openAiCompatible,
+        baseUrl: ProviderAuthMethod.chatGpt.baseUrl!,
+        model: 'gpt-5-mini',
+      );
+
+      final updated = (await providers.get(provider.id))!;
+      expect(updated.name, 'My ChatGPT');
+      expect(updated.model, 'gpt-5-mini');
+      expect(await providers.apiKeyFor(updated), 'access-1');
+    });
+
+    test('requires a new account when switching account types', () async {
+      final provider = await providers.create(
+        name: 'ChatGPT',
+        type: AiProviderType.openAiCompatible,
+        baseUrl: ProviderAuthMethod.chatGpt.baseUrl!,
+        model: 'gpt-5',
+        apiKey: '',
+        authMethod: ProviderAuthMethod.chatGpt,
+        credential: _chatGptCredential(),
+      );
+
+      await expectLater(
+        providers.update(
+          provider: provider,
+          name: 'OpenRouter',
+          type: AiProviderType.openAiCompatible,
+          baseUrl: ProviderAuthMethod.openRouter.baseUrl!,
+          model: 'openai/gpt-4o-mini',
+          authMethod: ProviderAuthMethod.openRouter,
+        ),
+        throwsA(isA<ChatFailure>()),
+      );
+      expect(
+        (await providers.get(provider.id))?.authMethod,
+        ProviderAuthMethod.chatGpt,
+      );
+    });
+
+    test('switches an account provider back to an API key', () async {
+      final provider = await providers.create(
+        name: 'ChatGPT',
+        type: AiProviderType.openAiCompatible,
+        baseUrl: ProviderAuthMethod.chatGpt.baseUrl!,
+        model: 'gpt-5',
+        apiKey: '',
+        authMethod: ProviderAuthMethod.chatGpt,
+        credential: _chatGptCredential(),
+      );
+
+      await expectLater(
+        providers.update(
+          provider: provider,
+          name: 'OpenAI',
+          type: AiProviderType.openAiCompatible,
+          baseUrl: 'https://api.openai.com/v1',
+          model: 'gpt-4o-mini',
+          authMethod: ProviderAuthMethod.apiKey,
+        ),
+        throwsA(isA<ChatFailure>()),
+      );
+
+      await providers.update(
+        provider: provider,
+        name: 'OpenAI',
+        type: AiProviderType.openAiCompatible,
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4o-mini',
+        apiKey: 'key-2',
+        authMethod: ProviderAuthMethod.apiKey,
+      );
+
+      final updated = (await providers.get(provider.id))!;
+      expect(updated.authMethod, ProviderAuthMethod.apiKey);
+      expect(await providers.apiKeyFor(updated), 'key-2');
+      expect(secureStore.values['${provider.apiKeyRef}.oauth'], isNull);
+    });
+
+    test('disconnects and deletes account credentials', () async {
+      final provider = await providers.create(
+        name: 'ChatGPT',
+        type: AiProviderType.openAiCompatible,
+        baseUrl: ProviderAuthMethod.chatGpt.baseUrl!,
+        model: 'gpt-5',
+        apiKey: '',
+        authMethod: ProviderAuthMethod.chatGpt,
+        credential: _chatGptCredential(),
+      );
+
+      await providers.disconnectAccount(provider);
+      await expectLater(
+        providers.apiKeyFor(provider),
+        throwsA(
+          isA<ChatFailure>().having(
+            (failure) => failure.kind,
+            'kind',
+            ChatFailureKind.unauthorized,
+          ),
+        ),
+      );
+
+      await providers.delete(provider);
+      expect(secureStore.values, isEmpty);
+    });
+
+    test('keeps one installation host id in secure storage', () async {
+      final first = await providers.oauthHostId();
+      final second = await providers.oauthHostId();
+      expect(first, startsWith('urn:uuid:'));
+      expect(second, first);
+      expect(secureStore.values['agentport.provider.oauth.host'], first);
+      expect(first, isNot(contains('@')));
     });
   });
 

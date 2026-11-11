@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show KeepAliveLink;
 
 import '../../data/api/openai_compatible_client.dart';
+import '../../data/api/openai_responses_client.dart';
 import '../../data/repositories/conversation_repository.dart';
 import '../../data/repositories/mcp_server_repository.dart';
 import '../../data/repositories/provider_repository.dart';
@@ -174,14 +175,14 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
       return;
     }
 
-    final apiKey = await ref
-        .read(providerRepositoryProvider)
-        .apiKeyFor(provider);
+    final apiKey = await _credentialFor(provider);
     if (!ref.mounted || _deleted) {
       return;
     }
     if (apiKey == null || apiKey.isEmpty) {
-      _setFailure(const ChatFailure(ChatFailureKind.missingApiKey));
+      if (state.value?.failure == null) {
+        _setFailure(const ChatFailure(ChatFailureKind.missingApiKey));
+      }
       return;
     }
 
@@ -306,14 +307,14 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
       return;
     }
 
-    final apiKey = await ref
-        .read(providerRepositoryProvider)
-        .apiKeyFor(provider);
+    final apiKey = await _credentialFor(provider);
     if (!ref.mounted || _deleted) {
       return;
     }
     if (apiKey == null || apiKey.isEmpty) {
-      _setFailure(const ChatFailure(ChatFailureKind.missingApiKey));
+      if (state.value?.failure == null) {
+        _setFailure(const ChatFailure(ChatFailureKind.missingApiKey));
+      }
       return;
     }
 
@@ -468,6 +469,25 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
     return model == null || model.isEmpty ? provider.model : model;
   }
 
+  Future<String?> _credentialFor(AiProvider provider) async {
+    try {
+      return await ref.read(providerRepositoryProvider).apiKeyFor(provider);
+    } on ChatFailure catch (error) {
+      if (ref.mounted) _setFailure(error);
+      return null;
+    } catch (_) {
+      if (ref.mounted) {
+        _setFailure(
+          const ChatFailure(
+            ChatFailureKind.unknown,
+            detail: 'Could not load provider credentials.',
+          ),
+        );
+      }
+      return null;
+    }
+  }
+
   Future<AiProvider?> _resolveProvider(String? providerId) async {
     final providers = await ref.read(providerRepositoryProvider).list();
     if (providers.isEmpty) {
@@ -590,42 +610,66 @@ class ChatController extends AsyncNotifier<ChatSessionState> {
     final completer = Completer<void>();
     _completer = completer;
 
-    final subscription = client
-        .streamChat(
-          baseUrl: provider.baseUrl,
-          apiKey: apiKey,
-          model: _effectiveModel(provider),
-          messages: messages,
-          tools: definitions,
-        )
-        .listen(
-          (delta) {
-            if (generation != _generation) {
-              return;
-            }
-            _contentBuffer += delta.content;
-            _reasoningBuffer += delta.reasoning;
-            for (final toolDelta in delta.toolCalls) {
-              toolBuilders
-                  .putIfAbsent(toolDelta.index, _ToolCallBuilder.new)
-                  .add(toolDelta);
-            }
-            if (delta.content.isNotEmpty || delta.reasoning.isNotEmpty) {
-              _publishStreaming(assistantMessageId);
-            }
-          },
-          onError: (Object error, StackTrace stackTrace) {
-            if (!completer.isCompleted) {
-              completer.completeError(error, stackTrace);
-            }
-          },
-          onDone: () {
-            if (!completer.isCompleted) {
-              completer.complete();
-            }
-          },
-          cancelOnError: true,
-        );
+    final Stream<ChatDelta> stream;
+    if (provider.usesResponses) {
+      final token = await _credentialFor(provider);
+      if (token == null || !ref.mounted) {
+        if (ref.mounted) {
+          await _finishStreaming(
+            status: ChatMessageStatus.error,
+            failure:
+                state.value?.failure ??
+                const ChatFailure(ChatFailureKind.unauthorized),
+          );
+        }
+        return null;
+      }
+      stream = ref
+          .read(openAiResponsesClientProvider)
+          .streamChat(
+            accessToken: token,
+            model: _effectiveModel(provider),
+            messages: messages,
+            tools: definitions,
+          );
+    } else {
+      stream = client.streamChat(
+        baseUrl: provider.baseUrl,
+        apiKey: apiKey,
+        model: _effectiveModel(provider),
+        messages: messages,
+        tools: definitions,
+        allowRedirects: !provider.usesAccount,
+      );
+    }
+    final subscription = stream.listen(
+      (delta) {
+        if (generation != _generation) {
+          return;
+        }
+        _contentBuffer += delta.content;
+        _reasoningBuffer += delta.reasoning;
+        for (final toolDelta in delta.toolCalls) {
+          toolBuilders
+              .putIfAbsent(toolDelta.index, _ToolCallBuilder.new)
+              .add(toolDelta);
+        }
+        if (delta.content.isNotEmpty || delta.reasoning.isNotEmpty) {
+          _publishStreaming(assistantMessageId);
+        }
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (!completer.isCompleted) {
+          completer.completeError(error, stackTrace);
+        }
+      },
+      onDone: () {
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      },
+      cancelOnError: true,
+    );
     _subscription = subscription;
 
     try {

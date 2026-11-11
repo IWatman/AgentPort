@@ -275,6 +275,18 @@ class $ProviderEntriesTable extends ProviderEntries
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _authMethodMeta = const VerificationMeta(
+    'authMethod',
+  );
+  @override
+  late final GeneratedColumn<String> authMethod = GeneratedColumn<String>(
+    'auth_method',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('api_key'),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -294,6 +306,7 @@ class $ProviderEntriesTable extends ProviderEntries
     baseUrl,
     model,
     apiKeyRef,
+    authMethod,
     createdAt,
   ];
   @override
@@ -353,6 +366,12 @@ class $ProviderEntriesTable extends ProviderEntries
     } else if (isInserting) {
       context.missing(_apiKeyRefMeta);
     }
+    if (data.containsKey('auth_method')) {
+      context.handle(
+        _authMethodMeta,
+        authMethod.isAcceptableOrUnknown(data['auth_method']!, _authMethodMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -394,6 +413,10 @@ class $ProviderEntriesTable extends ProviderEntries
         DriftSqlType.string,
         data['${effectivePrefix}api_key_ref'],
       )!,
+      authMethod: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}auth_method'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
@@ -416,6 +439,7 @@ class ProviderEntry extends DataClass implements Insertable<ProviderEntry> {
   final String baseUrl;
   final String model;
   final String apiKeyRef;
+  final String authMethod;
   final int createdAt;
   const ProviderEntry({
     required this.id,
@@ -424,6 +448,7 @@ class ProviderEntry extends DataClass implements Insertable<ProviderEntry> {
     required this.baseUrl,
     required this.model,
     required this.apiKeyRef,
+    required this.authMethod,
     required this.createdAt,
   });
   @override
@@ -435,6 +460,7 @@ class ProviderEntry extends DataClass implements Insertable<ProviderEntry> {
     map['base_url'] = Variable<String>(baseUrl);
     map['model'] = Variable<String>(model);
     map['api_key_ref'] = Variable<String>(apiKeyRef);
+    map['auth_method'] = Variable<String>(authMethod);
     map['created_at'] = Variable<int>(createdAt);
     return map;
   }
@@ -447,6 +473,7 @@ class ProviderEntry extends DataClass implements Insertable<ProviderEntry> {
       baseUrl: Value(baseUrl),
       model: Value(model),
       apiKeyRef: Value(apiKeyRef),
+      authMethod: Value(authMethod),
       createdAt: Value(createdAt),
     );
   }
@@ -463,6 +490,7 @@ class ProviderEntry extends DataClass implements Insertable<ProviderEntry> {
       baseUrl: serializer.fromJson<String>(json['baseUrl']),
       model: serializer.fromJson<String>(json['model']),
       apiKeyRef: serializer.fromJson<String>(json['apiKeyRef']),
+      authMethod: serializer.fromJson<String>(json['authMethod']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
     );
   }
@@ -476,6 +504,7 @@ class ProviderEntry extends DataClass implements Insertable<ProviderEntry> {
       'baseUrl': serializer.toJson<String>(baseUrl),
       'model': serializer.toJson<String>(model),
       'apiKeyRef': serializer.toJson<String>(apiKeyRef),
+      'authMethod': serializer.toJson<String>(authMethod),
       'createdAt': serializer.toJson<int>(createdAt),
     };
   }
@@ -487,6 +516,7 @@ class ProviderEntry extends DataClass implements Insertable<ProviderEntry> {
     String? baseUrl,
     String? model,
     String? apiKeyRef,
+    String? authMethod,
     int? createdAt,
   }) => ProviderEntry(
     id: id ?? this.id,
@@ -495,6 +525,7 @@ class ProviderEntry extends DataClass implements Insertable<ProviderEntry> {
     baseUrl: baseUrl ?? this.baseUrl,
     model: model ?? this.model,
     apiKeyRef: apiKeyRef ?? this.apiKeyRef,
+    authMethod: authMethod ?? this.authMethod,
     createdAt: createdAt ?? this.createdAt,
   );
   ProviderEntry copyWithCompanion(ProviderEntriesCompanion data) {
@@ -505,6 +536,9 @@ class ProviderEntry extends DataClass implements Insertable<ProviderEntry> {
       baseUrl: data.baseUrl.present ? data.baseUrl.value : this.baseUrl,
       model: data.model.present ? data.model.value : this.model,
       apiKeyRef: data.apiKeyRef.present ? data.apiKeyRef.value : this.apiKeyRef,
+      authMethod: data.authMethod.present
+          ? data.authMethod.value
+          : this.authMethod,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -518,14 +552,23 @@ class ProviderEntry extends DataClass implements Insertable<ProviderEntry> {
           ..write('baseUrl: $baseUrl, ')
           ..write('model: $model, ')
           ..write('apiKeyRef: $apiKeyRef, ')
+          ..write('authMethod: $authMethod, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, type, baseUrl, model, apiKeyRef, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    type,
+    baseUrl,
+    model,
+    apiKeyRef,
+    authMethod,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -536,6 +579,7 @@ class ProviderEntry extends DataClass implements Insertable<ProviderEntry> {
           other.baseUrl == this.baseUrl &&
           other.model == this.model &&
           other.apiKeyRef == this.apiKeyRef &&
+          other.authMethod == this.authMethod &&
           other.createdAt == this.createdAt);
 }
 
@@ -546,6 +590,7 @@ class ProviderEntriesCompanion extends UpdateCompanion<ProviderEntry> {
   final Value<String> baseUrl;
   final Value<String> model;
   final Value<String> apiKeyRef;
+  final Value<String> authMethod;
   final Value<int> createdAt;
   final Value<int> rowid;
   const ProviderEntriesCompanion({
@@ -555,6 +600,7 @@ class ProviderEntriesCompanion extends UpdateCompanion<ProviderEntry> {
     this.baseUrl = const Value.absent(),
     this.model = const Value.absent(),
     this.apiKeyRef = const Value.absent(),
+    this.authMethod = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -565,6 +611,7 @@ class ProviderEntriesCompanion extends UpdateCompanion<ProviderEntry> {
     required String baseUrl,
     required String model,
     required String apiKeyRef,
+    this.authMethod = const Value.absent(),
     required int createdAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -581,6 +628,7 @@ class ProviderEntriesCompanion extends UpdateCompanion<ProviderEntry> {
     Expression<String>? baseUrl,
     Expression<String>? model,
     Expression<String>? apiKeyRef,
+    Expression<String>? authMethod,
     Expression<int>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -591,6 +639,7 @@ class ProviderEntriesCompanion extends UpdateCompanion<ProviderEntry> {
       if (baseUrl != null) 'base_url': baseUrl,
       if (model != null) 'model': model,
       if (apiKeyRef != null) 'api_key_ref': apiKeyRef,
+      if (authMethod != null) 'auth_method': authMethod,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -603,6 +652,7 @@ class ProviderEntriesCompanion extends UpdateCompanion<ProviderEntry> {
     Value<String>? baseUrl,
     Value<String>? model,
     Value<String>? apiKeyRef,
+    Value<String>? authMethod,
     Value<int>? createdAt,
     Value<int>? rowid,
   }) {
@@ -613,6 +663,7 @@ class ProviderEntriesCompanion extends UpdateCompanion<ProviderEntry> {
       baseUrl: baseUrl ?? this.baseUrl,
       model: model ?? this.model,
       apiKeyRef: apiKeyRef ?? this.apiKeyRef,
+      authMethod: authMethod ?? this.authMethod,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -639,6 +690,9 @@ class ProviderEntriesCompanion extends UpdateCompanion<ProviderEntry> {
     if (apiKeyRef.present) {
       map['api_key_ref'] = Variable<String>(apiKeyRef.value);
     }
+    if (authMethod.present) {
+      map['auth_method'] = Variable<String>(authMethod.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
     }
@@ -657,6 +711,7 @@ class ProviderEntriesCompanion extends UpdateCompanion<ProviderEntry> {
           ..write('baseUrl: $baseUrl, ')
           ..write('model: $model, ')
           ..write('apiKeyRef: $apiKeyRef, ')
+          ..write('authMethod: $authMethod, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -5815,6 +5870,7 @@ typedef $$ProviderEntriesTableCreateCompanionBuilder =
       required String baseUrl,
       required String model,
       required String apiKeyRef,
+      Value<String> authMethod,
       required int createdAt,
       Value<int> rowid,
     });
@@ -5826,6 +5882,7 @@ typedef $$ProviderEntriesTableUpdateCompanionBuilder =
       Value<String> baseUrl,
       Value<String> model,
       Value<String> apiKeyRef,
+      Value<String> authMethod,
       Value<int> createdAt,
       Value<int> rowid,
     });
@@ -5894,6 +5951,11 @@ class $$ProviderEntriesTableFilterComposer
 
   ColumnFilters<String> get apiKeyRef => $composableBuilder(
     column: $table.apiKeyRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authMethod => $composableBuilder(
+    column: $table.authMethod,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5967,6 +6029,11 @@ class $$ProviderEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get authMethod => $composableBuilder(
+    column: $table.authMethod,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -5999,6 +6066,11 @@ class $$ProviderEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get apiKeyRef =>
       $composableBuilder(column: $table.apiKeyRef, builder: (column) => column);
+
+  GeneratedColumn<String> get authMethod => $composableBuilder(
+    column: $table.authMethod,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -6065,6 +6137,7 @@ class $$ProviderEntriesTableTableManager
                 Value<String> baseUrl = const Value.absent(),
                 Value<String> model = const Value.absent(),
                 Value<String> apiKeyRef = const Value.absent(),
+                Value<String> authMethod = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProviderEntriesCompanion(
@@ -6074,6 +6147,7 @@ class $$ProviderEntriesTableTableManager
                 baseUrl: baseUrl,
                 model: model,
                 apiKeyRef: apiKeyRef,
+                authMethod: authMethod,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -6085,6 +6159,7 @@ class $$ProviderEntriesTableTableManager
                 required String baseUrl,
                 required String model,
                 required String apiKeyRef,
+                Value<String> authMethod = const Value.absent(),
                 required int createdAt,
                 Value<int> rowid = const Value.absent(),
               }) => ProviderEntriesCompanion.insert(
@@ -6094,6 +6169,7 @@ class $$ProviderEntriesTableTableManager
                 baseUrl: baseUrl,
                 model: model,
                 apiKeyRef: apiKeyRef,
+                authMethod: authMethod,
                 createdAt: createdAt,
                 rowid: rowid,
               ),

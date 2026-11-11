@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-11
+
+### Added
+
+- Sign in with a ChatGPT account (OpenAI Responses API) or an OpenRouter account instead of an API key where the provider officially supports it. Browser OAuth keeps credentials in the Android Keystore, pins official endpoints, and refreshes tokens automatically.
+- An authentication-method selector in the provider editor, account sign-in status, and a model picker backed by the provider.
+
+### Changed
+
+- Providers store their authentication method, so account-based providers survive migrations, backups, and edits without exporting secrets.
+- Backups keep the authentication method while continuing to omit API keys and OAuth tokens.
+
 ### Documentation
 
 - Expanded the Google Workspace section with project-number registration in the Developer Preview Program, API/MCP service hosts, OAuth client requirements, scopes, per-service consent, and troubleshooting.

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/provider_repository.dart';
 import '../../domain/entities/ai_provider.dart';
+import '../../domain/entities/provider_oauth.dart';
 
 final providersControllerProvider =
     AsyncNotifierProvider<ProvidersController, List<AiProvider>>(
@@ -20,6 +21,8 @@ class ProvidersController extends AsyncNotifier<List<AiProvider>> {
     required String baseUrl,
     required String model,
     required String apiKey,
+    ProviderAuthMethod authMethod = ProviderAuthMethod.apiKey,
+    ProviderOAuthCredential? credential,
   }) async {
     final provider = await ref
         .read(providerRepositoryProvider)
@@ -29,6 +32,8 @@ class ProvidersController extends AsyncNotifier<List<AiProvider>> {
           baseUrl: baseUrl,
           model: model,
           apiKey: apiKey,
+          authMethod: authMethod,
+          credential: credential,
         );
     state = AsyncData([...?state.value, provider]);
     return provider;
@@ -41,6 +46,8 @@ class ProvidersController extends AsyncNotifier<List<AiProvider>> {
     required String baseUrl,
     required String model,
     String? apiKey,
+    ProviderAuthMethod? authMethod,
+    ProviderOAuthCredential? credential,
   }) async {
     await ref
         .read(providerRepositoryProvider)
@@ -51,6 +58,8 @@ class ProvidersController extends AsyncNotifier<List<AiProvider>> {
           baseUrl: baseUrl,
           model: model,
           apiKey: apiKey,
+          authMethod: authMethod,
+          credential: credential,
         );
     final current = state.value ?? const <AiProvider>[];
     state = AsyncData([
@@ -63,6 +72,7 @@ class ProvidersController extends AsyncNotifier<List<AiProvider>> {
             baseUrl: baseUrl,
             model: model,
             apiKeyRef: provider.apiKeyRef,
+            authMethod: authMethod ?? provider.authMethod,
           )
         else
           item,

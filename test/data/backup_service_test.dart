@@ -79,6 +79,9 @@ void main() {
       expect(json, isNot(contains('secret-provider-ref')));
       expect(json, isNot(contains('apiKey')));
 
+      final exported = jsonDecode(json) as Map<String, Object?>;
+      expect((exported['providers'] as List).single['auth_method'], 'api_key');
+
       final result = await BackupService(target, secureStore).importJson(json);
 
       expect(result.providers, 1);
@@ -89,10 +92,78 @@ void main() {
       final messages = await target.select(target.messages).get();
       expect(providers.single.name, 'DeepSeek');
       expect(providers.single.id, isNot('provider-1'));
+      expect(providers.single.authMethod, 'api_key');
       expect(conversations.single.title, 'Imported chat');
       expect(conversations.single.providerId, providers.single.id);
       expect(messages.single.content, 'Hello');
       expect(messages.single.attachmentsJson, isNotNull);
+    },
+  );
+
+  test('round-trips account authentication without credentials', () async {
+    final source = AppDatabase(NativeDatabase.memory());
+    final target = AppDatabase(NativeDatabase.memory());
+    addTearDown(source.close);
+    addTearDown(target.close);
+    final secureStore = _MemorySecureStore();
+    final now = DateTime(2026, 1, 2, 3, 4).millisecondsSinceEpoch;
+
+    await source
+        .into(source.providerEntries)
+        .insert(
+          ProviderEntriesCompanion.insert(
+            id: 'provider-chatgpt',
+            name: 'ChatGPT',
+            type: 'openai',
+            baseUrl: 'https://api.openai.com/v1',
+            model: 'gpt-5',
+            apiKeyRef: 'agentport.provider.provider-chatgpt.key',
+            authMethod: const Value('chatgpt'),
+            createdAt: now,
+          ),
+        );
+
+    final json = await BackupService(source, secureStore).exportJson();
+    final exported = jsonDecode(json) as Map<String, Object?>;
+    expect((exported['providers'] as List).single['auth_method'], 'chatgpt');
+    expect(json, isNot(contains('refresh_token')));
+    expect(json, isNot(contains('access_token')));
+
+    await BackupService(target, secureStore).importJson(json);
+
+    final provider = (await target.select(target.providerEntries).get()).single;
+    expect(provider.authMethod, 'chatgpt');
+    expect(secureStore.values, isEmpty);
+  });
+
+  test(
+    'defaults a legacy backup without auth_method to API-key authentication',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final now = DateTime(2026, 1, 2, 3, 4).millisecondsSinceEpoch;
+      final legacy = jsonEncode({
+        'format': BackupService.format,
+        'version': BackupService.version,
+        'providers': [
+          {
+            'id': 'legacy-provider',
+            'name': 'OpenAI',
+            'type': 'openai',
+            'base_url': 'https://api.openai.com/v1',
+            'model': 'gpt-4o-mini',
+            'created_at': now,
+          },
+        ],
+        'conversations': <Object>[],
+        'messages': <Object>[],
+      });
+
+      await BackupService(database, _MemorySecureStore()).importJson(legacy);
+
+      final provider =
+          (await database.select(database.providerEntries).get()).single;
+      expect(provider.authMethod, 'api_key');
     },
   );
 

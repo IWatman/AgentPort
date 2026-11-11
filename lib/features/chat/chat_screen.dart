@@ -10,6 +10,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:speech_to_text/speech_to_text.dart';
 
+import '../../data/api/openai_responses_client.dart';
+import '../../data/repositories/provider_repository.dart';
 import '../../domain/entities/ai_provider.dart';
 import '../../domain/entities/chat_failure.dart';
 import '../../domain/entities/chat_message.dart';
@@ -613,6 +615,67 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     AiProvider provider,
   ) async {
     final current = _modelFor(state, provider);
+    if (provider.usesResponses) {
+      final modelsFuture = _loadChatGptModels(provider);
+      final selected = await showModalBottomSheet<String>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheetContext) => SafeArea(
+          child: FutureBuilder<List<ModelOption>>(
+            future: modelsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const SizedBox(
+                  height: 140,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (snapshot.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(l10n.providerAccountLoadFailed),
+                );
+              }
+              final models = snapshot.data ?? const <ModelOption>[];
+              if (models.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(l10n.providerNoAccountModels),
+                );
+              }
+              return ListView(
+                shrinkWrap: true,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                    child: Text(
+                      l10n.chatModel,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  for (final option in models)
+                    ListTile(
+                      leading: const Icon(Icons.memory_rounded),
+                      title: Text(option.label),
+                      subtitle: Text(option.id),
+                      trailing: current == option.id
+                          ? const Icon(Icons.check_rounded)
+                          : null,
+                      onTap: () => Navigator.of(sheetContext).pop(option.id),
+                    ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+      if (selected != null && mounted) {
+        await ref
+            .read(chatControllerProvider(widget.conversationId).notifier)
+            .selectModel(selected);
+      }
+      return;
+    }
     final suggestions = _modelSuggestions(provider);
     final selected = await showModalBottomSheet<String>(
       context: context,
@@ -673,6 +736,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       return;
     }
     await controller.selectModel(selected);
+  }
+
+  Future<List<ModelOption>> _loadChatGptModels(AiProvider provider) async {
+    final token = await ref
+        .read(providerRepositoryProvider)
+        .apiKeyFor(provider);
+    if (token == null || token.isEmpty) {
+      throw StateError('Account disconnected.');
+    }
+    final models = await ref
+        .read(openAiResponsesClientProvider)
+        .listModels(accessToken: token);
+    return [
+      for (final model in models) ModelOption(id: model.id, label: model.label),
+    ];
   }
 
   List<ModelOption> _modelSuggestions(AiProvider provider) {

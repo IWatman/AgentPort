@@ -1,4 +1,6 @@
-/// The kind of API behind a provider.
+import 'provider_oauth.dart';
+
+/// The kind of API behind an API-key provider.
 ///
 /// Both kinds speak the OpenAI chat-completions protocol; the distinction only
 /// affects presets and UI copy.
@@ -28,6 +30,7 @@ class AiProvider {
     required this.baseUrl,
     required this.model,
     required this.apiKeyRef,
+    this.authMethod = ProviderAuthMethod.apiKey,
   });
 
   final String id;
@@ -36,6 +39,10 @@ class AiProvider {
   final String baseUrl;
   final String model;
   final String apiKeyRef;
+  final ProviderAuthMethod authMethod;
+
+  bool get usesAccount => authMethod != ProviderAuthMethod.apiKey;
+  bool get usesResponses => authMethod == ProviderAuthMethod.chatGpt;
 
   bool get isDeepSeek => type == AiProviderType.deepSeek;
 }

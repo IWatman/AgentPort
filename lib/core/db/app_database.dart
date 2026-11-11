@@ -40,6 +40,8 @@ class ProviderEntries extends Table {
 
   TextColumn get apiKeyRef => text()();
 
+  TextColumn get authMethod => text().withDefault(const Constant('api_key'))();
+
   IntColumn get createdAt => integer()();
 
   @override
@@ -316,7 +318,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -344,6 +346,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 6) {
         await migrator.createTable(openCodeConnectionEntries);
+      }
+      if (from < 7 && from >= 2) {
+        await migrator.addColumn(providerEntries, providerEntries.authMethod);
       }
     },
     beforeOpen: (details) async {

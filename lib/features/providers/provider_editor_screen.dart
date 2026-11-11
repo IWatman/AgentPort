@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/api/openai_compatible_client.dart';
+import '../../data/api/openai_responses_client.dart';
+import '../../data/auth/provider_oauth.dart';
 import '../../data/repositories/provider_repository.dart';
 import '../../domain/entities/ai_provider.dart';
 import '../../domain/entities/chat_failure.dart';
+import '../../domain/entities/provider_oauth.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../shared/empty_state.dart';
 import '../shared/failure_text.dart';
@@ -41,11 +46,23 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
   bool _testing = false;
   bool _saving = false;
   String? _error;
+  ProviderAuthMethod _authMethod = ProviderAuthMethod.apiKey;
+  ProviderOAuthCredential? _credential;
+  bool _credentialDirty = false;
+  bool _authorizing = false;
+  bool _loadingAccount = false;
+  List<ModelOption> _accountModels = const [];
+
+  bool get _busy => _saving || _testing || _authorizing || _loadingAccount;
+  bool get _usesAccount => _authMethod != ProviderAuthMethod.apiKey;
 
   bool get _isEditing => widget.providerId != null;
 
   @override
   void dispose() {
+    if (_authorizing) {
+      _activeFlow?.cancel();
+    }
     _nameController.dispose();
     _baseUrlController.dispose();
     _modelController.dispose();
@@ -100,7 +117,7 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
           if (_isEditing)
             IconButton(
               tooltip: l10n.commonDelete,
-              onPressed: _saving ? null : () => _confirmDelete(l10n),
+              onPressed: _busy ? null : () => _confirmDelete(l10n),
               icon: const Icon(Icons.delete_outline_rounded),
             ),
         ],
@@ -122,7 +139,7 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
                     key: ValueKey('providerPreset-${preset.id}'),
                     preset: preset,
                     selected: _selectedPresetId == preset.id,
-                    onTap: _saving ? null : () => _selectPreset(preset),
+                    onTap: _busy ? null : () => _selectPreset(preset),
                   );
                 },
               ),
@@ -144,13 +161,14 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
               ),
             ],
             selected: {_type},
-            onSelectionChanged: _saving
+            onSelectionChanged: _busy || _usesAccount
                 ? null
                 : (selection) => _selectType(selection.first),
           ),
           const SizedBox(height: 20),
           TextField(
             key: const Key('providerNameField'),
+            enabled: !_busy,
             controller: _nameController,
             textInputAction: TextInputAction.next,
             decoration: InputDecoration(
@@ -161,7 +179,9 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
           const SizedBox(height: 14),
           TextField(
             key: const Key('providerBaseUrlField'),
+            enabled: !_busy && !_usesAccount,
             controller: _baseUrlController,
+            onChanged: (_) => setState(() {}),
             keyboardType: TextInputType.url,
             textInputAction: TextInputAction.next,
             autocorrect: false,
@@ -172,38 +192,165 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          TextField(
-            key: const Key('providerApiKeyField'),
-            controller: _apiKeyController,
-            obscureText: _obscureApiKey,
-            autocorrect: false,
-            enableSuggestions: false,
+          DropdownButtonFormField<ProviderAuthMethod>(
+            key: ValueKey('providerAuth-$_authMethod'),
+            initialValue: _authMethod,
+            isExpanded: true,
             decoration: InputDecoration(
-              labelText: l10n.providerApiKey,
-              helperText: _isEditing
-                  ? l10n.providerApiKeyKeep
-                  : l10n.providerApiKeyHelp,
-              helperMaxLines: 3,
+              labelText: l10n.providerAuthMethod,
               border: const OutlineInputBorder(),
-              suffixIcon: IconButton(
-                tooltip: _obscureApiKey ? l10n.commonShow : l10n.commonHide,
-                onPressed: () =>
-                    setState(() => _obscureApiKey = !_obscureApiKey),
-                icon: Icon(
-                  _obscureApiKey
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
+            ),
+            items: [
+              DropdownMenuItem(
+                value: ProviderAuthMethod.apiKey,
+                child: Text(l10n.providerAuthApiKey),
+              ),
+              DropdownMenuItem(
+                value: ProviderAuthMethod.chatGpt,
+                child: Text(l10n.providerAuthChatGpt),
+              ),
+              DropdownMenuItem(
+                value: ProviderAuthMethod.openRouter,
+                child: Text(l10n.providerAuthOpenRouter),
+              ),
+            ],
+            onChanged: _busy
+                ? null
+                : (value) {
+                    if (value != null) _selectAuthMethod(value);
+                  },
+          ),
+          const SizedBox(height: 14),
+          if (_usesAccount) ...[
+            Text(
+              _authMethod == ProviderAuthMethod.chatGpt
+                  ? l10n.providerChatGptNotice
+                  : l10n.providerOpenRouterNotice,
+            ),
+            const SizedBox(height: 12),
+            if (_loadingAccount) const LinearProgressIndicator(),
+            if (_credential != null)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.verified_user_outlined),
+                title: Text(l10n.providerAccountConnected),
+                subtitle: Text(
+                  _credential!.email ??
+                      (_authMethod == ProviderAuthMethod.chatGpt
+                          ? 'ChatGPT'
+                          : 'OpenRouter'),
+                ),
+              ),
+            OutlinedButton.icon(
+              key: const Key('providerAccountSignIn'),
+              onPressed: _busy ? null : () => _signIn(l10n),
+              icon: _authorizing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.login_rounded),
+              label: Text(
+                _authMethod == ProviderAuthMethod.chatGpt
+                    ? l10n.providerContinueChatGpt
+                    : l10n.providerContinueOpenRouter,
+              ),
+            ),
+            if (_authorizing)
+              TextButton(
+                onPressed: () => _activeFlow?.cancel(),
+                child: Text(l10n.commonCancel),
+              ),
+            if (_credential != null)
+              TextButton.icon(
+                key: const Key('providerAccountDisconnect'),
+                onPressed: _busy ? null : () => _disconnect(l10n),
+                icon: const Icon(Icons.logout_rounded),
+                label: Text(l10n.providerAccountDisconnect),
+              ),
+            if (_authMethod == ProviderAuthMethod.chatGpt) ...[
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                key: ValueKey(
+                  'providerAccountModel-${_modelController.text}-${_accountModels.length}',
+                ),
+                initialValue:
+                    _accountModels.any(
+                      (item) => item.id == _modelController.text,
+                    )
+                    ? _modelController.text
+                    : null,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: l10n.chatModel,
+                  border: const OutlineInputBorder(),
+                ),
+                items: [
+                  for (final option in _accountModels)
+                    DropdownMenuItem(
+                      value: option.id,
+                      child: Text(
+                        option.label,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                ],
+                onChanged: _busy
+                    ? null
+                    : (value) =>
+                          setState(() => _modelController.text = value ?? ''),
+              ),
+            ] else if (_authMethod == ProviderAuthMethod.openRouter) ...[
+              const SizedBox(height: 14),
+              TextField(
+                key: const Key('providerOpenRouterModelField'),
+                enabled: !_busy,
+                controller: _modelController,
+                autocorrect: false,
+                enableSuggestions: false,
+                decoration: InputDecoration(
+                  labelText: l10n.providerOpenRouterModel,
+                  helperText: l10n.providerOpenRouterModelHelp,
+                  helperMaxLines: 2,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ] else
+            TextField(
+              key: const Key('providerApiKeyField'),
+              controller: _apiKeyController,
+              enabled: !_busy,
+              obscureText: _obscureApiKey,
+              autocorrect: false,
+              enableSuggestions: false,
+              decoration: InputDecoration(
+                labelText: l10n.providerApiKey,
+                helperText: _isEditing
+                    ? l10n.providerApiKeyKeep
+                    : l10n.providerApiKeyHelp,
+                helperMaxLines: 3,
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  tooltip: _obscureApiKey ? l10n.commonShow : l10n.commonHide,
+                  onPressed: () =>
+                      setState(() => _obscureApiKey = !_obscureApiKey),
+                  icon: Icon(
+                    _obscureApiKey
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
                 ),
               ),
             ),
-          ),
           if (_error != null) ...[
             const SizedBox(height: 16),
             _ErrorBox(message: _error!),
           ],
           const SizedBox(height: 24),
           OutlinedButton.icon(
-            onPressed: _testing || _saving ? null : () => _testConnection(l10n),
+            onPressed: _busy ? null : () => _testConnection(l10n),
             icon: _testing
                 ? const SizedBox(
                     width: 18,
@@ -215,7 +362,7 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
           ),
           const SizedBox(height: 12),
           FilledButton(
-            onPressed: _saving || _testing ? null : () => _save(l10n),
+            onPressed: _busy ? null : () => _save(l10n),
             child: _saving
                 ? const SizedBox(
                     width: 20,
@@ -238,15 +385,24 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
       return;
     }
     _type = provider.type;
+    _authMethod = provider.authMethod;
     _nameController.text = provider.name;
     _baseUrlController.text = provider.baseUrl;
     _modelController.text = provider.model;
+    if (provider.usesAccount) {
+      _loadingAccount = true;
+      unawaited(_loadSavedAccount(provider));
+    }
   }
 
   void _selectPreset(ProviderPreset preset) {
     final oldHost = Uri.tryParse(_baseUrlController.text)?.host;
     final newHost = Uri.tryParse(preset.baseUrl)?.host;
     setState(() {
+      _authMethod = ProviderAuthMethod.apiKey;
+      _credential = null;
+      _credentialDirty = false;
+      _accountModels = const [];
       if (oldHost != null && oldHost != newHost) {
         _apiKeyController.clear();
       }
@@ -270,6 +426,188 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
       _applyPreset(preset);
       _error = null;
     });
+  }
+
+  ProviderOAuthFlow? _activeFlow;
+
+  void _selectAuthMethod(ProviderAuthMethod method) {
+    setState(() {
+      _authMethod = method;
+      _credential = null;
+      _credentialDirty = false;
+      _accountModels = const [];
+      _apiKeyController.clear();
+      _error = null;
+      if (method == ProviderAuthMethod.apiKey) {
+        _modelController.text =
+            _baseUrlController.text.trim() == ProviderPreset.openRouter.baseUrl
+            ? ProviderPreset.openRouter.model
+            : ProviderPreset.openAi.model;
+      } else {
+        _type = AiProviderType.openAiCompatible;
+        _baseUrlController.text = method.baseUrl!;
+        _selectedPresetId = null;
+        _modelController.text = method == ProviderAuthMethod.chatGpt
+            ? ''
+            : ProviderPreset.openRouter.model;
+        if (!_isEditing &&
+            _isPresetValue(_nameController.text, (preset) => preset.label)) {
+          _nameController.text = method == ProviderAuthMethod.chatGpt
+              ? 'ChatGPT'
+              : ProviderPreset.openRouter.label;
+        }
+      }
+    });
+    if (_existing?.authMethod == method &&
+        method != ProviderAuthMethod.apiKey) {
+      setState(() => _loadingAccount = true);
+      unawaited(_loadSavedAccount(_existing!));
+    }
+  }
+
+  Future<void> _loadSavedAccount(AiProvider provider) async {
+    try {
+      final repository = ref.read(providerRepositoryProvider);
+      var credential = await repository.oauthCredentialFor(provider);
+      if (credential != null && provider.usesResponses) {
+        await repository.apiKeyFor(provider);
+        credential = await repository.oauthCredentialFor(provider);
+      }
+      final models = credential != null && provider.usesResponses
+          ? await ref
+                .read(openAiResponsesClientProvider)
+                .listModels(accessToken: credential.accessToken)
+          : null;
+      if (!mounted || _authMethod != provider.authMethod) {
+        return;
+      }
+      setState(() {
+        _credential = credential;
+        _credentialDirty = false;
+        if (models != null) {
+          _setAccountModels([
+            for (final item in models)
+              ModelOption(id: item.id, label: item.label),
+          ]);
+        }
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = AppLocalizations.of(context).providerAccountLoadFailed,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingAccount = false);
+    }
+  }
+
+  void _setAccountModels(List<ModelOption> models) {
+    _accountModels = models;
+    if (!models.any((item) => item.id == _modelController.text)) {
+      _modelController.text = models.isEmpty ? '' : models.first.id;
+    }
+  }
+
+  Future<void> _signIn(AppLocalizations l10n) async {
+    setState(() {
+      _authorizing = true;
+      _error = null;
+    });
+    final method = _authMethod;
+    final flow = ref.read(providerOAuthFlowProvider);
+    _activeFlow = flow;
+    try {
+      final repository = ref.read(providerRepositoryProvider);
+      final credential = method == ProviderAuthMethod.chatGpt
+          ? await flow.authorizeChatGpt(
+              hostId: await repository.oauthHostId(),
+              previous: _credential,
+            )
+          : await flow.authorizeOpenRouter();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _credential = credential;
+        _credentialDirty = true;
+        if (method == ProviderAuthMethod.openRouter &&
+            _modelController.text.trim().isEmpty) {
+          _modelController.text = ProviderPreset.openRouter.model;
+        }
+      });
+      if (method == ProviderAuthMethod.chatGpt) {
+        // Keep the new credential even if the model list cannot be loaded.
+        try {
+          final models = await ref
+              .read(openAiResponsesClientProvider)
+              .listModels(accessToken: credential.accessToken);
+          if (mounted && _authMethod == method) {
+            setState(
+              () => _setAccountModels([
+                for (final item in models)
+                  ModelOption(id: item.id, label: item.label),
+              ]),
+            );
+          }
+        } catch (_) {
+          if (mounted) {
+            setState(() => _error = l10n.providerAccountLoadFailed);
+          }
+        }
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = error is ChatFailure
+              ? chatFailureText(l10n, error)
+              : error.toString(),
+        );
+      }
+    } finally {
+      _activeFlow = null;
+      if (mounted) setState(() => _authorizing = false);
+    }
+  }
+
+  Future<void> _disconnect(AppLocalizations l10n) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.providerAccountDisconnect),
+        content: Text(l10n.providerAccountDisconnectNotice),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.providerAccountDisconnect),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _saving = true);
+    try {
+      if (_existing != null && _existing!.authMethod == _authMethod) {
+        await ref
+            .read(providerRepositoryProvider)
+            .disconnectAccount(_existing!);
+      }
+      if (!mounted) return;
+      setState(() {
+        _credential = null;
+        _credentialDirty = false;
+        _accountModels = const [];
+        _modelController.clear();
+      });
+    } catch (_) {
+      if (mounted) setState(() => _error = l10n.providerAccountLoadFailed);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   /// Applies [preset]. Unless [force] is set, fields edited by the user keep
@@ -308,7 +646,66 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
       setState(() => _error = l10n.providerFieldRequired);
       return;
     }
-    if (apiKey.isEmpty && _existing != null) {
+    if (_usesAccount) {
+      if (_credential == null) {
+        setState(() => _error = l10n.providerAccountRequired);
+        return;
+      }
+      setState(() {
+        _testing = true;
+        _error = null;
+      });
+      try {
+        if (_authMethod == ProviderAuthMethod.chatGpt) {
+          var credential = _credential!;
+          if (credential.expiresAt == null ||
+              !credential.expiresAt!.isAfter(
+                DateTime.now().add(const Duration(seconds: 60)),
+              )) {
+            if (!_credentialDirty &&
+                _existing != null &&
+                _existing!.authMethod == _authMethod) {
+              await ref.read(providerRepositoryProvider).apiKeyFor(_existing!);
+              credential = (await ref
+                  .read(providerRepositoryProvider)
+                  .oauthCredentialFor(_existing!))!;
+            } else {
+              credential = await ref
+                  .read(providerOAuthFlowProvider)
+                  .refreshChatGpt(credential);
+              _credentialDirty = true;
+            }
+            _credential = credential;
+          }
+          final models = await ref
+              .read(openAiResponsesClientProvider)
+              .listModels(accessToken: credential.accessToken);
+          if (mounted) {
+            setState(
+              () => _setAccountModels([
+                for (final item in models)
+                  ModelOption(id: item.id, label: item.label),
+              ]),
+            );
+          }
+        } else {
+          await ref
+              .read(openAiCompatibleClientProvider)
+              .testConnection(
+                baseUrl: ProviderAuthMethod.openRouter.baseUrl!,
+                apiKey: _credential!.accessToken,
+                allowRedirects: false,
+              );
+        }
+        if (mounted) _showSnack(l10n.providerTestSuccess);
+      } catch (_) {
+        if (mounted) setState(() => _error = l10n.providerAccountLoadFailed);
+      } finally {
+        if (mounted) setState(() => _testing = false);
+      }
+      return;
+    }
+    if (apiKey.isEmpty && _existing != null && !_existing!.usesAccount) {
       apiKey =
           await ref.read(providerRepositoryProvider).apiKeyFor(_existing!) ??
           '';
@@ -356,7 +753,9 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
     final baseUrl = _baseUrlController.text.trim();
     var model = _modelController.text.trim();
     final options = ProviderModelCatalog.forBaseUrl(baseUrl);
-    if (options.isNotEmpty && !options.any((option) => option.id == model)) {
+    if (!_usesAccount &&
+        options.isNotEmpty &&
+        !options.any((option) => option.id == model)) {
       model = options.first.id;
     }
     final apiKey = _apiKeyController.text.trim();
@@ -365,7 +764,13 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
       setState(() => _error = l10n.providerFieldRequired);
       return;
     }
-    if (_existing == null && apiKey.isEmpty) {
+    if (_usesAccount && (_credential == null || model.isEmpty)) {
+      setState(() => _error = l10n.providerAccountRequired);
+      return;
+    }
+    if (!_usesAccount &&
+        (_existing == null || _existing!.usesAccount) &&
+        apiKey.isEmpty) {
       setState(() => _error = l10n.providerApiKeyRequired);
       return;
     }
@@ -391,6 +796,8 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
           baseUrl: baseUrl,
           model: model,
           apiKey: apiKey,
+          authMethod: _authMethod,
+          credential: _credential,
         );
       } else {
         await controller.save(
@@ -400,6 +807,8 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
           baseUrl: baseUrl,
           model: model,
           apiKey: apiKey.isEmpty ? null : apiKey,
+          authMethod: _authMethod,
+          credential: _credentialDirty ? _credential : null,
         );
       }
       if (!mounted) {
@@ -412,7 +821,9 @@ class _ProviderEditorScreenState extends ConsumerState<ProviderEditorScreen> {
       }
       setState(() {
         _saving = false;
-        _error = error.toString();
+        _error = error is ChatFailure
+            ? chatFailureText(l10n, error)
+            : error.toString();
       });
     }
   }

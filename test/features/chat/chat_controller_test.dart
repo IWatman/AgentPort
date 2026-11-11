@@ -50,6 +50,7 @@ class _FakeClient extends OpenAiCompatibleClient {
     required String model,
     required List<ChatRequestMessage> messages,
     List<ChatToolDefinition> tools = const [],
+    bool allowRedirects = true,
   }) {
     calls++;
     requests.add(List.of(messages));
@@ -82,6 +83,7 @@ class _ControlledClient extends OpenAiCompatibleClient {
     required String model,
     required List<ChatRequestMessage> messages,
     List<ChatToolDefinition> tools = const [],
+    bool allowRedirects = true,
   }) {
     calls++;
     return controller.stream;
@@ -102,6 +104,7 @@ class _ToolFakeClient extends OpenAiCompatibleClient {
     required String model,
     required List<ChatRequestMessage> messages,
     List<ChatToolDefinition> tools = const [],
+    bool allowRedirects = true,
   }) {
     calls++;
     requests.add(List.of(messages));

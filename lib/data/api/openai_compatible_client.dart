@@ -133,10 +133,12 @@ class OpenAiCompatibleClient {
     required String model,
     required List<ChatRequestMessage> messages,
     List<ChatToolDefinition> tools = const [],
+    bool allowRedirects = true,
   }) async* {
     final client = _clientFactory();
     try {
       final request = http.Request('POST', chatCompletionsUri(baseUrl))
+        ..followRedirects = allowRedirects
         ..headers.addAll({
           'Authorization': 'Bearer $apiKey',
           'Content-Type': 'application/json',
@@ -243,11 +245,17 @@ class OpenAiCompatibleClient {
   Future<void> testConnection({
     required String baseUrl,
     required String apiKey,
+    bool allowRedirects = true,
   }) async {
     final client = _clientFactory();
     try {
-      final response = await client
-          .get(modelsUri(baseUrl), headers: {'Authorization': 'Bearer $apiKey'})
+      final request = http.Request('GET', modelsUri(baseUrl))
+        ..followRedirects = allowRedirects
+        ..headers['Authorization'] = 'Bearer $apiKey';
+      final streamed = await client
+          .send(request)
+          .timeout(const Duration(seconds: 45));
+      final response = await http.Response.fromStream(streamed)
           .timeout(const Duration(seconds: 45));
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
